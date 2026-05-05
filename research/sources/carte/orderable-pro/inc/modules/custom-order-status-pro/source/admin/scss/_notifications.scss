@@ -1,0 +1,45 @@
+#orderable-cos-notifications {
+	margin-top: 12px;
+}
+
+.ocos-notifications--no-field {
+	padding: 20px;
+	text-align: center;
+}
+
+.orderable-fields-row--disabled {
+
+	.orderable-fields-row__header {
+		opacity: 0.5;
+	}
+}
+
+.orderable-fields-row__header-action span {
+	cursor: pointer;
+}
+
+#orderable-cos-notifications .orderable-fields-row__notification-type {
+	font-size: 16px;
+	display: inline-block;
+	line-height: 1;
+	font-weight: 400;
+	width: 20px;
+	height: 20px;
+	text-align: center;
+}
+
+.orderable-cos-field--subject,
+.orderable-cos-field--from-email,
+.orderable-cos-field--from-name,
+.orderable-cos-field--message {
+	width: 300px;
+}
+
+.orderable-wa-template-selector__select {
+	min-width: 300px;
+}
+
+.orderable-cos-field-row--message .orderable-fields-row__body-row-right {
+	display: block;
+	padding: 20px;
+}

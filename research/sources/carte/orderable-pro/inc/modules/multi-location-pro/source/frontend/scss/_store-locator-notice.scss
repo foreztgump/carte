@@ -1,0 +1,11 @@
+.opml-store-locator-notice {
+	background-color: #fcf2f2;
+	color: #30303a;
+	padding: 16px 26px;
+	border-radius: 60px;
+	margin-bottom: 30px;
+
+	@media screen and (max-width: 400px) {
+		padding: 10px 16px;
+	}
+}

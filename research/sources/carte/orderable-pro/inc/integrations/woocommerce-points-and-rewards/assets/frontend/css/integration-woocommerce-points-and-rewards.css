@@ -1,0 +1,15 @@
+.orderable-checkout .wc_points_rewards_earn_points,
+.orderable-checkout .wc_points_redeem_earn_points {
+  margin: 0 0 2em !important;
+}
+
+.button.wc_points_rewards_apply_discount {
+  cursor: pointer;
+  margin-top: -9px;
+  padding-left: 1em;
+  width: auto;
+}
+
+.woocommerce-info.wc_points_redeem_earn_points {
+  height: 25px !important;
+}

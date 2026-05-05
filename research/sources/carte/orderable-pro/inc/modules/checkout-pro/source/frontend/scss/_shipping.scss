@@ -1,0 +1,150 @@
+.woocommerce-shipping-methods {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+
+	li {
+		list-style-type: none;
+		margin: 0 0 6px;
+		padding: 0;
+	}
+
+	label {
+		// Fallbacks for older browsers.
+
+		color: $c-text-bold;
+		display: inline !important;
+		float: none;
+		margin: unset;
+		min-width: 80%;
+		padding: unset !important;
+
+		&::after,
+		&::before {
+			// Fallbacks for older browsers.
+			border: 0;
+			margin: 0;
+			padding: 0;
+
+			all: unset;
+			content: "" !important; // Important because Zepher sets this important;
+		}
+
+		.about_paypal {
+			margin-left: 5px;
+		}
+	}
+
+	/* stylelint-disable-next-line selector-id-pattern */
+	&#shipping_method li input[type="radio"],
+	input[type="radio"] {
+		// Fallbacks for older browsers.
+
+		-webkit-appearance: radio;
+		appearance: radio;
+		bottom: unset;
+		clip: unset;
+		clip-path: unset;
+		display: inline !important;
+
+		float: unset;
+		height: unset;
+		left: unset;
+		margin: unset;
+		margin-right: 8px;
+		margin-top: 8px;
+		padding: unset;
+		position: unset !important; // Has to be important because Shoptimizer sets it as important;
+		right: unset;
+		top: unset;
+		width: unset;
+		vertical-align: top;
+
+		&::after,
+		&::before {
+			all: unset;
+		}
+
+		&:focus {
+			outline: unset;
+		}
+	}
+}
+
+/* stylelint-disable-next-line selector-id-pattern */
+#customer_details {
+
+	.orderable-checkout__shipping-table {
+		display: block;
+		width: 100%;
+
+		tbody {
+			display: block;
+		}
+
+		tr,
+		th,
+		td {
+			display: block;
+			text-align: left;
+			width: 100%;
+		}
+
+		.woocommerce-shipping-totals.shipping > td:first-of-type {
+			display: none;
+		}
+
+		label {
+			text-align: left !important;
+		}
+	}
+}
+
+/**
+ * IE11.
+ */
+/* stylelint-disable-next-line selector-type-no-unknown */
+_:-ms-fullscreen,
+:root {
+
+	body.woocommerce-checkout {
+
+		.woocommerce-shipping-methods {
+
+			label {
+				display: inline !important;
+			}
+		}
+	}
+}
+
+table.orderable-mobile-table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 0 0 30px;
+
+	tr {
+		border-collapse: collapse;
+		border-bottom: 1px solid $c-border;
+		border-top: 1px solid $c-border;
+		display: block;
+		padding: 0;
+		width: 100%;
+
+		&:not(.orderable-tip-row) {
+			padding: 20px 0;
+		}
+
+		&:first-of-type {
+			border-bottom: none;
+		}
+
+		td {
+			display: block;
+		}
+	}
+
+	.orderable-form-coupon__actions {
+		width: auto !important;
+	}
+}

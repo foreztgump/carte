@@ -1,0 +1,25 @@
+{
+	"apiVersion": 2,
+	"name": "orderable/order-service-time-block",
+	"version": "1.0.0",
+	"title": "Orderable - Service time field",
+	"category": "woocommerce",
+	"description": "Shows a select field to allow customers to select a service time.",
+	"supports": {
+		"html": false,
+		"align": false,
+		"multiple": false,
+		"reusable": false
+	},
+	"parent": [ "woocommerce/checkout-shipping-methods-block" ],
+	"attributes": {
+		"lock": {
+			"type": "object",
+			"default": {
+				"remove": true,
+				"move": true
+			}
+		}
+	},
+	"textdomain": "orderable-pro"
+}

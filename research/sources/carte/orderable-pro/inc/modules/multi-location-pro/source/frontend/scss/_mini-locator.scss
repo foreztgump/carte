@@ -1,0 +1,81 @@
+.opml-mini-locator {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+
+	&__icon-wrap {
+		width: 40px;
+		height: 40px;
+		box-sizing: border-box;
+		border: 1px solid #d9d9d9;
+		border-radius: 50%;
+		background-color: #fff;
+		cursor: pointer;
+
+		&:hover {
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		}
+	}
+
+	&__icon {
+		mask-image: url(../../images/location-pin.svg);
+		background-color: #006350;
+		mask-repeat: no-repeat;
+		mask-position: center 11px;
+		width: 100%;
+		height: 100%;
+	}
+
+	&[data-type="delivery"] &__icon {
+		mask-image: url(../../images/delivery-cycle.svg);
+	}
+
+	&[data-type="collection"] &__icon,
+	&[data-type="pickup"] &__icon {
+		mask-image: url(../../images/pickup.svg);
+	}
+
+	&[data-type="notset"] {
+
+		.opml-mini-locator__address-button {
+			display: none;
+		}
+
+		.opml-mini-locator__address-postcode {
+			cursor: pointer;
+		}
+	}
+
+	&__address {
+
+		&-postcode {
+			font-size: 16px;
+			color: #000;
+			margin: 0 !important;
+			line-height: 1.2;
+		}
+
+		&-button {
+			color: #606060;
+			text-decoration: none;
+			margin: 0;
+			line-height: 1.2;
+			outline: none;
+
+			&:hover {
+				text-decoration: none;
+				outline: none;
+			}
+		}
+	}
+}
+
+/* stylelint-disable-next-line selector-id-pattern */
+#order_review .opml-mini-locator .opml-mini-locator__icon-wrap,
+.wp-block-woocommerce-checkout .opml-mini-locator .opml-mini-locator__icon-wrap {
+	display: none;
+}
+
+.flux-checkout .opml-mini-locator {
+	justify-content: end;
+}

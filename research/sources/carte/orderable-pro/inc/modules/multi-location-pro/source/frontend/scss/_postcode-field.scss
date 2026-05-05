@@ -1,0 +1,34 @@
+/* stylelint-disable-next-line selector-id-pattern */
+p#billing_postcode_field {
+	position: relative;
+}
+
+/* stylelint-disable-next-line selector-id-pattern */
+p#shipping_postcode_field {
+	position: relative;
+}
+
+span.opml-postcode-btn {
+	position: absolute;
+	right: 10px;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	gap: 5px;
+	top: 0;
+	height: 100%;
+
+	&__icon {
+		height: 100%;
+		width: 11px;
+		background-color: #000;
+		mask-image: url(../../images/pencil.svg);
+		mask-repeat: no-repeat;
+		mask-size: 11px;
+		mask-position: center;
+	}
+
+	&__edit {
+		color: #000;
+	}
+}

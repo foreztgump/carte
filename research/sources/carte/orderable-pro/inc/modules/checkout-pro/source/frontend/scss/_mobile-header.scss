@@ -1,0 +1,67 @@
+@use "sass:color";
+
+.orderable-checkout-mobile-header {
+	background: #f4f4f4;
+	display: block;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+	width: 100%;
+
+	&:hover {
+		background: color.adjust(#f4f4f4, $lightness: -5%);
+	}
+
+	.orderable-checkout-summary-toggle_link--hide {
+		display: none;
+	}
+
+	.orderable-checkout-summary-toggle {
+		align-items: center;
+		color: $c-text;
+		cursor: pointer;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: space-between;
+		outline: none;
+		text-decoration: none !important;
+		padding: 20px;
+
+		* {
+			color: $c-text;
+		}
+	}
+
+	.orderable-checkout-summary-toggle_total {
+		font-weight: 700;
+	}
+
+	.orderable-checkout-summary-toggle_link {
+		cursor: pointer;
+		position: relative;
+		padding-left: 32px;
+	}
+
+	.dashicons.dashicons-cart {
+		display: inline;
+
+		&::before {
+			content: url(../svg/cart.svg);
+			display: inline-block;
+			height: 20px;
+			left: 0;
+			margin-right: 4px;
+			position: absolute;
+			top: 3px;
+			width: 20px;
+		}
+	}
+}
+
+@media (min-width: 992px) {
+
+	.orderable-checkout-mobile-header {
+		display: none;
+	}
+}

@@ -1,0 +1,3 @@
+#woocommerce-product-data ul.wc-tabs li.orderable_allergen_info_tab a::before {
+  content: "\f164";
+}

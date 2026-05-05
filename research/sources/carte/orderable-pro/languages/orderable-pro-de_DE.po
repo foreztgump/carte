@@ -1,0 +1,474 @@
+# Copyright (C) 2021 orderable-pro
+# This file is distributed under the same license as the orderable-pro package.
+msgid ""
+msgstr ""
+"Project-Id-Version: orderable-pro\n"
+"POT-Creation-Date: 2021-09-13 18:49+0200\n"
+"PO-Revision-Date: 2023-03-07 09:58+0000\n"
+"Last-Translator: \n"
+"Language-Team: Deutsch\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:"
+"1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;"
+"esc_html_x:1,2c\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+"Report-Msgid-Bugs-To: \n"
+"X-Loco-Version: 2.6.3; wp-6.1.1"
+
+#: inc/class-auto-update.php:108
+msgid "An error occour when try to identify the plugin."
+msgstr "Beim Versuch, das Plugin zu identifizieren, tritt ein Fehler auf."
+
+#: inc/class-auto-update.php:108 inc/class-auto-update.php:121
+msgid "Try again"
+msgstr "Versuchen Sie es erneut"
+
+#: inc/class-auto-update.php:121
+msgid "An Unexpected HTTP Error occurred during the API request."
+msgstr ""
+"Während der API-Anforderung ist ein unerwarteter HTTP-Fehler aufgetreten."
+
+#: inc/class-license.php:66
+msgid "License Settings"
+msgstr "Lizenzeinstellungen"
+
+#: inc/class-license.php:72
+msgid "License Key"
+msgstr "Lizenzschlüssel"
+
+#: inc/class-license.php:73
+msgid ""
+"Enter your license key to receive regular updates and support for Orderable."
+msgstr ""
+"Geben Sie Ihren Lizenzschlüssel ein, um regelmäßige Updates und Support für "
+"Orderable zu erhalten."
+
+#: inc/class-license.php:96
+msgid "Deactivate"
+msgstr "Deaktivieren"
+
+#: inc/class-license.php:124
+msgid "Activated"
+msgstr "Aktiviert"
+
+#: inc/class-license.php:126
+msgid "Not Activated"
+msgstr "Nicht aktiviert"
+
+#: inc/class-license.php:200
+msgid ""
+"There was a problem establishing a connection to the licensing server. "
+"Please try again in a few minutes."
+msgstr ""
+"Beim Herstellen einer Verbindung zum Lizenzserver ist ein Problem "
+"aufgetreten. Bitte versuchen Sie es in ein paar Minuten erneut."
+
+#: inc/class-license.php:246
+msgid ""
+"There was a problem activating the license. Please check your license "
+"expiration."
+msgstr ""
+"Beim Aktivieren der Lizenz ist ein Problem aufgetreten. Bitte überprüfen Sie "
+"das Ablaufdatum Ihrer Lizenz."
+
+#: inc/class-license.php:278
+msgid "There was a problem deactivating the licence. Please try again."
+msgstr ""
+"Beim Deaktivieren der Lizenz ist ein Problem aufgetreten. Bitte versuche es "
+"erneut."
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:29
+msgid "Product Addons"
+msgstr "Produkt-Add-Ons"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:30
+msgid "Product Addon"
+msgstr "Produkt-Addon"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:59
+msgid "Fields"
+msgstr "Felder"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:68
+msgid "Conditions"
+msgstr "Bedingungen"
+
+#: inc/modules/addons-pro/class-addons-pro-fields.php:92
+msgid "Select"
+msgstr "Wählen"
+
+#: inc/modules/addons-pro/class-addons-pro-fields.php:92
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: inc/modules/addons-pro/class-addons-pro.php:126
+#, php-format
+msgid "%s is a required field"
+msgstr "%s ist ein Pflichtfeld"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:6
+msgid "Rules"
+msgstr "Regel"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:7
+msgid "Add a set of rules to determine when this field group should appear."
+msgstr ""
+"Fügen Sie eine Reihe von Regeln hinzu, um festzulegen, wann diese Feldgruppe "
+"angezeigt werden soll."
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:12
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:38
+msgid "or"
+msgstr "oder"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:17
+msgid "Product"
+msgstr "Produkt"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:18
+msgid "Product Category"
+msgstr "Produktkategorie"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:23
+msgid "Is equal to"
+msgstr "Ist gleich zu"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:24
+msgid "Is not equal to"
+msgstr "Ist ungleich zu"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:35
+msgid "Add Rule"
+msgstr "Regel hinzufügen"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:40
+msgid "Add Rule Group"
+msgstr "Regelgruppe hinzufügen"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:47
+msgid "Add Your First Rule"
+msgstr "Fügen Sie Ihre erste Regel hinzu"
+
+#: inc/modules/addons-pro/templates/admin/conditions-metabox.php:48
+msgid ""
+"If you do not add any conditions, this field group will appear for all "
+"products."
+msgstr ""
+"Wenn Sie keine Bedingungen hinzufügen, wird diese Feldgruppe für alle "
+"Produkte angezeigt."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:26
+#: inc/modules/tip-pro/class-tip-pro-settings.php:166
+msgid "Type"
+msgstr "Type"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:27
+msgid "What type of field should this be?"
+msgstr "Was für ein Feld soll das sein?"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:31
+msgid "Dropdown"
+msgstr "Dropdown"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:32
+msgid "Checkbox"
+msgstr "Checkbox"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:33
+msgid "Radio"
+msgstr "Radio"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:41
+msgid "Title/Label"
+msgstr "Titel/Bezeichnung"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:42
+msgid "The front-facing title/label for the field."
+msgstr "Den Titel dieses Felds, welches der Benutzer sieht."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:52
+msgid "Description"
+msgstr "Beschreibung"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:53
+msgid "The front-facing description of this field."
+msgstr "Die Beschreibung dieses Felds, welches der Benutzer sieht."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:63
+msgid "Required"
+msgstr "Erforderlich"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:64
+msgid "Is this field required?"
+msgstr "Ist dieses Feld erforderlich?"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:74
+msgid "Options"
+msgstr "Optionen"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:75
+msgid ""
+"Enter the options for the field. Add new options by clicking \"Add Option\"."
+msgstr ""
+"Geben Sie die Optionen für das Feld ein. Fügen Sie neue Optionen hinzu, "
+"indem Sie auf „Option hinzufügen“ klicken."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:88
+msgid "Add Field"
+msgstr "Feld hinzufügen"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:92
+msgid "Add Your First Field"
+msgstr "Fügen Sie Ihr erstes Feld hinzu"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:93
+msgid "Start adding product addon fields for your products."
+msgstr ""
+"Beginnen Sie mit dem Hinzufügen von Produkt-Addon-Feldern für Ihre Produkte."
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:12
+#: inc/modules/tip-pro/class-tip-pro-settings.php:154
+msgid "Label"
+msgstr "Beschriftung"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:17
+msgid "Visual"
+msgstr "Optisch"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:19
+msgid "None"
+msgstr "Keiner"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:20
+msgid "Image"
+msgstr "Bild"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:21
+msgid "Color"
+msgstr "Farbe"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:46
+msgid "Price"
+msgstr "Preis"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:50
+msgid "Selected"
+msgstr "Gewählt"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:66
+#: inc/modules/tip-pro/class-tip-pro-settings.php:137
+msgid "Add Option"
+msgstr "Option hinzufügen"
+
+#: inc/modules/cart-bumps-pro/templates/bumps.php:14
+msgid "You May Also Like..."
+msgstr "Sie mögen vielleicht auch..."
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:40
+msgid "No Titles or Tabs"
+msgstr "Keine Titel oder Tabs"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:41
+msgid "All Category Titles"
+msgstr "Alle Kategorietitel"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:42
+msgid "Main Category Titles Only"
+msgstr "Nur Titel der Hauptkategorie"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:43
+msgid "Subcategory Titles Only"
+msgstr "Nur Unterkategorietitel"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:44
+msgid "Top Tabs"
+msgstr "Top Tabs"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:45
+msgid "Side Tabs"
+msgstr "Seiten Tabs"
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:35
+msgid ""
+"Sorry, the date you selected is no longer available. Please choose another."
+msgstr ""
+"Das von Ihnen ausgewählte Datum ist leider nicht mehr verfügbar. Bitte "
+"wählen Sie ein anderes."
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:40
+msgid "Please select an order time."
+msgstr "Bitte wählen Sie eine Bestellzeit aus."
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:100
+msgid " (As soon as possible)"
+msgstr " (So schnell als möglich)"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:36
+msgid "Max Orders (Day)"
+msgstr "Maximale Bestellungen (Tag)"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:58
+msgid "Hours"
+msgstr "Öffnungszeit"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:61
+msgid "From:"
+msgstr "Von:"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:65
+msgid "To:"
+msgstr "An:"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:73
+msgid "Frequency (Mins)"
+msgstr "Frequenz (Minuten)"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:75
+msgid "Default: 30"
+msgstr "Standard: 30"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:81
+msgid "Cutoff (Mins)"
+msgstr "Wartezeit (minuten)"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:89
+msgid "Max Orders (Slot)"
+msgstr "Maximale Bestellungen (Slot)"
+
+#: inc/modules/timings-pro/class-timings-pro.php:196
+msgid "All Day"
+msgstr "Den ganzen Tag"
+
+#: inc/modules/tip-pro/class-tip-pro-checkout.php:82
+msgid "Tip Amount"
+msgstr "Trinkgeld Betrag"
+
+#: inc/modules/tip-pro/class-tip-pro-checkout.php:101
+msgid "Apply"
+msgstr "Anwenden"
+
+#: inc/modules/tip-pro/class-tip-pro-checkout.php:132
+msgid "Tip"
+msgstr "Trinkgeld"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:31
+#: inc/modules/tip-pro/class-tip-pro-settings.php:95
+#: inc/modules/tip-pro/class-tip-pro-settings.php:204
+msgid "No Tip"
+msgstr "Kein Trinkgeld"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:33
+#: inc/modules/tip-pro/class-tip-pro-settings.php:109
+msgid "Custom Tip"
+msgstr "Benutzerdefiniertes Trinkgeld"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:56
+#: inc/modules/tip-pro/class-tip-pro-settings.php:63
+msgid "Tip Settings"
+msgstr "Trinkgeld Einstellungen"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:69
+msgid "Enable Tipping"
+msgstr "Trinkgeld aktivieren"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:70
+msgid "Show tipping options at checkout."
+msgstr "Trinkgeldoptionen an der Kasse anzeigen."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:76
+msgid "Tip Options"
+msgstr "Trinkgeld Optionen"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:77
+msgid ""
+"Enter the tip options you want to display at checkout. We recommend adding 3 "
+"options."
+msgstr ""
+"Geben Sie die Trinkgeldoptionen ein, die an der Kasse angezeigt werden "
+"sollen. Wir empfehlen, 3 Optionen hinzuzufügen."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:84
+msgid "Default Option"
+msgstr "Standard Option"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:85
+msgid ""
+"Choose which option is pre-selected in checkout. The options are updated "
+"after saving."
+msgstr ""
+"Wählen Sie aus, welche Option im Checkout vorausgewählt ist. Die Optionen "
+"werden nach dem Speichern aktualisiert."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:92
+msgid "No Tip Label"
+msgstr "Keine Trinkgeld Bezeichnung"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:93
+msgid "Enter a label for the \"No Tip\" button at checkout."
+msgstr ""
+"Geben Sie an der Kasse ein Label für die Schaltfläche „Kein Trinkgeld“ ein."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:99
+msgid "Enable Custom Tip"
+msgstr "Benutzerdefiniertes Trinkgeld aktivieren"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:100
+msgid "Allow customers to enter their own tip amount at checkout."
+msgstr ""
+"Ermöglichen Sie Kunden, ihren eigenen Trinkgeldbetrag an der Kasse "
+"einzugeben."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:106
+msgid "Custom Tip Label"
+msgstr "Benutzerdefinierte Trinkgeld Bezeichnung"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:107
+msgid "Enter a label for the \"Custom Tip\" button."
+msgstr ""
+"Geben Sie eine Bezeichnung für die Schaltfläche \"Benutzerdefiniertes "
+"Trinkgeld\" ein."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:160
+msgid "Amount"
+msgstr "Betrag"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:169
+msgid "Fixed"
+msgstr "Fixiert"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:170
+msgid "Percentage"
+msgstr "Prozentsatz"
+
+#: orderable-pro.php:75
+msgid ""
+"Orderable Pro requires the free version of Orderable to be installed and "
+"activated."
+msgstr ""
+"Orderable Pro erfordert, dass die kostenlose Version von Orderable "
+"installiert und aktiviert ist."
+
+#: orderable-pro.php:76
+msgid "Get it now"
+msgstr "Hol es dir jetzt"
+
+#: orderable-pro.php:89
+#, php-format
+msgid ""
+"Orderable Pro requires the free version of Orderable to be at least v%s. "
+"Please update the Orderable plugin."
+msgstr ""
+"Orderable Pro erfordert, dass die kostenlose Version von Orderable "
+"mindestens v%s ist. Bitte aktualisieren Sie das Bestellbare Plugin."
+
+#: orderable-pro.php:90
+msgid "Update now"
+msgstr "Jetzt aktualisieren"

@@ -1,0 +1,121 @@
+.opml-store-locator {
+
+	* {
+		box-sizing: border-box;
+		letter-spacing: unset;
+		line-height: 1.4;
+		font-family: Roboto, Helvetica, Arial, sans-serif;
+	}
+
+	&__heading {
+		color: #24242d;
+		margin-bottom: 15px;
+		text-align: center;
+		font-weight: 700;
+		font-size: 30px;
+	}
+
+	&__content {
+		color: #24242d;
+		text-align: center;
+		margin-bottom: 33px;
+	}
+
+	.opml-store-locator__input {
+		display: flex;
+		justify-content: center;
+		height: 60px;
+
+		.opml-store-locator-input {
+			width: 100%;
+		}
+	}
+
+	&__geolocate {
+		text-align: center;
+		margin-top: 25px;
+
+		&-btn {
+			box-shadow: none;
+			border-radius: 0;
+			border: 0;
+			background: transparent;
+			outline: none;
+			margin: 0;
+			position: relative;
+			padding: 0 0 0 24px;
+			font-weight: 500;
+			font-size: 16px;
+			cursor: pointer;
+
+			&::before {
+				content: "";
+				display: block;
+				height: 16px;
+				width: 16px;
+				background-repeat: no-repeat;
+				background-image: url(../../images/geolocate.svg);
+				position: absolute;
+				left: 0;
+				background-size: 16px;
+				top: 5px;
+			}
+
+			&.opml-store-locator__geolocate-btn--loading {
+
+				&::after {
+					content: "";
+					display: block;
+					position: absolute;
+					height: 16px;
+					width: 16px;
+					background: #fff;
+					left: 0;
+					top: 2px;
+					border-radius: 50%;
+					border: 1px solid #a7a7ab;
+					border-top: 1px solid #24242e;
+					animation: opml-rotate 1s linear infinite;
+				}
+
+				&::before {
+					display: none;
+				}
+			}
+
+			&:hover {
+				box-shadow: none;
+				border-radius: 0;
+				border: 0;
+				background: transparent;
+				outline: none;
+			}
+		}
+
+		&--error {
+
+			p {
+				margin-bottom: 0;
+				color: #24242d;
+			}
+		}
+	}
+
+	&__results {
+		margin-top: 30px;
+		position: relative;
+
+		&.has-scroll-bottom {
+
+			&::after {
+				position: absolute;
+				height: 30px;
+				width: 100%;
+				content: "";
+				bottom: 0;
+				left: 0;
+				background: linear-gradient(0deg, #fff, transparent);
+			}
+		}
+	}
+}

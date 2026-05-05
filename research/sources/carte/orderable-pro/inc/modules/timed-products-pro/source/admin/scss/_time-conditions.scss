@@ -1,0 +1,59 @@
+// Block.
+.orderable-time-conditions {
+	margin: 15px 0;
+}
+
+// Elements.
+.orderable-time-conditions {
+
+	.orderable-conditions__row-item--action {
+		position: absolute;
+		top: 5px;
+		right: -30px;
+	}
+
+	.day_selector {
+		margin-top: 10px;
+	}
+
+	.day_selector label {
+		display: inline-block;
+		margin-bottom: 5px;
+		width: 30%;
+	}
+
+	.mx-datepicker {
+		max-width: 160px;
+		margin-left: 5px;
+
+		input {
+			height: 30px;
+		}
+	}
+}
+
+.orderable-time-conditions__row {
+	margin-bottom: 12px;
+	position: relative;
+
+	&:last-of-type {
+		margin-bottom: 20px;
+	}
+
+	.multi-select-container {
+		width: auto;
+		top: 4px;
+		margin-left: 6px;
+	}
+
+	&__and_label {
+		margin: 15px 0 0;
+		padding: 5px 10px;
+		border-radius: 8px;
+		font-style: italic;
+	}
+
+	&:last-of-type .orderable-time-conditions__row__and_label {
+		display: none;
+	}
+}

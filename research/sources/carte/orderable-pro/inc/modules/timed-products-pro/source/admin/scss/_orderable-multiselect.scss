@@ -1,0 +1,69 @@
+// Block.
+.orderable-multiselect {
+	position: relative;
+	display: inline-block;
+	top: 4px;
+	margin-left: 5px;
+}
+
+// Elements.
+.orderable-multiselect__label {
+	display: inline-block;
+	font-size: 14px;
+	padding: 0 28px 0 8px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: -0.5em;
+	background-color: #fff;
+	border: 1px solid #7e8993;
+	border-radius: 4px;
+	box-shadow: 0 0 0 transparent;
+	cursor: pointer;
+	line-height: 2;
+	min-height: 30px;
+	position: relative;
+	box-sizing: border-box;
+	user-select: none;
+	min-width: 150px;
+	max-width: 300px;
+
+	&::after {
+		content: "";
+		display: inline-block;
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 6px 6px 0 6px;
+		border-color: #999 #0000 #0000 #0000;
+		vertical-align: 0.1em;
+		position: absolute;
+		right: 8px;
+		top: 50%;
+		-webkit-transform: translateY(-48%);
+		transform: translateY(-48%);
+	}
+
+	&.orderable-combobox__label--open::after {
+		border-width: 0 0.4em 0.4em 0.4em;
+		border-color: #0000 #0000 #999 #0000;
+	}
+}
+
+.orderable-multiselect__dropdown {
+	position: absolute;
+	left: 0;
+	top: 17px;
+	z-index: 3;
+	background: #fff;
+	margin: 1em 0;
+	border: 1px solid #aaa;
+	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+	padding: 8px;
+	width: 150px;
+}
+
+.orderable-multiselect__dropdown label {
+	display: block;
+	margin-bottom: 5px;
+}

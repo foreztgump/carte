@@ -1,0 +1,157 @@
+body.woocommerce-checkout {
+
+	#payment.woocommerce-checkout-payment {
+		background-color: transparent;
+
+		.payment_box {
+			background-color: transparent;
+		}
+	}
+
+	#payment .payment_methods {
+		// Fallbacks for older browsers.
+		margin: 0;
+		padding: 0;
+
+		background-color: unset;
+		border: 1px solid $c-border;
+		list-style-type: none;
+		margin-top: 30px;
+		margin-bottom: 30px;
+		border-radius: $br-sm;
+	}
+
+	#payment .payment_methods > li:not(.woocommerce-notice) {
+		// Fallbacks for older browsers.
+
+		background-color: transparent;
+		border-bottom: unset;
+		border-left: unset;
+		border-right: unset;
+		border-top: 1px solid $c-border;
+		list-style-type: none;
+		margin: unset;
+		padding: 24px;
+		vertical-align: unset;
+
+		&:first-child {
+			border-top: none;
+		}
+
+		label {
+			// Fallbacks for older browsers.
+
+			color: $c-text-bold;
+			display: inline-block !important;
+			margin: unset;
+			min-width: 80%;
+			padding: unset !important;
+
+			&::after,
+			&::before {
+				// Fallbacks for older browsers.
+				border: 0;
+				margin: 0;
+				padding: 0;
+
+				all: unset;
+				content: "" !important; // Important because Zepher sets this important;
+			}
+
+			.about_paypal {
+				margin-left: 5px;
+			}
+		}
+
+		input[type="radio"] {
+			// Fallbacks for older browsers.
+
+			-webkit-appearance: radio;
+			appearance: radio;
+			bottom: unset;
+			clip: unset;
+			clip-path: unset;
+			display: inline;
+
+			float: unset;
+			height: unset;
+			left: unset;
+			margin: unset;
+			margin-right: 8px;
+			margin-top: 8px;
+			padding: unset;
+			position: unset !important; // Has to be important because Shoptimizer sets it as important;
+			right: unset;
+			top: unset;
+			width: unset;
+			vertical-align: top;
+
+			&::after,
+			&::before {
+				all: unset;
+			}
+
+			&:focus {
+				outline: unset;
+			}
+		}
+
+		input[type="radio"]:first-child:checked + label::before {
+			color: #448aff;
+		}
+
+		img:not([class^="iconic-"]) {
+			max-height: 48px;
+			margin: unset;
+			margin-left: 8px;
+			margin-right: 8px;
+			padding: unset;
+			width: auto;
+			vertical-align: top;
+		}
+
+		.payment_box {
+			margin: unset;
+			padding: 16px 26px 0 32px;
+
+			p {
+				font-size: unset;
+				margin: unset;
+				padding: unset;
+			}
+		}
+	}
+
+	/* stylelint-disable-next-line selector-id-pattern */
+	#place_order + img,
+	#place_order + .x-loader {
+		display: none;
+	}
+}
+
+/**
+ * IE11.
+ */
+/* stylelint-disable-next-line selector-type-no-unknown */
+_:-ms-fullscreen,
+:root {
+
+	body.woocommerce-checkout {
+
+		#payment .payment_methods > li:not(.woocommerce-notice) {
+
+			label {
+				display: inline !important;
+				margin: 0;
+				padding: 0;
+			}
+
+			input[type="radio"] {
+				clip: auto;
+				height: auto;
+				position: relative;
+				width: auto;
+			}
+		}
+	}
+}

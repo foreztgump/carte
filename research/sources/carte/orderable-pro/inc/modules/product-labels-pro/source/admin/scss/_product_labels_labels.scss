@@ -1,0 +1,62 @@
+/*
+ * Product Labels
+ */
+
+// Block.
+
+// Elements.
+
+.orderable-pro-product-labels__label {
+	align-items: center;
+	display: inline-flex;
+	padding: 0 8px;
+	height: 26px;
+}
+
+i.orderable-pro-product-labels__icon {
+	fill: currentcolor;
+	font-weight: 400;
+	font-size: 16px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.orderable-pro-product-labels__text {
+	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	font-size: 14px;
+	white-space: nowrap;
+}
+
+// Modifiers.
+
+.orderable-pro-product-labels__label--direction-row-reverse {
+	flex-direction: row-reverse;
+}
+
+.orderable-pro-product-labels__label:not(.orderable-pro-product-labels__label--direction-row-reverse) .orderable-pro-product-labels__icon:not(.orderable-pro-product-labels__icon--display-none) + .orderable-pro-product-labels__text {
+	margin-left: 6px;
+}
+
+.orderable-pro-product-labels__label--direction-row-reverse .orderable-pro-product-labels__text {
+	margin-right: 6px;
+}
+
+.orderable-pro-product-labels__label--rounded {
+	border-radius: 20px;
+}
+
+.orderable-pro-product-labels__preview-wrapper {
+	align-items: center;
+	background-color: #fff;
+	background-image: repeating-linear-gradient(45deg, #f6f6f6 25%, transparent 25%, transparent 75%, #f6f6f6 75%, #f6f6f6), repeating-linear-gradient(45deg, #f6f6f6 25%, #fff 25%, #fff 75%, #f6f6f6 75%, #f6f6f6);
+	background-position: 0 0, 10px 10px;
+	background-size: 20px 20px;
+	border-radius: 4px;
+	display: inline-flex;
+	height: 60px;
+	justify-content: center;
+	margin-top: 10px;
+	padding: 20px;
+	min-width: 80px;
+}

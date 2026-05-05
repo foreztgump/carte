@@ -1,0 +1,26 @@
+/* Logo */
+
+.orderable-checkout-logo {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	margin: 2em 0;
+	width: 100%;
+
+	@media (min-width: 992px) {
+		margin: 2em 0 0;
+	}
+}
+
+.orderable-checkout-logo_link {
+	box-shadow: none;
+	cursor: pointer;
+	display: inline-block;
+	text-decoration: none;
+	outline: none;
+}
+
+.orderable-checkout-logo_image {
+	height: auto;
+	max-width: 100%;
+}

@@ -1,0 +1,16 @@
+.wc-block-components-address-form__postcode {
+	#shipping-postcode {
+		cursor: pointer;
+	}
+}
+
+.orderable-location-selector-checkout-block {
+	.wc-block-components-totals-item {
+		flex-direction: column;
+	}
+}
+
+.orderable-location-selector-checkout-block__title {
+	font-weight: 600;
+	margin-bottom: 5px;
+}

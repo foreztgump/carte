@@ -1,0 +1,16 @@
+.wp-block-orderable-pro-order-tip-block {
+	.orderable-tip__title {
+		margin: 0 0 30px;
+		display: block;
+	}
+	
+	.orderable-tip__row {
+		column-gap: 2%;
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.orderable-tip__button {
+		flex: auto;
+	}
+}

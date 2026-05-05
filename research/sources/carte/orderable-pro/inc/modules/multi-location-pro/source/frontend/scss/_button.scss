@@ -1,0 +1,121 @@
+body {
+
+	.opml-select-store-button {
+		padding: 8px 20px 8px 46px;
+		background-color: #000;
+		color: #fff;
+		border-radius: 100px;
+		position: relative;
+		text-decoration: none !important;
+		outline: none;
+
+		&:active {
+			color: #fff;
+			outline: none;
+		}
+
+		&:focus {
+			outline: none;
+		}
+
+		&::after {
+			content: "";
+			display: block;
+			height: 100%;
+			width: 20px;
+			mask-image: url(../../images/delivery-cycle.svg);
+			background-color: #fff;
+			position: absolute;
+			top: 0;
+			left: 20px;
+			mask-repeat: no-repeat;
+			mask-position: center;
+		}
+
+		&--selected {
+
+			&::before {
+				content: "";
+				width: 24px;
+				height: 24px;
+				position: absolute;
+				background-color: #5da052;
+				border: 2px solid #fff;
+				border-radius: 50%;
+				background-image: url(../../images/check.svg);
+				background-position: center;
+				background-repeat: no-repeat;
+				top: -16px;
+				right: -5px;
+				background-size: 9px;
+			}
+		}
+
+		&.opml-is-loading {
+
+			&::before {
+				position: absolute;
+				z-index: 10;
+				content: "";
+				width: 16px;
+				height: 16px;
+				border: 1px solid #fff;
+				border-top: 1px solid #838383;
+				border-radius: 50%;
+				left: 16px;
+				background: #000;
+				top: 12px;
+				animation: opml-rotate 1s linear infinite;
+			}
+
+			&::after {
+				display: none;
+			}
+		}
+
+		.opml-select-store-button__text {
+			display: block;
+			line-height: 1;
+			font-size: 14px;
+			font-weight: 700;
+			text-decoration: none;
+			color: #fff;
+		}
+
+		.opml-select-store-button__eta {
+			display: block;
+			font-size: 12px;
+			line-height: 1;
+			text-decoration: none;
+			color: #fff;
+		}
+
+		&--disabled {
+			opacity: 0.3;
+			cursor: no-drop;
+		}
+
+		&--pickup {
+
+			&::after {
+				mask-image: url(../../images/pickup.svg);
+			}
+		}
+
+		&:not(.opml-is-loading):hover {
+			outline: 2px solid #000 !important;
+			background-color: #fff !important;
+			color: #000 !important;
+
+			.opml-select-store-button__text,
+			.opml-select-store-button__eta {
+				color: #000;
+			}
+
+			&::after {
+				background-color: #000;
+			}
+		}
+	}
+
+}

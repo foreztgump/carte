@@ -1,0 +1,96 @@
+
+/* Woo Account */
+.restrofood-checkout a.edit {
+  font-style: italic;
+  font-weight: normal;
+}
+
+.restrofood-checkout a.edit:hover {
+  text-decoration: underline;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation {
+  padding: 30px 0;
+  background-color: #fffbf9;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation ul li {
+  margin: 0 0 5px;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation ul li:last-child {
+  margin-bottom: 0;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation ul li a {
+  display: block;
+  border: none;
+  padding: 19px 30px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111111;
+  line-height: 1;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-navigation ul li.is-active > a, .restrofood-checkout .woocommerce-MyAccount-navigation ul li:hover > a {
+  text-decoration: none;
+  color: #f79101;
+  background-color: rgba(225, 215, 202, 0.45);
+}
+
+.restrofood-checkout .woocommerce-address-fields__field-wrapper + p {
+  margin-bottom: 0;
+  margin-top: 30px;
+}
+
+.restrofood-checkout .woocommerce-EditAccountForm.edit-account > *:last-child {
+  margin-top: 30px;
+  margin-bottom: 0;
+}
+
+.restrofood-checkout .woocommerce-checkout .woocommerce-billing-fields,
+.restrofood-checkout .woocommerce-checkout .woocommerce-shipping-fields,
+.restrofood-checkout .woocommerce-checkout .woocommerce-additional-fields {
+  margin-bottom: 40px;
+}
+
+.restrofood-checkout .woocommerce-MyAccount-content p {
+  font-size: inherit;
+}
+
+.restrofood-checkout .woocommerce-EditAccountForm fieldset {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.restrofood-checkout .woocommerce-PaymentMethods .woocommerce-PaymentMethod--stripe {
+  margin: 0;
+  position: relative;
+  padding-left: 31px;
+}
+
+.restrofood-checkout .woocommerce-PaymentMethods .woocommerce-PaymentMethod--stripe label {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  margin-bottom: 15px;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+.restrofood-checkout .woocommerce-PaymentMethods input#payment_method_stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin-left: 0;
+}
+.restrofood-checkout .woocommerce-PaymentMethods fieldset#wc-stripe-cc-form {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}

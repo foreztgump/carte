@@ -1,0 +1,33 @@
+.column-orderable_actions {
+  width: 385px;
+}
+
+/*
+ * Orderable Change Location Status button
+ */
+.orderable-change-location-status {
+  display: inline-block;
+  position: relative;
+  top: -3px;
+}
+
+.orderable-change-location-status__error-message {
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  height: 26px;
+  margin: 0 0 0 26px !important;
+  position: relative;
+  top: -3px;
+}
+
+.orderable-change-location-status--hidden {
+  display: none;
+}
+
+select#locations_multi_location_pages + .select2 {
+  width: 400px !important;
+}

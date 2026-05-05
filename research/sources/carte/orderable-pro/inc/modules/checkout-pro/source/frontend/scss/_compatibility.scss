@@ -1,0 +1,68 @@
+form.woocommerce-checkout > .coupon-wrapper,
+.orderable-checkout > .woocommerce-form-coupon-toggle {
+	display: none;
+}
+
+/**
+ * IE11: Tips.
+ */
+/* stylelint-disable-next-line selector-type-no-unknown */
+_:-ms-fullscreen,
+:root {
+
+	.orderable-tip__row {
+		column-gap: 2%;
+		display: block;
+	}
+
+	.orderable-tip__button {
+		flex: auto;
+		width: auto;
+	}
+}
+
+/**
+ * WooCommerce Subscriptions
+ */
+.orderable-checkout__order-review .shipping.recurring-total ul li input[type="radio"]:checked + label::after {
+	left: -8px;
+	top: 4px;
+}
+
+.orderable-checkout__order-review .recurring-total small {
+	font-size: 75%;
+}
+
+.orderable-checkout__order-review .shipping.recurring-total ul li input[type="radio"] + label {
+	line-height: normal;
+}
+
+.shipping.recurring-total li {
+
+	input[type="radio"] {
+		appearance: none;
+		display: inline-block !important;
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		border: 2px solid #dad9dd;
+		min-height: unset;
+		padding: 0;
+		margin-bottom: -2px;
+
+		&:checked {
+			background-color: #000 !important;
+			border-width: 3px;
+		}
+
+		& + label {
+			display: inline !important;
+		}
+
+		& + label::before,
+		& + label::after {
+			display: none;
+		}
+
+	}
+}

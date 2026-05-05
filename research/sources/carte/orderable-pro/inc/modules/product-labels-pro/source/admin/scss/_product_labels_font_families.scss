@@ -1,0 +1,101 @@
+/*
+ * Product Labels Font Families
+ */
+
+// Block.
+
+.orderable-pro-product-labels-icon-font-families {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	display: none;
+	margin-top: 10px;
+}
+
+
+// Elements.
+
+.orderable-pro-product-labels-icon-font-families__heading {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 10px;
+}
+
+.orderable-pro-product-labels-icon-font-families__search-field-wrapper {
+	position: relative;
+}
+
+.orderable-pro-product-labels-icon-font-families__search-field-icon {
+	position: absolute;
+	width: 30px;
+
+	@media screen and (max-width: 782px) {
+		top: 10px;
+	}
+
+	top: 5px;
+}
+
+input[type="text"].orderable-pro-product-labels-icon-font-families__search-field {
+	border: none;
+	margin-bottom: 5px;
+	padding-left: 30px;
+	width: 100%;
+
+	&:focus {
+		border-radius: 3px;
+	}
+}
+
+select.orderable-pro-product-labels-icon-font-families__field {
+	border-color: #c3c4c7;
+	margin: 0;
+	max-width: 100%;
+}
+
+.orderable-pro-product-labels-font-families__wrap {
+	height: 300px;
+	overflow-y: scroll;
+}
+
+.orderable-pro-product-labels-font-families__font {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	grid-gap: 10px;
+	padding: 5px 10px 10px 11px;
+
+	@media (min-width: 1100px) {
+		grid-template-columns: repeat(5, 1fr);
+	}
+
+	@media (min-width: 1385px) {
+		grid-template-columns: repeat(7, 1fr);
+	}
+}
+
+.orderable-pro-product-labels-font-families__icon i {
+	align-items: center;
+	border-radius: 3px;
+	justify-content: center;
+	text-align: center;
+	width: 100%;
+	height: 30px;
+	font-size: 16px;
+	line-height: 30px;
+	display: inline-flex;
+	background: #f0f0f1;
+	cursor: pointer;
+}
+
+// Modifiers.
+
+.orderable-pro-product-labels-font-families__icon--display-none {
+	display: none;
+}
+
+.orderable-pro-product-labels-font-families__icon--selected i {
+	background: #3788cb;
+	color: #fff;
+	fill: currentcolor;
+}

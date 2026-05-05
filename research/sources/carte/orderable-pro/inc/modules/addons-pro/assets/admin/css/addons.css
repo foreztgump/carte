@@ -1,0 +1,204 @@
+#orderable-fields-metabox .inside {
+  padding: 15px;
+  margin: 0;
+}
+
+/* Block */
+/* Modifiers */
+.orderable-addon-fields--no-fields {
+  padding: 15px 0;
+  text-align: center;
+}
+
+.orderable-dashicons {
+  -webkit-transition: none;
+  transition: none;
+  cursor: pointer;
+}
+
+.orderable-dashicons--trash {
+  margin-top: -1px;
+}
+
+.orderable-dashicons--trash:hover {
+  color: #dc3232;
+}
+
+.orderable-conditions {
+  margin: 15px 0;
+  width: 100%;
+}
+
+/* Elements */
+.orderable-conditions select {
+  width: 100%;
+}
+
+.orderable-conditions__row {
+  min-height: 34px;
+  margin: 0 0 8px;
+}
+
+.orderable-conditions__row:last-of-type {
+  margin-bottom: 0;
+}
+
+.orderable-conditions__row--and {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+.orderable-conditions__row-label {
+  margin: 15px 0;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-style: italic;
+}
+
+.orderable-conditions__row-item {
+  padding-right: 15px;
+  -ms-flex-preferred-size: 100%;
+      flex-basis: 100%;
+}
+
+.orderable-conditions__row-item:last-child {
+  padding-right: 0;
+}
+
+.orderable-conditions__row-item--action {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -ms-flex-wrap: nowrap;
+      flex-wrap: nowrap;
+  margin: 0 0 0 auto;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+  justify-items: flex-end;
+}
+
+.orderable-conditions__row-item--action .orderable-dashicons--trash {
+  width: 20px;
+}
+
+.orderable-conditions__and-button {
+  margin: 15px 0 0;
+}
+
+.orderable-conditions__or-button {
+  margin: 0;
+}
+
+.orderable-conditions .vs__search,
+.orderable-conditions .vs__search:focus {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  line-height: 1.4;
+  font-size: 1em;
+  border: 1px solid rgba(0, 0, 0, 0);
+  border-left: none;
+  outline: 0;
+  margin: 4px 0 0;
+  padding: 0 7px;
+  background: 0 0;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+  width: 0;
+  max-width: 100%;
+  -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+  z-index: 1;
+}
+
+.orderable-conditions .vs__dropdown-toggle {
+  border: 1px solid #7e8993;
+  height: 30px;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.orderable-conditions .vs--open .vs__dropdown-toggle {
+  border-radius: 3px 3px 0 0;
+}
+
+.orderable-conditions .vs__selected-options {
+  padding: 0 8px;
+  position: relative;
+}
+
+.orderable-conditions .vs__selected {
+  margin: 0;
+  line-height: 26px;
+  padding: 0;
+  height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  display: block;
+}
+
+.orderable-conditions .vs--single.vs--open .vs__selected {
+  left: 8px;
+  right: 8px;
+}
+
+.orderable-conditions .vs__search,
+.orderable-conditions .vs__search:focus {
+  margin: 0;
+  border: none;
+  padding: 0;
+  line-height: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+
+.orderable-conditions .vs__dropdown-menu {
+  border-color: #7e8993;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+  padding: 0;
+  min-width: 0;
+  top: calc(100% - 2px);
+}
+
+.orderable-conditions .vs__actions {
+  padding: 0 8px;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+}
+
+.orderable-conditions .vs__no-options {
+  font-style: italic;
+  margin: 0;
+  color: #696969;
+  padding: 3px 6px;
+}
+
+.orderable-conditions .vs__dropdown-option {
+  margin: 0;
+  padding: 3px 9px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.orderable-conditions .vs__spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+.orderable-conditions .vs__clear,
+.orderable-conditions .vs__open-indicator {
+  cursor: pointer;
+}

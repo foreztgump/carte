@@ -1,0 +1,27 @@
+/*
+ * Orderable Change Location Status button
+ */
+
+// Block.
+.orderable-change-location-status {
+	display: inline-block;
+	position: relative;
+	top: -3px;
+}
+
+// Elements.
+
+.orderable-change-location-status__error-message {
+	align-items: center;
+	display: inline-flex;
+	height: 26px;
+	margin: 0 0 0 26px !important;
+	position: relative;
+	top: -3px;
+}
+
+// Modifiers.
+
+.orderable-change-location-status--hidden {
+	display: none;
+}

@@ -1,0 +1,1770 @@
+# Copyright (C) 2022 orderable-pro
+# This file is distributed under the same license as the orderable-pro package.
+msgid ""
+msgstr ""
+"Project-Id-Version: orderable-pro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:"
+"1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;"
+"esc_html_x:1,2c\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-08-08 13:40+0000\n"
+"PO-Revision-Date: 2022-09-26 08:59+0000\n"
+"Last-Translator: \n"
+"Language-Team: Français\n"
+"Language: fr-FR\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.2; wp-6.0.2"
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:114
+msgid " (As soon as possible)"
+msgstr "(Aussi tôt que possible)"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:365, 
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:550
+msgid "% Daily Value"
+msgstr "% Apports Journaliers Recommandés"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:179
+msgid "% Daily Value*"
+msgstr "% AJR*"
+
+#. translators: %1$s is the notification type, %2$s is the recipient.
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:410
+msgid "%1$s to %2$s"
+msgstr "%1$s au %2$s"
+
+#. translators: Field name.
+#: inc/modules/addons-pro/class-addons-pro.php:130
+msgid "%s is a required field"
+msgstr "%s est un champ requis."
+
+#. translators: %s: product name
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:173
+msgid "%s is not available for ordering now."
+msgstr "%s n'est pas disponible pour commander maintenant."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:141
+msgid "%s serving per container"
+msgid_plural "%s servings per container"
+msgstr[0] "Portion par plat"
+msgstr[1] "Portions par plat"
+
+#. translators: %s - Field label for allergens info e.g.: Contains, May Contain.
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:255
+msgid "%s:"
+msgstr "%s:"
+
+#. translators: %d is the maximum allowed selection.
+#: inc/modules/addons-pro/class-addons-pro-fields.php:266
+msgid "(Select %d option)"
+msgid_plural "(Select up to %d options)"
+msgstr[0] "(Sélectionner %d option)"
+msgstr[1] "(Sélectionner jusqua %d options)"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:86
+msgid "-- Select --"
+msgstr "-- Sélectionner --"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:86
+msgid "Account SID"
+msgstr "SID du compte"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:17
+msgid "Action"
+msgstr "Action"
+
+#: inc/class-license.php:124
+msgid "Activated"
+msgstr "Activé"
+
+#: inc/modules/addons-pro/class-addons-pro-fields.php:114
+msgid "Add"
+msgstr "Ajouter"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:32
+msgid "Add a set of rules to determine the timing for products."
+msgstr ""
+"Ajouter un ensemble de règles pour déterminer le timing de vos produits."
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:101
+msgid "Add a set of rules to determine when this field group should appear."
+msgstr ""
+"Ajoutez un ensemble de règles pour déterminer quand ce groupe de champs doit "
+"apparaitre."
+
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:102
+msgid ""
+"Add a set of rules to select the products for which these time rules will "
+"apply."
+msgstr ""
+"Ajouter un ensemble de conditions pour choisir les produits ou catégories "
+"auxquels s'appliquent vos règles."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:130
+msgid "Add Field"
+msgstr "Ajouter un champ"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:12
+msgid "Add Notification"
+msgstr "Ajouter une notification"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:137, 
+#: inc/modules/addons-pro/templates/admin/fields-options.php:66
+msgid "Add Option"
+msgstr "Ajouter une option"
+
+#: templates/admin/conditions-metabox.php:39
+msgid "Add Rule"
+msgstr "Ajouter une règle"
+
+#: templates/admin/conditions-metabox.php:44
+msgid "Add Rule Group"
+msgstr "Ajouter une condition"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:118
+msgid "Add Time"
+msgstr "Ajouter date/timing"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:857
+msgid "Add vitamin or mineral"
+msgstr "Ajouter vitamines et minéraux"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:134
+msgid "Add Your First Field"
+msgstr "Ajouter votre premier champ"
+
+#: templates/admin/conditions-metabox.php:51, 
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:121
+msgid "Add Your First Rule"
+msgstr "Ajouter votre première règle"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:740
+msgid "Added Sugars"
+msgstr "Dont sucres ajoutés"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:46
+msgid "Admin phone number"
+msgstr "Numéro de tel Admin"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:41
+msgid "After Date"
+msgstr "Après la date"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:42
+msgid "All Category Titles"
+msgstr "Tous les titres catégories"
+
+#: inc/modules/timings-pro/class-timings-pro.php:205
+msgid "All Day"
+msgstr "Toute la journée"
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:78, 
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:223
+msgid "Allergens"
+msgstr "Allergènes"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:35
+msgid "Allow \"ASAP\" as an option when choosing delivery time"
+msgstr ""
+"Activer l'option \"Aussi tôt que possible\" lorsqu'on choisis une heure de "
+"livraison."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:100
+msgid "Allow customers to enter their own tip amount at checkout."
+msgstr "Laissez vos clients entrer leur propre montant de pourboire."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:160
+msgid "Amount"
+msgstr "Montant"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:161
+msgid "Amount Per Serving"
+msgstr "Quantité par portion"
+
+#: inc/class-auto-update.php:108
+msgid "An error occour when try to identify the plugin."
+msgstr "Une erreur est survenue en tentant d'identifier l'extension."
+
+#: inc/class-auto-update.php:121
+msgid "An Unexpected HTTP Error occurred during the API request."
+msgstr "Une erreur HTTP inattendue est survenue lors de la requête API."
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:111
+msgid "and"
+msgstr "et"
+
+#: inc/modules/tip-pro/class-tip-pro.php:241
+msgid "Apply"
+msgstr "Soumettre"
+
+#: woocommerce/checkout/form-coupon.php:36, 
+#: woocommerce/checkout/form-coupon.php:36
+msgid "Apply coupon"
+msgstr "Appliquer"
+
+#: woocommerce/checkout/form-coupon.php:26
+msgid "Apply Promo Code"
+msgstr "Appliquer le code promo"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:93
+msgid "Auth Token"
+msgstr "Auth Token"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:40
+msgid "Before Date"
+msgstr "Avant la date"
+
+#: woocommerce/orderable/checkout/billing-fields.php:14
+msgid "Billing &amp; Shipping"
+msgstr "Facturation et livraison"
+
+#: woocommerce/orderable/checkout/billing-fields.php:16
+msgid "Billing Address"
+msgstr "Adresse de facturation"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:390
+msgid "Biotin"
+msgstr "Biotine"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:425
+msgid "Calcium"
+msgstr "Calcium"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:167, 
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:658
+msgid "Calories"
+msgstr "Calories"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:94
+msgid "Can be found at in Twillio at Messaging > Overview."
+msgstr "Vous pouvez le trouver dans Twilio, Messaging > Overview."
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:101
+msgid "Can be found at in Twillio at Messaging > Services."
+msgstr "Vous pouvez le trouver dans Twilio, Messaging > Services."
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:87
+msgid "Can be found in Twillio at Messaging > Overview."
+msgstr "Vous pouvez le trouver dans Twilio, Messaging > Overview."
+
+#: woocommerce/cart/cart-shipping.php:52
+msgid "Change address"
+msgstr "Changer l'adresse"
+
+#. translators: %s is the order status title.
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:314
+msgid "Change status to %s"
+msgstr "Changer le statut vers %s"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:69
+msgid "Check to enable logging error messages to WooCommerce logs."
+msgstr "Cochez pour activer les messages d'erreurs dans les logs WooCommerce."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:33
+msgid "Checkbox"
+msgstr "Case à cocher"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:48, 
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:55
+msgid "Checkout Settings"
+msgstr "Réglages page de commande"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:426
+msgid "Chloride"
+msgstr "Chlorure"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:698
+msgid "Cholesterol"
+msgstr "Cholestérol"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:391
+msgid "Choline"
+msgstr "Choline"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:85
+msgid ""
+"Choose which option is pre-selected in checkout. The options are updated "
+"after saving."
+msgstr ""
+"Choisissez l'option présélectionnée par défaut. Les options disponibles ici "
+"sont mises à jour après sauvegarde de vos changements."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:427
+msgid "Chromium"
+msgstr "Chrome"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:21
+msgid "Color"
+msgstr "Couleur"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:68, 
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:69
+msgid "Conditions"
+msgstr "Conditions"
+
+#: woocommerce/orderable/checkout/contact-fields.php:11
+msgid "Contact Information"
+msgstr "Informations de contact"
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:121
+msgid "Contains"
+msgstr "Contient"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:428
+msgid "Copper"
+msgstr "Cuivre"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:242
+msgid "Core"
+msgstr "Core"
+
+#: woocommerce/checkout/form-coupon.php:32
+msgid "Coupon code"
+msgstr "Code promo"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:129
+msgid "Current Date/Time"
+msgstr "Date/Heure actuelle"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:242
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:104
+msgctxt "custom order status"
+msgid "[Order #{order_id}] Your order is now {order_status}"
+msgstr "[Commande #{order_id}] Votre commande est maintenant {order_status}"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:279
+msgctxt "custom order status"
+msgid "Add Notification"
+msgstr "Ajouter une notification"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:111, 
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:85
+msgctxt "custom order status"
+msgid "Admin"
+msgstr "Admin"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:105
+msgctxt "custom order status"
+msgid ""
+"All orders belonging to this order status will be changed to On Hold. Are "
+"you sure you want to delete this order status?"
+msgstr ""
+"Toutes les commandes qui appartiennent à ce statut basculeront vers \"en "
+"attente\". Etes-vous certains de vouloir supprimer ce statut ?"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:102
+msgctxt "custom order status"
+msgid "Are you sure you want to delete this notification?"
+msgstr "Etes-vous certains de vouloir supprimer cette notification ?"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:198
+msgctxt "custom order status"
+msgid "Available Shortcodes:"
+msgstr "Codes courts disponibles:"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:59
+msgctxt "custom order status"
+msgid "Color"
+msgstr "Couleur"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:86,
+#:  inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:33
+msgctxt "custom order status"
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:109, 
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:84
+msgctxt "custom order status"
+msgid "Customer"
+msgstr "Client"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:112, 
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:67
+msgctxt "custom order status"
+msgid "Email"
+msgstr "Email"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:154
+msgctxt "custom order status"
+msgid "Email subject"
+msgstr "Sujet Email"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:170
+msgctxt "custom order status"
+msgid "Email Title"
+msgstr "Titre Email"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:42,
+#:  inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:17
+msgctxt "custom order status"
+msgid "Enabled"
+msgstr "Activé"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:124
+msgctxt "custom order status"
+msgid "From email"
+msgstr "Email expéditeur"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:139
+msgctxt "custom order status"
+msgid "From name"
+msgstr "Nom expéditeur"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:70
+msgctxt "custom order status"
+msgid "Icon"
+msgstr "Icône"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:264
+msgctxt "custom order status"
+msgid "Include Customer information"
+msgstr "Inclure les informations (livraison, facturation) du client"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:100
+msgctxt "custom order status"
+msgid "Include in reports"
+msgstr "Inclure dans les rapports"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:248
+msgctxt "custom order status"
+msgid "Include order info/table"
+msgstr "Inclure le détail de la commande/table"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:43
+msgctxt "custom order status"
+msgid "Is this notification enabled?"
+msgstr "Cette notification est-elle activée ?"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:186
+msgctxt "custom order status"
+msgid "Message"
+msgstr "Message"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:108
+msgctxt "custom order status"
+msgid "Please enter a valid email address"
+msgstr "Merci de renseigner un email valide."
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:107
+msgctxt "custom order status"
+msgid "Please enter the recipient email"
+msgstr "Merci de renseigner l'email du destinataire"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:77
+msgctxt "custom order status"
+msgid "Recipient"
+msgstr "Destinataire"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:94
+msgctxt "custom order status"
+msgid "Recipient email"
+msgstr "Email destinataire"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:109
+msgctxt "custom order status"
+msgid "Recipient number"
+msgstr "Téléphone destinataire"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:29
+msgctxt "custom order status"
+msgid ""
+"Select a type for your status. You can modify a core order status or create "
+"a new custom order status."
+msgstr ""
+"Choisissez un type de statut. Vous pouvez modifier les statuts core (par "
+"défaut) de WooCommerce ou créer de nouveaux statuts personnalisés."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:60
+msgctxt "custom order status"
+msgid "Select color to represent this order status."
+msgstr "Choisissez une couleur qui représente ce statut."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:71
+msgctxt "custom order status"
+msgid "Select the icon."
+msgstr "Choisissez une icône."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:47
+msgctxt "custom order status"
+msgid "Slug"
+msgstr "URL"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:106
+msgctxt "custom order status"
+msgid "Slug is already in use, please choose a different one."
+msgstr "Cette URL est déjà utilisée, merci d'en choisir une autre."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:48
+msgctxt "custom order status"
+msgid "Slug is used for identifying the order status internally."
+msgstr ""
+"Ces URL sont utilisées pour identifier les statuts de commande en interne."
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:114, 
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:68
+msgctxt "custom order status"
+msgid "SMS"
+msgstr "SMS"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:28
+msgctxt "custom order status"
+msgid "Status Type"
+msgstr "Type de statut"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:83
+msgctxt "custom order status"
+msgid ""
+"These statuses will display in the quick actions on the order page for "
+"orders with this order status."
+msgstr ""
+"Ces statuts seront affichés dans les actions rapides de votre page des "
+"commandes lorsque le statut actuel sera sélectionné."
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:171
+msgctxt "custom order status"
+msgid "Title showed in the email body."
+msgstr "Titre affiché dans le corps du mail."
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:110
+msgctxt "custom order status"
+msgid "to"
+msgstr "à"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:53
+msgctxt "custom order status"
+msgid "Type"
+msgstr "Type"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:113
+msgctxt "custom order status"
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:69
+msgctxt "custom order status"
+msgid "Whatsapp"
+msgstr "WhatsApp"
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:18
+msgctxt "custom order status"
+msgid ""
+"Whether to enable or disable this status. You can choose to disable the core "
+"order statuses too."
+msgstr ""
+"Activé ou désactivé ce statut. Vous pouvez aussi choisir de désactiver les "
+"statuts core."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:101
+msgctxt "custom order status"
+msgid "Whether to include the orders with this order status in the reports."
+msgstr "Faut-il inclure ou non ce statut dans vos rapports WooCommerce ?"
+
+#. translators: URL to the facebook business maanger templates page.
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:192
+msgctxt "custom order status"
+msgid ""
+"You can create and manage WhatsApp templates from <a href=\"%s\" "
+"target=_blank>Meta Business Manager</a>"
+msgstr ""
+"Vous pouvez créer et gérer vos templates WhatsApp depuis le <a href=\"%s\" "
+"target=_blank>Meta Business Manager</a>"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:103
+msgctxt "custom order status"
+msgid "Your order is now {order_status}"
+msgstr "Votre commande est maintenant {order_status}"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-email.php:62
+msgid "Custom Order Status Notification"
+msgstr "Notification de statut personnalisé"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:65
+msgid "Custom Status Settings"
+msgstr "Réglages statut personnalisé"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:33, 
+#: inc/modules/tip-pro/class-tip-pro-settings.php:109
+msgid "Custom Tip"
+msgstr "Pourboire Personnalisé"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:106
+msgid "Custom Tip Label"
+msgstr "Libellé du pourboire personnalisé"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:99
+msgid "Cutoff (Mins)"
+msgstr "Délai minimum (Mins)"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:89
+msgid "Date"
+msgstr "Date"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:42
+msgid "Date Range"
+msgstr "Telle à telle date"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:135
+msgid "Date/time settings"
+msgstr "Réglages date/heure"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:43
+msgid "Day of the Week"
+msgstr "Jours de la semaine"
+
+#: inc/class-license.php:96
+msgid "Deactivate"
+msgstr "Désactiver"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:84
+msgid "Default Option"
+msgstr "Option par défaut"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:118
+msgid "Default value"
+msgstr "Valeur par défaut"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:119
+msgid "Default value for the field."
+msgstr "Valeur renseignée par défaut pour ce champ."
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:93
+msgid "Default: 30"
+msgstr "Par défaut: 30"
+
+#: woocommerce/orderable/checkout/shipping-fields.php:16
+msgid "Delivery Address"
+msgstr "Adresse de livraison"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:53
+msgid "Description"
+msgstr "Description"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:723
+msgid "Dietary Fiber"
+msgstr "Fibres alimentaires"
+
+#: inc/modules/checkout-pro/class-checkout-pro-payment-settings.php:44
+msgid "Disable billing"
+msgstr "Désactiver la facturation"
+
+#: inc/modules/checkout-pro/class-checkout-pro-payment-settings.php:45
+msgid "Disable billing address fields"
+msgstr "Désactiver les champs facturation"
+
+#: inc/modules/checkout-pro/class-checkout-pro-payment-settings.php:51
+msgid "Disable shipping"
+msgstr "Désactiver la livraison"
+
+#: inc/modules/checkout-pro/class-checkout-pro-payment-settings.php:52
+msgid "Disable shipping address fields"
+msgstr "Désactiver les champs livraison"
+
+#: inc/modules/table-ordering-pro/templates/admin/qr-code-metabox.php:26
+msgid "Download"
+msgstr "Télécharger"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:32
+msgid "Dropdown"
+msgstr "Menu déroulant"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:61
+msgid "Enable Custom Checkout"
+msgstr "Activer Page de Commande Orderable"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:99
+msgid "Enable Custom Tip"
+msgstr "Activer le pourboire personnalisé"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:68
+msgid "Enable Logging"
+msgstr "Activer log"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:69
+msgid "Enable Tipping"
+msgstr "Activer les pourboires"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:99
+msgid "Enable to allow the user to enter multiple lines of text."
+msgstr ""
+"Activez pour permettre toute une zone de texte et non seulement une ligne."
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:216
+msgid "Enabled"
+msgstr "Activé"
+
+#: woocommerce/cart/cart-shipping.php:71
+msgid "Enter a different address"
+msgstr "Renseigner une adresse différente"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:107
+msgid "Enter a label for the \"Custom Tip\" button."
+msgstr "Entrez un libellé pour le bouton \"Pourboire personnalisé\"."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:93
+msgid "Enter a label for the \"No Tip\" button at checkout."
+msgstr "Entrez un libellé pour le bouton \"pas de pourboire\"."
+
+#: inc/modules/table-ordering-pro/templates/admin/table-metabox.php:51
+msgid ""
+"Enter a URL for where the QR code should direct your customers to. The table "
+"number will be added and tracked automatically."
+msgstr ""
+"Renseignez une URL pour préciser où le QR code doit rediriger vos clients. "
+"Le numéro de table sera automatiquement tracké lorsque le client passe par "
+"ce QR code pour passer commande."
+
+#: inc/modules/table-ordering-pro/templates/admin/table-metabox.php:28
+msgid ""
+"Enter an ID for this table. One will be automatically generated if left "
+"blank."
+msgstr ""
+"Renseignez un ID pour cette table. Un ID sera automatiquement généré si "
+"laissé vide."
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:48
+msgid "Enter the number where you would like to receive admin notifications."
+msgstr ""
+"Entrez le numéro de tel où vous souhaitez recevoir des notifications (si "
+"activé dans un statut personnalisé)."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:87
+msgid ""
+"Enter the options for the field. Add new options by clicking \"Add Option\"."
+msgstr ""
+"Renseignez les options pour ce champ. Ajoutez de nouvelles options en "
+"cliquant sur \"ajouter une option\"."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:77
+msgid ""
+"Enter the tip options you want to display at checkout. We recommend adding 3 "
+"options."
+msgstr ""
+"Entrez les options de pourboire que vous souhaitez afficher sur la page de "
+"commande. Nous vous recommandons 3 options."
+
+#: woocommerce/cart/cart-shipping.php:64
+msgid "Enter your address to view shipping options."
+msgstr "Renseigner votre adresse pour voir les options de livraison."
+
+#: inc/class-license.php:73
+msgid ""
+"Enter your license key to receive regular updates and support for Orderable."
+msgstr ""
+"Rentrez votre clé de license pour recevoir des mises à jour régulières et du "
+"support pour Orderable."
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:118
+msgid "Facebook APP ID"
+msgstr "Facebook APP ID"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:124
+msgid "Facebook APP Secret"
+msgstr "Facebook APP Secret"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:59
+msgid "Fields"
+msgstr "Champs"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:169
+msgid "Fixed"
+msgstr "Fixe"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:392
+msgid "Folate"
+msgstr "Folate"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:91
+msgid "Frequency (Mins)"
+msgstr "Fréquence (Mins)"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:81
+msgid "Friday"
+msgstr "Vendredi"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:87
+msgid "From"
+msgstr "A partir de"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:90
+msgid "From date cannot be less than/equal to To date"
+msgstr "La date \"après\" ne peut pas être inférieur/égale à l'heure \"avant\""
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:91
+msgid "From time cannot be less than/equal to To time"
+msgstr "L'heure \"après\" ne peut pas être inférieur/égale à l'heure \"avant\""
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:79
+msgid "From:"
+msgstr "De:"
+
+#. translators: grams
+#. translators: grams
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:191, 
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:302
+msgid "g"
+msgstr "g"
+
+#: orderable-pro.php:84
+msgid "Get it now"
+msgstr "Obtenir maintenant"
+
+#: woocommerce/checkout/form-checkout.php:42
+msgid "Hide order summary"
+msgstr "Cacher le récapitulatif de commande"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:76
+msgid "Hours"
+msgstr "Horaires"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:63
+msgid "If enabled, the opt-in checkbox will be on checked state by default."
+msgstr ""
+"Si activé, l'opt-in sera coché par défaut lors du passage de la commande."
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:100
+msgid ""
+"If you do not add any conditions, this field group will appear for all "
+"products."
+msgstr ""
+"Si vous ne mettez aucune conditions, cet ensemble de champs apparaitra pour "
+"tous vos produits."
+
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:101
+msgid ""
+"If you do not add any conditions, this time rule will not apply for any "
+"product."
+msgstr ""
+"Si vous ne remplissez pas ces conditions, cette règle de disponibilité ne "
+"s'appliquera à aucun produit."
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:20
+msgid "Image"
+msgstr "Image"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:676
+msgid "Includes saturated, trans, monounsaturated and polyunsaturated fats."
+msgstr "Inclus les acides gras saturés, trans, monoinsaturés et polyinsaturés."
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:122
+msgid "Ingredients which are definitely present."
+msgstr "Ingrédients présents qui peuvent poser problème."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:932
+msgid "Invalid nonce"
+msgstr "Rebond invalide"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:936, 
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:948
+msgid "Invalid request"
+msgstr "Requête invalide"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:429
+msgid "Iodine"
+msgstr "Iode"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:430
+msgid "Iron"
+msgstr "Fer"
+
+#: templates/admin/conditions-metabox.php:23
+msgid "Is equal to"
+msgstr "Est égal à"
+
+#: templates/admin/conditions-metabox.php:24
+msgid "Is not equal to"
+msgstr "N'est pas égal à"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:65
+msgid "Is this field required?"
+msgstr "Est-ce que ce champ est obligatoire?"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:708
+msgid "It is a mineral and one of the chemical elements found in salt."
+msgstr "Principal minéral présent dans le sel."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:725
+msgid ""
+"It is a type of carbohydrate made up of many sugar molecules linked together."
+msgstr "Quantité de fibres alimentaires contenu dans ce plat ou cet aliment."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:700
+msgid "It is a waxy, fat-like substance found in all cells of the body."
+msgstr "Quantité de cholestérol"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:691
+msgid ""
+"It is an unsaturated fat, but it is structurally different than unsaturated "
+"fat that occurs naturally in plant foods."
+msgstr "Quantité d'acides gras trans contenu dans ce plat ou cet aliment."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:154, 
+#: inc/modules/addons-pro/templates/admin/fields-options.php:12
+msgid "Label"
+msgstr "Libellé"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:56
+msgid ""
+"Label for the Optin field. If left empty, the optin checkbox will be "
+"disabled, and all customers will receive notifications."
+msgstr ""
+"Libellé du champ d'opt-in pour les notifications SMS. Si vide, le champ "
+"disparaît et tous les clients recevront les notifications."
+
+#: inc/class-license.php:72
+msgid "License Key"
+msgstr "Clé de license"
+
+#: inc/class-license.php:66
+msgid "License Settings"
+msgstr "Réglages de license"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:76
+msgid "Limit the number of selections a user can make."
+msgstr "Limite le nombre max de cases qu'un visiteur peut cocher."
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:83
+msgid "Link the logo to a page on your website."
+msgstr "Ajouter un lien à votre logo vers une page de votre site."
+
+#: woocommerce/global/form-login.php:51, woocommerce/global/form-login.php:51
+msgid "Login"
+msgstr "Se connecter"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:82
+msgid "Logo Link"
+msgstr "Lien du logo"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:75
+msgid "Logo Upload"
+msgstr "Uploader votre logo"
+
+#: woocommerce/global/form-login.php:54
+msgid "Lost your password?"
+msgstr "Mot de passe perdu?"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:431
+msgid "Magnesium"
+msgstr "Magnésium"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:43
+msgid "Main Category Titles Only"
+msgstr "Titres des catégories principales"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:432
+msgid "Manganese"
+msgstr "Manganèse"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:54
+msgid "Max Orders (Day)"
+msgstr "Commandes max. (jour)"
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:107
+msgid "Max Orders (Slot)"
+msgstr "Max commandes (par créneau)"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:75
+msgid "Maximum Allowed Selections"
+msgstr "Sélections max autorisée"
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:125
+msgid "May contain"
+msgstr "Peut contenir"
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:129
+msgid "May contain via shared equipment"
+msgstr "Peut contenir via équipement partagé"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:100
+msgid "Messaging Service SID"
+msgstr "Messaging Service SID"
+
+#. translators: milligrams (mg)
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:712
+msgid "mg"
+msgstr "mg"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:513
+msgid "Minerals"
+msgstr "Minéraux"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:433
+msgid "Molybdenum"
+msgstr "Molybdène"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:77
+msgid "Monday"
+msgstr "Lundi"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:98
+msgid "Multi-Line"
+msgstr "Zone de texte"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:217
+msgid "Name"
+msgstr "Nom"
+
+#: inc/modules/addons-pro/class-addons-pro.php:101
+msgid "New field"
+msgstr "Nouveau champ"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:221
+msgid "Next Steps"
+msgstr "Étapes suivantes"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:393
+msgid "Niacin"
+msgstr "Niacine"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:101
+msgid "No Link"
+msgstr "Pas de lien"
+
+#. translators: $s shipping destination.
+#: woocommerce/cart/cart-shipping.php:70
+msgid "No shipping options were found for %s."
+msgstr "Aucune option de livraison trouvée pour %s."
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:31, 
+#: inc/modules/tip-pro/class-tip-pro-settings.php:95, 
+#: inc/modules/tip-pro/class-tip-pro-settings.php:204
+msgid "No Tip"
+msgstr "Pas de pourboire"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:92
+msgid "No Tip Label"
+msgstr "Libellé pour \"pas de pourboire\""
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:41
+msgid "No Titles or Tabs"
+msgstr "Pas de titre ni onglet"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:19
+msgid "None"
+msgstr "Aucun"
+
+#: inc/class-license.php:126
+msgid "Not Activated"
+msgstr "Non activé"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:40
+msgid "Notification Settings"
+msgstr "Réglages notifications"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:74,
+#:  
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:219,
+#:  inc/modules/notifications-pro/class-notifications-pro-settings.php:33
+msgid "Notifications"
+msgstr "Notifications"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:29
+msgctxt "notifications"
+msgid "Billing Address"
+msgstr "Adresse de facturation"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:22
+msgctxt "notifications"
+msgid "Customer First Name"
+msgstr "Prénom du client"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:24
+msgctxt "notifications"
+msgid "Customer Full Name"
+msgstr "Nom complet du client"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:23
+msgctxt "notifications"
+msgid "Customer Last Name"
+msgstr "Nom du client"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:26
+msgctxt "notifications"
+msgid "Order Date"
+msgstr "Date de commande"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:27
+msgctxt "notifications"
+msgid "Order details"
+msgstr "Détails de la commande"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:25
+msgctxt "notifications"
+msgid "Order ID"
+msgstr "ID de commande"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:28
+msgctxt "notifications"
+msgid "Order Status"
+msgstr "Statut de la commande"
+
+#: inc/modules/notifications-pro/class-notifications-pro-helper.php:30
+msgctxt "notifications"
+msgid "Shipping Address"
+msgstr "Adresse de livraison"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:135
+msgid "Nutrition Facts"
+msgstr "Valeurs Nutritionnelles"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:95
+msgid "Nutritional Info"
+msgstr "Infos Nutritionnelles"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:1006
+msgid "Nutritional Information"
+msgstr "Informations nutritionnelles"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:39
+msgid "On date"
+msgstr "À date"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:61
+msgid "Optin checkbox checked by default"
+msgstr "Opt-in coché par défaut ? "
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:54
+msgid "Optin Field label"
+msgstr "Libellé du champ d'opt-in"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:86
+msgid "Options"
+msgstr "Options"
+
+#: templates/admin/conditions-metabox.php:12, 
+#: templates/admin/conditions-metabox.php:42
+msgid "or"
+msgstr "ou"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:36
+msgid "Order Status"
+msgstr "Statut personnalisé"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:35
+msgid "Order Statuses"
+msgstr "Statuts personnalisés"
+
+#: woocommerce/checkout/form-checkout.php:50
+msgid "Order Summary"
+msgstr "Récapitulatif de commande"
+
+#: orderable-pro.php:97
+msgid ""
+"Orderable Pro requires the free version of Orderable to be at least v%s. "
+"Please update the Orderable plugin."
+msgstr ""
+"Orderable Pro nécessite que la version gratuite soit au minimum la version "
+"%s. Merci de mettre à jour Orderable."
+
+#: orderable-pro.php:83
+msgid ""
+"Orderable Pro requires the free version of Orderable to be installed and "
+"activated."
+msgstr "Orderable Pro nécessite d'installer et d'activer la version gratuite."
+
+#: inc/modules/custom-order-status-pro/templates/admin/settings-metabox.php:82
+msgctxt "orderable-pro"
+msgid "Next steps"
+msgstr "Étapes suivantes"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:394
+msgid "Pantothenic acid"
+msgstr "Acide pantothénique"
+
+#: woocommerce/global/form-login.php:38
+msgid "Password"
+msgstr "Mot de passe"
+
+#: woocommerce/checkout/form-checkout.php:73
+msgid "Payment Information"
+msgstr "Informations de paiement"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:170
+msgid "Percentage"
+msgstr "Pourcentage"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:434
+msgid "Phosphorus"
+msgstr "Phosphore"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:108
+msgid "Placeholder"
+msgstr "Placeholder"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:109
+msgid "Placeholder for the field."
+msgstr "Texte en exemple pour ce champ (texte grisé)."
+
+#. translators: %d is the maximum allowed selection.
+#: inc/modules/addons-pro/class-addons-pro-fields.php:310
+msgid "Please select %d option."
+msgid_plural "Please select up to %d options."
+msgstr[0] "Merci de sélectionner %d option."
+msgstr[1] "Merci de sélectionner jusqua %d options."
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:40
+msgid "Please select an order time."
+msgstr "Merci de choisir une heure pour votre commande."
+
+#: inc/modules/addons-pro/class-addons-pro.php:131
+msgid ""
+"Please select some product options before adding this product to your cart."
+msgstr "Merci de choisir les options nécessaires avant d'ajouter au panier."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:435
+msgid "Potassium"
+msgstr "Potassium"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:46
+msgid "Price"
+msgstr "Prix"
+
+#: templates/admin/conditions-metabox.php:17
+msgid "Product"
+msgstr "Produit"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:30
+msgid "Product Addon"
+msgstr "supplément / personnalisation"
+
+#: inc/modules/addons-pro/class-addons-pro-field-groups.php:29
+msgid "Product Addons"
+msgstr "Suppléments et personnalisation"
+
+#: templates/admin/conditions-metabox.php:18
+msgid "Product Category"
+msgstr "Catégorie de produit"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:747
+msgid "Protein"
+msgstr "Protéines"
+
+#: inc/modules/table-ordering-pro/templates/admin/qr-code-metabox.php:31
+msgid "Publish this table to generate a QR code automatically."
+msgstr "Publiez cette table pour générer automatiquement un QR code."
+
+#: inc/modules/table-ordering-pro/class-table-ordering-pro.php:118
+msgid "QR Code"
+msgstr "QR Code"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:34
+msgid "Radio"
+msgstr "Radio"
+
+#: woocommerce/global/form-login.php:47
+msgid "Remember me"
+msgstr "Se souvenir de moi"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:555
+msgid "Remove"
+msgstr "Supprimer"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:64
+msgid "Required"
+msgstr "Requis"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:395
+msgid "Riboflavin"
+msgstr "Riboflavine"
+
+#: templates/admin/conditions-metabox.php:6, 
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:60
+msgid "Rules"
+msgstr "Règles"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:682
+msgid "Saturated Fat"
+msgstr "Dont acides gras saturés"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:82
+msgid "Saturday"
+msgstr "Samedi"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:917
+msgid "Save nutritional info"
+msgstr "Sauvegarder infos nutritionnelles"
+
+#: orderable-pro.php:189
+msgid "Search for a Category.."
+msgstr "Chercher une catégorie..."
+
+#: orderable-pro.php:190
+msgid "Search for a Product.."
+msgstr "Chercher un produit..."
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:320
+msgid "See allergens information."
+msgstr "Voir les allergènes."
+
+#: inc/class-helpers.php:43
+msgid "See nutritional information."
+msgstr "Voir les informations nutritionnelles."
+
+#: inc/modules/addons-pro/class-addons-pro-fields.php:114
+msgid "Select"
+msgstr "Sélectionner"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:503
+msgid "Select&hellip;"
+msgstr "Sélectionner&hellip;"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:50
+msgid "Selected"
+msgstr "Par défaut"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:436
+msgid "Selenium"
+msgstr "Sélénium"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:652
+msgid "Serving size"
+msgstr "Portion"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:155
+msgid "Serving size %s"
+msgstr "Portion %s"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:666
+msgid "Servings per container"
+msgstr "Portions par plat"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:23
+msgid "Set Hidden"
+msgstr "Cacher"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:22
+msgid "Set Visible"
+msgstr "Rendre visible"
+
+#: inc/modules/checkout-pro/class-checkout-pro.php:86
+msgid "Shipping"
+msgstr "Livraison"
+
+#: woocommerce/cart/cart-shipping.php:62
+msgid "Shipping costs are calculated during checkout."
+msgstr "Les coûts de livraison sont calculés lors de votre commande."
+
+#: woocommerce/cart/cart-shipping.php:54
+msgid "Shipping options will be updated during checkout."
+msgstr "Vos options de livraison seront mises à jour sur la page de commande."
+
+#: woocommerce/cart/cart-shipping.php:51
+msgid "Shipping to %s."
+msgstr "Livré à %s."
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:68
+msgid "Show Logo"
+msgstr "Montrer votre logo"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:69
+msgid "Show logo on checkout page."
+msgstr "Montrer votre logo sur la page de commande."
+
+#: woocommerce/checkout/form-checkout.php:41
+msgid "Show order summary"
+msgstr "Voir le récapitulatif de commande"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:70
+msgid "Show tipping options at checkout."
+msgstr ""
+"Laisser à vos clients la possibilité de vous donner des pourboires sur la "
+"page de commande."
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:46
+msgid "Side Tabs"
+msgstr "Onglets à gauche"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:218
+msgid "Slug"
+msgstr "URL"
+
+#. translators: %s is the phone number.
+#: inc/modules/notifications-pro/class-notifications-pro.php:141
+msgid "SMS message sent to %s"
+msgstr "Message SMS envoyé à %s"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:437, 
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:706
+msgid "Sodium"
+msgstr "Sodium"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:919
+msgid "Something went wrong to save."
+msgstr "Quelque chose s'est mal passé en sauvegardant."
+
+#: inc/modules/timings-pro/class-timings-pro-checkout.php:35
+msgid ""
+"Sorry, the date you selected is no longer available. Please choose another."
+msgstr ""
+"Désolé, la date sélectionnée n'est plus disponible. Merci d'en choisir une "
+"autre."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:135
+msgid "Start adding product addon fields for your products."
+msgstr ""
+"Commencez à ajouter des champs à vos produits (suppléments, personnalisation."
+"..)"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:44
+msgid "Subcategory Titles Only"
+msgstr "Titres des sous-catégories"
+
+#: woocommerce/checkout/review-order.php:94
+msgid "Subtotal"
+msgstr "Sous-total"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:733
+msgid "Sugars are the smallest and simplest type of carbohydrate."
+msgstr "Les sucres sont les glucides les plus petits et simples qui existent."
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:83
+msgid "Sunday"
+msgstr "Dimanche"
+
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-checkout.php:56, 
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-order.php:77, 
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-order.php:99, 
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-order.php:112, 
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-order.php:161
+msgid "Table"
+msgstr "Table"
+
+#: inc/modules/table-ordering-pro/class-table-ordering-pro.php:109
+msgid "Table Information"
+msgstr "Informations de table"
+
+#: inc/modules/table-ordering-pro/class-table-ordering-pro-order.php:192
+msgid "Table Order"
+msgstr "Commande à table"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:31
+msgid "Text"
+msgstr "Texte"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:239
+msgid ""
+"The % Daily Value (DV) tells you how much a nutrient in a serving of food "
+"contributes to a daily diet. 2,000 calories a day is used for general "
+"nutrition advice."
+msgstr ""
+"Le % des Apports Journaliers Recommandés (AJR) vous indique comment un "
+"nutriment présent dans votre plat contribue à votre diète journalière. Pour "
+"des conseils génériques comme présentés ici, une diète à 2000 calories par "
+"jour est utilisée."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:653
+msgid ""
+"The amount of food that is customarily eaten at one time and is not a "
+"recommendation of how much to eat."
+msgstr ""
+"La quantité mangé pour ce plat, ce n'est pas une recommandation de combien "
+"il faut manger."
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:130
+msgid "The current date and time of your store."
+msgstr "La date et l'heure actuelles de votre boutique."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:54
+msgid "The front-facing description of this field."
+msgstr "La description du champ, côté visiteur."
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:43
+msgid "The front-facing title/label for the field."
+msgstr "Le titre/libellé du champ, côté visiteur. Ce champ est obligatoire."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:661
+msgid "The total number of calories in a serving of the food."
+msgstr "Quantité totale de calories pour ce plat ou cet aliment."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:669
+msgid "The total number of servings in the entire food package or container."
+msgstr ""
+"Le nombre total de portions pour ce plat ou cet aliment (combien de "
+"personnes...)."
+
+#: woocommerce/cart/cart-shipping.php:67
+msgid ""
+"There are no shipping options available. Please ensure that your address has "
+"been entered correctly, or contact us if you need any help."
+msgstr ""
+"Aucune option de livraison disponible. S'il vous plait, assurez-vous d'avoir "
+"rentrer correctement votre adresse, ou contactez-nous si vous avez besoin "
+"d'aide."
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:126
+msgid "There is a chance that these ingredients could be present."
+msgstr "Il y a des chances que ces ingrédients (ou des traces) soient présent."
+
+#: inc/modules/allergen-info-pro/class-allergen-info-pro.php:130
+msgid "There is a potential cross-contact through shared cooking equipment."
+msgstr ""
+"Potentiellement, ces ingrédients peuvent être présent à cause d'équipements "
+"partagés avec d'autres préparations."
+
+#: inc/class-license.php:246
+msgid ""
+"There was a problem activating the license. Please check your license "
+"expiration."
+msgstr ""
+"Il y a eu un problème lors de l'activation de votre license. Merci de "
+"vérifier l'expiration de votre license"
+
+#: inc/class-license.php:278
+msgid "There was a problem deactivating the licence. Please try again."
+msgstr ""
+"Nous avons rencontré un problème lors de la désactivation de votre license. "
+"Merci d'essayez à nouveau."
+
+#: inc/class-license.php:200
+msgid ""
+"There was a problem establishing a connection to the licensing server. "
+"Please try again in a few minutes."
+msgstr ""
+"Nous avons rencontré un problème lors de la connexion avec nos serveurs. "
+"Merci d'essayez à nouveau dans quelques minutes."
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:396
+msgid "Thiamin"
+msgstr "Thiamine"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:80
+msgid "Thursday"
+msgstr "Jeudi"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:44
+msgid "Time Range"
+msgstr "Telle heure à telle heure"
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:31
+msgid "Timed Product Rules"
+msgstr "Règles disponibilités"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:30
+msgid "Timed Products"
+msgstr "Règles disponibilités"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro-admin.php:31
+msgid "Timed Products Rule"
+msgstr "Règle disponibilités"
+
+#: inc/modules/tip-pro/class-tip-pro-checkout.php:78
+msgid "Tip"
+msgstr "Pourboire"
+
+#: inc/modules/tip-pro/class-tip-pro.php:78
+msgid "Tip Amount"
+msgstr "Montant de votre pourboire"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:76
+msgid "Tip Options"
+msgstr "Options de pourboire"
+
+#: inc/modules/tip-pro/class-tip-pro-settings.php:56, 
+#: inc/modules/tip-pro/class-tip-pro-settings.php:63
+msgid "Tip Settings"
+msgstr "Réglages pourboire"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:42
+msgid "Title/Label"
+msgstr "Titre/libellé"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:88
+msgid "To"
+msgstr "Jusqua"
+
+#. translators: %s is the URL of the article.
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:81
+msgid ""
+"To send SMS messages, follow our <a href=\"%s\" target=\"_blank\">Twilio "
+"integration guide</a>."
+msgstr ""
+"Pour envoyer des SMS de notification, suivez notre <a href=\"%s\" "
+"target=\"_blank\">guide d'intégration Twilio</a>."
+
+#. translators: %s is the URL of the article.
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:113
+msgid ""
+"To send WhatsApp messages, follow our <a href=\"%s\" target=\"_blank\">"
+"WhatsApp integration guide</a>."
+msgstr ""
+"Pour envoyer des messages WhatsApp, suivez notre <a href=\"%s\" "
+"target=\"_blank\">guide d'utilisation WhatsApp</a>."
+
+#: inc/modules/timings-pro/class-timings-pro-settings.php:83
+msgid "To:"
+msgstr "À:"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:130
+msgid "Token"
+msgstr "Token"
+
+#: inc/modules/layouts-pro/class-layouts-pro.php:45
+msgid "Top Tabs"
+msgstr "Onglets en haut"
+
+#: woocommerce/checkout/review-order.php:131
+msgid "Total"
+msgstr "Total"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:716
+msgid "Total Carbohydrate"
+msgstr "Glucides"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:674
+msgid "Total Fat"
+msgstr "Matières grasses"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:731
+msgid "Total Sugars"
+msgstr "Sucres"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:689
+msgid "Trans Fat"
+msgstr "Dont acides gras trans"
+
+#: inc/class-auto-update.php:108, inc/class-auto-update.php:121
+msgid "Try again"
+msgstr "Essayez encore"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:78
+msgid "Tuesday"
+msgstr "Mardi"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:58
+msgid "Twilio Integration Guide"
+msgstr "Guide intégration Twilio"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:79
+msgid "Twillio Integration"
+msgstr "Intégration Twilio"
+
+#: inc/modules/custom-order-status-pro/class-custom-order-status-pro-admin.php:220,
+#:  inc/modules/tip-pro/class-tip-pro-settings.php:166, 
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:26
+msgid "Type"
+msgstr "Type"
+
+#: templates/admin/conditions-metabox.php:30
+msgid "Type to search..."
+msgstr "Taper pour rechercher..."
+
+#: orderable-pro.php:98
+msgid "Update now"
+msgstr "Mettre à jour"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:76
+msgid "Upload logo to display on checkout page."
+msgstr "Uploadez votre logo à afficher sur la page de commande personnalisée."
+
+#: inc/modules/table-ordering-pro/templates/admin/table-metabox.php:49
+msgid "URL"
+msgstr "URL"
+
+#: woocommerce/global/form-login.php:34
+msgid "Username or email"
+msgstr "Nom d'utilisateur ou email"
+
+#: inc/modules/addons-pro/templates/admin/fields-options.php:17
+msgid "Visual"
+msgstr "Visuel"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:397
+msgid "Vitamin A"
+msgstr "Vitamine A"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:399
+msgid "Vitamin B12"
+msgstr "Vitamine B12"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:398
+msgid "Vitamin B6"
+msgstr "Vitamine B6"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:400
+msgid "Vitamin C"
+msgstr "Vitamine C"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:401
+msgid "Vitamin D"
+msgstr "Vitamine D"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:402
+msgid "Vitamin E"
+msgstr "Vitamine E"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:403
+msgid "Vitamin K"
+msgstr "Vitamine K"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:504
+msgid "Vitamins"
+msgstr "Vitamines"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:838
+msgid "Vitamins and Minerals"
+msgstr "Vitamines et minéraux"
+
+#: inc/modules/timed-products-pro/class-timed-products-pro.php:79
+msgid "Wednesday"
+msgstr "Mercredi"
+
+#: inc/modules/addons-pro/templates/admin/fields-metabox.php:27
+msgid "What type of field should this be?"
+msgstr "Quel type de champ voulez-vous?"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:142
+msgid "WhatsApp Business Account ID"
+msgstr "WhatsApp Business Account ID"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:136
+msgid "WhatsApp From Number ID"
+msgstr "WhatsApp From Number ID"
+
+#: inc/modules/notifications-pro/class-notifications-pro-settings.php:111
+msgid "WhatsApp Integration"
+msgstr "Intégration WhatsApp"
+
+#: inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:55
+msgid "WhatsApp Integration Guide"
+msgstr "Guide d'intégration WhatsApp"
+
+#: inc/modules/notifications-pro/class-notifications-pro.php:133
+msgid "WhatsApp message sent to %s"
+msgstr "Message WhatsApp envoyé à %s"
+
+#: inc/modules/checkout-pro/class-checkout-pro-settings.php:62
+msgid ""
+"When enabled, your theme's checkout will be replaced by Orderable's "
+"optimized checkout experience."
+msgstr ""
+"Si activé, la page de commande de votre thème sera remplacée par une page de "
+"commande personnalisée par Orderable."
+
+#: inc/modules/timed-products-pro/templates/admin/timed-products-rules-metabox.php:18
+msgid "Whether to show or hide product when these conditions are met."
+msgstr ""
+"Choisissez si vous voulez rendre visible ou cacher les produits qui "
+"correspondent à vos critères."
+
+#: inc/modules/cart-bumps-pro/templates/bumps.php:22
+msgid "You May Also Like..."
+msgstr "Vous pourriez aussi aimer..."
+
+#: woocommerce/checkout/form-checkout.php:27
+msgid "You must be logged in to checkout."
+msgstr "Vous devez être connecté pour passer commande"
+
+#: inc/modules/nutritional-info-pro/class-nutritional-info-pro.php:438
+msgid "Zinc"
+msgstr "Zinc"

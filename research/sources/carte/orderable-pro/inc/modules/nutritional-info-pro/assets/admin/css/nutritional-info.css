@@ -1,0 +1,253 @@
+#woocommerce-product-data ul.wc-tabs li.orderable_nutritional_info_tab a::before {
+  content: "\f164";
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__width_small {
+  width: 66px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__width_medium {
+  width: 108px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__width_large {
+  width: 80%;
+  max-width: 316px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__description + .woocommerce-help-tip {
+  margin-left: 11px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+@media (min-width: 782px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper {
+    -webkit-box-pack: initial;
+        -ms-flex-pack: initial;
+            justify-content: initial;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-values {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+@media (min-width: 645px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-values {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+  }
+}
+@media (min-width: 850px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-values {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+  }
+}
+@media (min-width: 1125px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-values {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-amount-in {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  margin-bottom: 7px;
+}
+
+@media (min-width: 645px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-amount-in {
+    margin-bottom: 0;
+  }
+}
+@media (min-width: 850px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-amount-in {
+    margin-bottom: 7px;
+  }
+}
+@media (min-width: 1125px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-amount-in {
+    margin-bottom: 0;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__wrapper-daily-value {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__description.orderable-pro-nutritional-info-panel__amount-in {
+  float: left;
+  width: 33px;
+}
+
+@media (max-width: 1280px) {
+  #orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__description.orderable-pro-nutritional-info-panel__amount-in {
+    display: inline;
+    clear: none;
+    margin-left: 7px;
+  }
+}
+@media (max-width: 1280px) {
+  #orderable_nutritional_info_panel .description {
+    display: inline;
+    clear: none;
+    margin-left: 7px;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info__font-weight_bold > label {
+  font-weight: 700;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel_nested-level_1 > label {
+  padding-left: 32px;
+  max-width: 131px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel_nested-level_2 > label {
+  padding-left: 48px;
+  max-width: 115px;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .form-field .orderable-pro-nutritional-info-panel__daily-value {
+    margin-left: 57px;
+  }
+}
+#orderable_nutritional_info_panel label {
+  width: 163px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .vitamin-or-mineral {
+  margin-bottom: 7px;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .vitamin-or-mineral {
+    margin-bottom: 0;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__values {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field:first-child .orderable-pro-vitamins-and-minerals-fields__button-remove {
+  visibility: hidden;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field:first-child .orderable-pro-vitamins-and-minerals-fields__button-remove {
+    display: none;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__button-remove {
+  text-align: right;
+  color: #b32d2e;
+  text-decoration: none;
+  margin-left: 25px;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__button-remove {
+    text-align: left;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__amount {
+  margin-left: 0;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__amount {
+    margin-left: 10px;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__amount-in {
+  margin-left: 7px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__daily-value {
+  margin-left: 7px;
+}
+
+@media (min-width: 1235px) {
+  #orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__daily-value {
+    margin-left: 28px;
+  }
+}
+#orderable_nutritional_info_panel .orderable-pro-vitamins-and-minerals-fields .orderable-pro-vitamins-and-minerals-fields__field .orderable-pro-vitamins-and-minerals-fields__description {
+  margin-left: 7px;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__form-control {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+#orderable_nutritional_info_panel .orderable-pro-nutritional-info-panel__form-control .orderable-pro-nutritional-info-panel__form-message {
+  margin-left: 15px;
+  color: #b32d2e;
+  display: none;
+}

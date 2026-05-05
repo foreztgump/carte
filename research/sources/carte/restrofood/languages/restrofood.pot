@@ -1,0 +1,2461 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Restrofood\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-04-28 11:40+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.1; wp-5.9.3\n"
+"X-Domain: restrofood"
+
+#: inc/Delivery_Boy_Order_Assign_Mail.php:64
+#, php-format
+msgid " %s Assigned New Order"
+msgstr ""
+
+#: inc/class-mail-notifier.php:61
+#, php-format
+msgid " %s Order Status"
+msgstr ""
+
+#: template/woocommerce/myaccount/view-order.php:46
+msgid " On "
+msgstr ""
+
+#: inc/class-hooks.php:518 inc/class-woo-hooks.php:720
+#, php-format
+msgid "%s Items"
+msgstr ""
+
+#: restrofood.php:389 restrofood.php:398
+msgid "(Check out the "
+msgstr ""
+
+#: view/template-modal-reviews.php:17
+msgid "1"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:70
+msgid "1 Column"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:102
+msgid "12 Hour"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:114
+msgid "120min"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:115
+msgid "180min"
+msgstr ""
+
+#: view/template-modal-reviews.php:18
+msgid "2"
+msgstr ""
+
+#: widgets/Products_Card.php:106 admin/inc/tabs-content/general.php:94
+#: admin/inc/tabs-content/shortcode.php:71
+msgid "2 Column"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:103
+msgid "24 Hour"
+msgstr ""
+
+#: view/template-modal-reviews.php:19
+msgid "3"
+msgstr ""
+
+#: widgets/Products_Card.php:107 admin/inc/tabs-content/general.php:95
+#: admin/inc/tabs-content/shortcode.php:72
+msgid "3 Column"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:112
+msgid "30min"
+msgstr ""
+
+#: view/template-modal-reviews.php:20
+msgid "4"
+msgstr ""
+
+#: widgets/Products_Card.php:108 admin/inc/tabs-content/general.php:96
+#: admin/inc/tabs-content/shortcode.php:73
+msgid "4 Column"
+msgstr ""
+
+#: view/template-modal-reviews.php:21
+msgid "5"
+msgstr ""
+
+#: admin/inc/settings-fields/number.php:49
+#: admin/inc/tabs-content/general.php:104
+msgid "6"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:113
+msgid "60min"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:60
+msgid "Accept Cooking Notification Text"
+msgstr ""
+
+#: inc/helper-functions.php:256 admin/inc/tabs-content/statustext.php:108
+msgid "Accepted Cooking"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:106
+msgid "Accepted Cooking Text"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:36
+msgid "Active Delivery Boy Assign Email Notification"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:30
+msgid "Active Email Notification"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:48
+msgid "Active Invitation Option"
+msgstr ""
+
+#: restrofood.php:101
+msgid "Active License"
+msgstr ""
+
+#: inc/class-text.php:52 admin/inc/settings-fields/zipcode.php:23
+msgid "Add"
+msgstr ""
+
+#: inc/class-text.php:53
+msgid "Add Features"
+msgstr ""
+
+#: admin/inc/settings-fields/km-fee-repeater.php:70
+msgid "Add Fee On KM"
+msgstr ""
+
+#: inc/class-text.php:50
+msgid "Add Group"
+msgstr ""
+
+#: view/template-modal-product-content.php:273
+msgid "Add instructions..."
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:60
+msgid "Add Nutrition"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:57
+msgid "Add Single Branch Shop Zip Code"
+msgstr ""
+
+#: inc/class-product-layout.php:364 view/template-modal-product-content.php:293
+msgid "Add to cart"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:51
+msgid "Add To Cart Button Show"
+msgstr ""
+
+#: admin/inc/settings-fields/product-visibility-time.php:77
+msgid "Add Visibility Type"
+msgstr ""
+
+#: admin/inc/settings-fields/zipcode-multiinput.php:72
+#: admin/inc/tabs-content/location.php:59
+msgid "Add Zip Code"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:202
+msgid ""
+"Additional information you'd like we delivery\n"
+"              services. Thank you!"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:39
+msgid "Address"
+msgstr ""
+
+#: inc/class-components.php:332 inc/class-components.php:352
+#: inc/class-components.php:397 inc/class-components.php:405
+#: inc/class-components.php:534 inc/class-components.php:542
+#: inc/class-components.php:704 inc/class-components.php:723
+#: frontend-admin/js-templates/template-order-modal.php:52
+#: frontend-admin/js-templates/template-order-modal.php:62
+msgid "Address: "
+msgstr ""
+
+#: inc/helper-functions.php:583
+msgid "ago"
+msgstr ""
+
+#: inc/helper-functions.php:30 inc/helper-functions.php:73
+#: inc/helper-functions.php:130 inc/helper-functions.php:161
+msgid "All"
+msgstr ""
+
+#: inc/class-components.php:122 inc/class-components.php:197
+msgid "All Branches"
+msgstr ""
+
+#: admin/inc/tabs-content/kitchen.php:39
+msgid "All Order Show In Kitchen"
+msgstr ""
+
+#: inc/class-components.php:132
+msgid "All Pre Order"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:17
+msgid "Apply"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:67
+msgid "ASC"
+msgstr ""
+
+#: inc/class-components.php:36
+#: frontend-admin/js-templates/template-order-modal.php:132
+msgid "Assign"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:33
+#: admin/inc/tabs-content/shortcode.php:49
+msgid "Attrubute List"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:275
+msgid "Availability Check"
+msgstr ""
+
+#: inc/class-components-ajax.php:779 view/modal-canvas-cart.php:18
+#: view/modal-footer-fixed-cart.php:39 view/template-modal-reviews.php:3
+#: view/template-part-woo-items.php:135
+#: frontend-admin/js-templates/template-order-modal.php:16
+msgid "Back"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:176 widgets/Products_Card.php:182
+msgid "Background"
+msgstr ""
+
+#: widgets/Products_Card.php:121 admin/inc/tabs-content/general.php:45
+#: admin/inc/tabs-content/shortcode.php:85
+msgid "Beside Products"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:150
+msgid "Bicycling"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:134
+msgid "Billing address"
+msgstr ""
+
+#: inc/class-components.php:325 inc/class-components.php:391
+#: inc/class-components.php:528 inc/class-components.php:698
+#: frontend-admin/js-templates/template-order-modal.php:46
+msgid "Billing Information"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:4
+msgid "Billing Summary"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:231
+msgid "Border"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:238
+msgid "Border Radius"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:251
+msgid "Box Shadow"
+msgstr ""
+
+#: inc/class-hooks.php:389
+msgid "Branch Manager"
+msgstr ""
+
+#: inc/class-woo-hooks.php:544
+msgid "Branch Name"
+msgstr ""
+
+#: inc/class-components-ajax.php:792
+#, php-format
+msgid "Branch Name: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/kitchen.php:30
+msgid "Branch Transfer Option"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:129
+msgid "Branch Type"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:82
+msgid "Break End Time"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:78
+msgid "Break Start Time"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:259
+msgid "Button Background Color"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:104
+msgid "Button Link"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:190
+msgid "Button Style"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:51
+msgid "button_text - button_text=\"search\""
+msgstr ""
+
+#: inc/class-text.php:23
+msgid "Buy More"
+msgstr ""
+
+#: widgets/Products_Card.php:119
+msgid "Canvas"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:43
+#: admin/inc/tabs-content/shortcode.php:83
+msgid "Canvas Modal"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:84
+msgid "Cart Button background"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:90
+msgid "Cart Button Count background"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:96
+msgid "Cart Button Count Text Color"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:122
+msgid "Cart Button Icon"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:35
+msgid "cat - cat=\"category name\""
+msgstr ""
+
+#: inc/class-text.php:69 admin/inc/tabs-content/textedit.php:39
+msgid "Categories"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:37
+msgid "Categories Heading Text"
+msgstr ""
+
+#: widgets/Products_Card.php:128
+msgid "Category"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:102
+msgid "Category Item Odd Background"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:108
+msgid "Category Item Text Color"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:30
+msgid "Category Nav Text"
+msgstr ""
+
+#: view/modal-canvas-cart.php:17 view/modal-footer-fixed-cart.php:38
+#: view/template-part-woo-items.php:134
+msgid "Check Out"
+msgstr ""
+
+#: inc/class-text.php:43
+msgid "Checkbox"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:30
+msgid "Checkout Delivery Option Show/Hide"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:99
+msgid "Checkout Page Delivery Location Checker Active"
+msgstr ""
+
+#: view/template-modal-loginreg.php:134
+msgid "Choose your Password"
+msgstr ""
+
+#: inc/class-hooks.php:472
+msgid "close"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:74
+msgid "Closing Time"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:156
+msgid "Closing Time Info Text"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:36
+msgid "col - col=\"column\" available value like ( 2, 3, 4 )"
+msgstr ""
+
+#: admin/inc/admin-template.php:74 admin/inc/tabs-content/color-settings.php:23
+msgid "Color Settings"
+msgstr ""
+
+#: widgets/Products_Card.php:101
+msgid "Column"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:127
+msgid "Content Wrapper Style Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:66
+msgid "Cooking Complete Notification Text"
+msgstr ""
+
+#: inc/helper-functions.php:259 admin/inc/tabs-content/statustext.php:66
+msgid "Cooking Completed"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:64
+msgid "Cooking Completed Text"
+msgstr ""
+
+#: inc/class-mail-notifier.php:172
+msgid "Cooking hasbeen completed"
+msgstr ""
+
+#: inc/helper-functions.php:264 admin/inc/tabs-content/statustext.php:59
+msgid "Cooking Processing"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:57
+msgid "Cooking Processing Text"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:116
+msgid "Copy"
+msgstr ""
+
+#: frontend-admin/js-templates/template-order-modal.php:216
+msgid "Coupon(s):"
+msgstr ""
+
+#: inc/class-components-ajax.php:905
+msgid "Coupon(s): "
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:49
+msgid "Create google API "
+msgstr ""
+
+#: view/template-modal-product-content.php:66
+msgid "customer reviews"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:164
+#: frontend-admin/template-admin-components.php:414
+#: template/woocommerce/checkout/thankyou.php:89
+msgid "Date:"
+msgstr ""
+
+#: inc/helper-functions.php:569
+msgid "day"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:60
+msgid "Days"
+msgstr ""
+
+#: view/template-part-woo-items.php:94
+msgid "Default sorting"
+msgstr ""
+
+#: admin/inc/tabs-content/kitchen.php:35
+msgid "Deliver Boy Assign Option"
+msgstr ""
+
+#: view/modal-checkout.php:36 view/modal-footer-fixed-checkout.php:37
+msgid "Deliver/Pickup Branch Name"
+msgstr ""
+
+#: inc/class-text.php:60
+msgid "Deliver/Pickup Branch Name is a required field."
+msgstr ""
+
+#: inc/class-text.php:34
+msgid "Deliver/Pickup Date"
+msgstr ""
+
+#: inc/class-text.php:35
+msgid "Deliver/Pickup Time"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:65
+msgid "Deliver/Pickup Time and Date Show/Hide"
+msgstr ""
+
+#: inc/class-text.php:58
+msgid "Deliver/Pickup Time is a required field."
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:83
+msgid "Deliver/Pickup Time Option Note"
+msgstr ""
+
+#: inc/class-text.php:59
+msgid "Deliver/Pickup type is a required field."
+msgstr ""
+
+#: inc/custom-hooks.php:33
+msgid "Delivery"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:61
+msgid "Delivery ability checker form"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:46
+msgid "Delivery ability checker form:"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:81 inc/class-ability-checker-form.php:130
+msgid "Delivery Availability Checker"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:30
+msgid "Delivery Availability Checker Active"
+msgstr ""
+
+#: inc/class-hooks.php:390
+msgid "Delivery Boy"
+msgstr ""
+
+#: inc/class-text.php:39
+msgid "Delivery boy assigned failed"
+msgstr ""
+
+#: inc/class-text.php:38
+msgid "Delivery boy assigned success"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:78
+msgid "Delivery Complete Notification Text"
+msgstr ""
+
+#: inc/helper-functions.php:263 admin/inc/tabs-content/statustext.php:94
+msgid "Delivery Completed"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:92
+msgid "Delivery Completed Text"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:318
+#: frontend-admin/template-admin-components.php:391
+#: frontend-admin/template-admin-components.php:502
+#: frontend-admin/template-admin-components.php:521
+msgid "Delivery Date/Time"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:145
+msgid "Delivery Directions Map Transport Mode"
+msgstr ""
+
+#: inc/class-woo-hooks.php:456
+msgid "Delivery Fee"
+msgstr ""
+
+#: inc/class-text.php:32
+msgid "Delivery is available"
+msgstr ""
+
+#: view/modal-checkout.php:54 view/modal-footer-fixed-checkout.php:55
+msgid "Delivery Schedule Type"
+msgstr ""
+
+#: admin/inc/admin-template.php:70
+#: admin/inc/tabs-content/delivertimebranch.php:23
+msgid "Delivery Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:91
+msgid "Delivery Time and Day "
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:99
+msgid "Delivery Time Format"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:109
+msgid "Delivery Time Slot"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:319
+#: frontend-admin/template-admin-components.php:392
+#: frontend-admin/template-admin-components.php:503
+#: frontend-admin/template-admin-components.php:522 inc/class-woo-hooks.php:143
+#: inc/custom-hooks.php:26
+msgid "Delivery Type"
+msgstr ""
+
+#: template/woocommerce/myaccount/view-order.php:43
+msgid "Delivery Type:"
+msgstr ""
+
+#: inc/class-components-ajax.php:797 inc/class-components.php:385
+#: inc/class-components.php:522 inc/class-components.php:691
+#: frontend-admin/js-templates/template-order-modal.php:34
+#, php-format
+msgid "Delivery Type: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:39
+msgid "Delivery/Pickup Both"
+msgstr ""
+
+#: frontend-admin/js-templates/template-order-modal.php:38
+#, php-format
+msgid "Delivery/Pickup Date and Time: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:66
+msgid "DESC"
+msgstr ""
+
+#: view/template-modal-product-content.php:87
+msgid "Descriptions"
+msgstr ""
+
+#: inc/class-components.php:453 inc/class-components.php:590
+#: inc/class-components.php:777
+msgid "Discount:"
+msgstr ""
+
+#: restrofood.php:388 restrofood.php:397
+msgid "Download your License certificate & purchase code (text) from here "
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:148
+msgid "Driving"
+msgstr ""
+
+#: inc/class-components-ajax.php:581
+msgid "E-mail id not found."
+msgstr ""
+
+#: view/template-modal-loginreg.php:118
+msgid "email"
+msgstr ""
+
+#: restrofood.php:409
+msgid "Email Address"
+msgstr ""
+
+#: admin/inc/admin-template.php:76 admin/inc/tabs-content/email.php:23
+msgid "Email Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:90
+msgid "Email Template Footer Text"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:96
+msgid "Email Template Header Background Color"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:84
+msgid "Email Template Header Text"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:95
+msgid "Email:"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:184
+msgid "Enable this option to allow this product to show flash sale section"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:262
+#: admin/inc/settings-fields/location-search.php:54
+msgid "Enter a location"
+msgstr ""
+
+#: restrofood.php:382
+msgid ""
+"Enter your license key here, to activate the product, and get full feature "
+"updates and premium support."
+msgstr ""
+
+#: restrofood.php:387 restrofood.php:396
+msgid "Envato Account"
+msgstr ""
+
+#: inc/class-components-ajax.php:180
+msgid "Error Occured please fill up the sign up form carefully."
+msgstr ""
+
+#: restrofood.php:394
+msgid "Extended License"
+msgstr ""
+
+#: inc/class-components-ajax.php:844 inc/class-components.php:419
+#: inc/class-components.php:556 inc/class-components.php:739
+#: view/template-modal-product-content.php:140
+#: frontend-admin/js-templates/template-order-modal.php:166
+msgid "Extra Item"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:78
+msgid "Facebook Share Link"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:59
+msgid "Falsh Sale Product Content"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:40
+msgid "Falsh Sale Products"
+msgstr ""
+
+#: inc/class-text.php:47
+msgid "Feature max required number"
+msgstr ""
+
+#: inc/class-text.php:46
+msgid "Feature minimum required number"
+msgstr ""
+
+#: inc/class-text.php:45
+msgid "Feature Section Title"
+msgstr ""
+
+#: inc/class-woo-hooks.php:531
+msgid "Features items is a required field."
+msgstr ""
+
+#: inc/class-components.php:96 inc/class-components.php:131
+#: inc/class-components.php:208
+msgid "Filter"
+msgstr ""
+
+#: inc/class-components.php:111
+msgid "Filter By Delivery Date:"
+msgstr ""
+
+#: inc/class-components.php:92 inc/class-components.php:183
+msgid "Filter By Order Date:"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:87
+msgid "Flash Sale"
+msgstr ""
+
+#: inc/class-text.php:71 admin/inc/tabs-content/textedit.php:53
+msgid "Food Visibility"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:51
+msgid "Food Visibility Categories Heading Text"
+msgstr ""
+
+#: widgets/Products_Card.php:120 admin/inc/tabs-content/general.php:44
+#: admin/inc/tabs-content/shortcode.php:84
+msgid "Footer Fixed"
+msgstr ""
+
+#: inc/class-text.php:48
+msgid "Frature Title"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:59
+msgid "Free shipping require minimum order amount"
+msgstr ""
+
+#: inc/helper-functions.php:903
+msgid "Friday"
+msgstr ""
+
+#: admin/inc/admin-template.php:69
+msgid "General"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:24
+msgid "General Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:115
+msgid "Generate"
+msgstr ""
+
+#: restrofood.php:390 restrofood.php:399
+msgid "Get Your License Key"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:60
+msgid "Global Button Background Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:66
+msgid "Global Button Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:72
+msgid "Global Button Hover Background Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:78
+msgid "Global Button Hover Color"
+msgstr ""
+
+#: widgets/Products_Card.php:80 admin/inc/tabs-content/shortcode.php:65
+msgid "Grid"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:75
+msgid "Grid Column"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:96 widgets/Products_Card.php:139
+msgid "Hide"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:66
+msgid "HoliDay?"
+msgstr ""
+
+#: inc/helper-functions.php:570
+msgid "hour"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:271
+msgid "Hover"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:289
+msgid "Hover Border"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:296
+msgid "Hover Border Radius"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:309
+msgid "Hover Box Shadow"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:317
+msgid "Hover Button Background Color"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:278
+msgid "Hover Text Color"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://themelooks.com/"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://www.themelooks.com/blog/"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:106
+msgid "https://your-link.com"
+msgstr ""
+
+#: restrofood.php:313
+msgid "Invalid"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:54
+msgid "Invitation Header ( From ) Email"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:66
+msgid "Invitation Message"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:60
+msgid "Invitation Message Subject"
+msgstr ""
+
+#: inc/class-components-ajax.php:577
+msgid "Invite failed, please try again."
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:218
+msgid "Invite frends"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:199
+msgid "Invite your friend"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:58
+msgid "Invoice Footer Text"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:52
+msgid "Invoice header restaurant Address"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:46
+msgid "Invoice header restaurant name"
+msgstr ""
+
+#: admin/inc/admin-template.php:79
+#: admin/inc/tabs-content/invoice-settings.php:23
+msgid "Invoice Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:30
+msgid "Invoice Type"
+msgstr ""
+
+#: inc/class-woo-hooks.php:116
+msgid "Item Extra:-"
+msgstr ""
+
+#: inc/class-woo-hooks.php:109
+msgid "Item Instructions"
+msgstr ""
+
+#: inc/class-components-ajax.php:842 inc/class-components.php:418
+#: inc/class-components.php:555 inc/class-components.php:738
+#: frontend-admin/js-templates/template-order-modal.php:164
+msgid "Item Name"
+msgstr ""
+
+#: inc/class-components-ajax.php:845 inc/class-components.php:420
+#: inc/class-components.php:557 inc/class-components.php:740
+#: frontend-admin/js-templates/template-order-modal.php:167
+msgid "Item Total Price"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:75
+msgid "Items Per Slide"
+msgstr ""
+
+#: inc/class-components-ajax.php:895
+#: frontend-admin/js-templates/template-order-modal.php:207
+msgid "Items Subtotal"
+msgstr ""
+
+#: inc/helper-functions.php:583
+msgid "just now"
+msgstr ""
+
+#: inc/class-hooks.php:388
+msgid "Kitchen Manager"
+msgstr ""
+
+#: admin/inc/admin-template.php:71 admin/inc/tabs-content/kitchen.php:23
+msgid "Kitchen Options"
+msgstr ""
+
+#: template/woocommerce/myaccount/view-order.php:55
+msgid "l jS \\o\\f F Y, h:ia"
+msgstr ""
+
+#: widgets/Products_Card.php:76
+msgid "Layout"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:37
+msgid "layout - layout=\"layout\" available value like grid or list"
+msgstr ""
+
+#: widgets/Products_Card.php:88 admin/inc/tabs-content/general.php:80
+msgid "Layout Style"
+msgstr ""
+
+#: inc/class-text.php:28
+msgid "Less"
+msgstr ""
+
+#: restrofood.php:405
+msgid "License code"
+msgstr ""
+
+#: restrofood.php:325
+msgid "License Expired on"
+msgstr ""
+
+#: restrofood.php:319
+msgid "License Type"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:66 widgets/Products_Card.php:67
+#: admin/inc/tabs-content/shortcode.php:87
+msgid "Limit"
+msgstr ""
+
+#: widgets/Products_Card.php:81 admin/inc/tabs-content/shortcode.php:66
+msgid "List"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:75
+msgid "List Column"
+msgstr ""
+
+#: inc/class-text.php:42
+msgid "List Type"
+msgstr ""
+
+#: inc/class-text.php:29 view/template-modal-wrapper.php:20
+msgid "Loading"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:267
+msgid "Locate Me"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:81
+msgid "Location Modal Popup Active"
+msgstr ""
+
+#: admin/inc/admin-template.php:75 admin/inc/tabs-content/location.php:23
+msgid "Location Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:36
+msgid "Location Type"
+msgstr ""
+
+#: inc/class-components.php:77
+msgid "Log Out"
+msgstr ""
+
+#: frontend-admin/templates/template-admin.php:60
+msgid "Login"
+msgstr ""
+
+#: inc/class-components-ajax.php:129
+msgid "Login successful, redirecting..."
+msgstr ""
+
+#: restrofood.php:387 restrofood.php:396
+msgid "Login To Your "
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:40
+msgid "Logo Upload"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:30
+msgid "Main Color"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:102
+msgid "Manager Page Order Notification Delay Time ( default 6 second )"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:146 widgets/Products_Card.php:170
+msgid "Margin"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:578
+#: inc/class-components-ajax.php:748
+#, php-format
+msgid "Method: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:40
+msgid "Mini Cart Style"
+msgstr ""
+
+#: widgets/Products_Card.php:115 admin/inc/tabs-content/shortcode.php:82
+msgid "Mini Cart Type"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:39
+msgid ""
+"mini cart type - mini_cart_type=\"canvas\" available value like canvas, "
+"footer-fixed, beside-products"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:53
+msgid "Minimum order amount"
+msgstr ""
+
+#: inc/helper-functions.php:571
+msgid "minute"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:93
+msgid "Modal Close Button Show"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:87
+msgid "Modal Location Checker Active"
+msgstr ""
+
+#: inc/helper-functions.php:899
+msgid "Monday"
+msgstr ""
+
+#: inc/helper-functions.php:567
+msgid "month"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:133
+msgid "Multi Branch"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:63
+msgid "My account"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:114
+msgid "My Account Tab Background"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:126
+msgid "My Account Tab Hover Background"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:132
+msgid "My Account Tab Hover Text Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:120
+msgid "My Account Tab Text Color"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:137
+#: template/woocommerce/checkout/thankyou.php:155
+msgid "N/A"
+msgstr ""
+
+#: inc/class-components.php:328 inc/class-components.php:347
+#: inc/class-components.php:393 inc/class-components.php:404
+#: inc/class-components.php:530 inc/class-components.php:541
+#: inc/class-components.php:701 inc/class-components.php:718
+#: frontend-admin/js-templates/template-order-modal.php:48
+#: frontend-admin/js-templates/template-order-modal.php:61
+#, php-format
+msgid "Name: %s"
+msgstr ""
+
+#: inc/helper-functions.php:250 admin/inc/tabs-content/statustext.php:45
+msgid "New Order"
+msgstr ""
+
+#: inc/class-text.php:30
+msgid "New Order Placed"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:43
+msgid "New Order Text"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:91
+msgid "No"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:382
+msgid "No order found"
+msgstr ""
+
+#: template/woocommerce/cart/mini-cart.php:159
+msgid "No products in the cart."
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:202
+msgid "Normal"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:33
+msgid "Normal Printer"
+msgstr ""
+
+#: inc/class-product-layout.php:383 admin/inc/tabs-content/textedit.php:60
+msgid "Not Available for this time."
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:140
+msgid "Notification Audio Loop"
+msgstr ""
+
+#: inc/class-text.php:62
+msgid "Nutrition Title"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:71
+msgid "Off current date order"
+msgstr ""
+
+#: inc/class-text.php:68 admin/inc/tabs-content/textedit.php:32
+msgid "Offers & Category"
+msgstr ""
+
+#: inc/class-product-layout.php:61 inc/class-product-layout.php:168
+#: inc/class-product-layout.php:283
+msgid "On sale"
+msgstr ""
+
+#: inc/helper-functions.php:261 admin/inc/tabs-content/statustext.php:80
+msgid "On The Way"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:72
+msgid "On The Way Notification Text"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:78
+msgid "On The Way Text"
+msgstr ""
+
+#: inc/helper-functions.php:262 admin/inc/tabs-content/statustext.php:122
+msgid "On The Way To Delivery"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:120
+msgid "On The Way To Delivery Text"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:40
+msgid "Only Delivery"
+msgstr ""
+
+#: view/template-modal-reviews.php:40
+msgid ""
+"Only logged in customers who have purchased this product may leave a review."
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:41
+msgid "Only Pickup"
+msgstr ""
+
+#: admin/inc/settings-fields/day-based-time.php:70
+msgid "Opening Time"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:232
+msgid "OR"
+msgstr ""
+
+#. 1: order number 2: order date 3: order status
+#: template/woocommerce/myaccount/view-order.php:28
+#, php-format
+msgid "Order #%1$s was placed on %2$s and is currently %3$s."
+msgstr ""
+
+#: view/modal-canvas-cart.php:19 view/template-part-woo-items.php:136
+msgid "Order & Payment"
+msgstr ""
+
+#: inc/class-mail-notifier.php:169
+msgid "Order accept to cooking"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:36
+msgid "Order Button Background Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:42
+msgid "Order Button Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:48
+msgid "Order Button Hover Background Color"
+msgstr ""
+
+#: admin/inc/tabs-content/color-settings.php:54
+msgid "Order Button Hover Color"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:116
+msgid "Order Button Text"
+msgstr ""
+
+#: inc/helper-functions.php:253 admin/inc/tabs-content/statustext.php:31
+msgid "Order Cancel"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:48
+msgid "Order Cancel Notification Text"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:29
+msgid "Order Cancel Text"
+msgstr ""
+
+#: inc/class-mail-notifier.php:163
+msgid "Order Cancelled"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:317
+#: frontend-admin/template-admin-components.php:390
+#: frontend-admin/template-admin-components.php:501
+#: frontend-admin/template-admin-components.php:520
+msgid "Order Date"
+msgstr ""
+
+#: inc/class-components.php:384 inc/class-components.php:521
+#: inc/class-components.php:690
+msgid "Order Date:"
+msgstr ""
+
+#: inc/class-components-ajax.php:796
+#: frontend-admin/js-templates/template-order-modal.php:33
+#, php-format
+msgid "Order Date: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:139
+msgid "Order Delivery Directions Map Active"
+msgstr ""
+
+#: inc/class-mail-notifier.php:178
+msgid "Order delivery hasbeen completed"
+msgstr ""
+
+#: inc/class-components-ajax.php:802
+#, php-format
+msgid "Order Delivery/Pickup Date and Time: %s"
+msgstr ""
+
+#: inc/class-components.php:386 inc/class-components.php:523
+#: inc/class-components.php:692
+#, php-format
+msgid "Order Delivery/Pickup Time: %s"
+msgstr ""
+
+#: inc/class-components-ajax.php:777
+#: frontend-admin/js-templates/template-order-modal.php:14
+#: template/woocommerce/checkout/thankyou.php:52
+msgid "Order Details"
+msgstr ""
+
+#: inc/helper-functions.php:254 admin/inc/tabs-content/statustext.php:38
+msgid "Order Failed"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:36
+msgid "Order Failed Text"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:316
+#: frontend-admin/template-admin-components.php:389
+#: frontend-admin/template-admin-components.php:500
+#: frontend-admin/template-admin-components.php:519
+msgid "Order Id"
+msgstr ""
+
+#: inc/class-components-ajax.php:788 inc/class-components.php:689
+msgid "Order ID:"
+msgstr ""
+
+#: inc/class-components.php:383 inc/class-components.php:520
+#: frontend-admin/js-templates/template-order-modal.php:32
+msgid "Order ID: #"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:121
+msgid "Order Limit On Time Slot"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:89
+#: frontend-admin/template-admin-components.php:265
+msgid "Order List :"
+msgstr ""
+
+#: admin/inc/class-admin-menu.php:53
+msgid "Order Manage"
+msgstr ""
+
+#: inc/class-components-ajax.php:876
+#: frontend-admin/js-templates/template-order-modal.php:196
+msgid "Order Notes:"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:84
+msgid "Order number:"
+msgstr ""
+
+#: inc/class-mail-notifier.php:175
+msgid "Order on the way to delivery"
+msgstr ""
+
+#: inc/helper-functions.php:251 admin/inc/tabs-content/statustext.php:101
+msgid "Order Placed"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:99
+msgid "Order Placed Text"
+msgstr ""
+
+#: admin/inc/admin-template.php:72 admin/inc/tabs-content/order-received.php:23
+msgid "Order Received Pgae"
+msgstr ""
+
+#: inc/class-mail-notifier.php:166
+msgid "Order send to Cooking"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:78
+msgid "Order Tracking"
+msgstr ""
+
+#: inc/class-order-metabox.php:25
+msgid "Order Tracking Status"
+msgstr ""
+
+#: template/woocommerce/myaccount/view-order.php:46
+msgid "Order Tracking Status: "
+msgstr ""
+
+#: inc/class-text.php:41
+msgid "Order transfer failed"
+msgstr ""
+
+#: inc/class-text.php:40
+msgid "Order transfer success"
+msgstr ""
+
+#: template/woocommerce/myaccount/view-order.php:49
+msgid "Order updates"
+msgstr ""
+
+#. page title
+#: admin/inc/class-admin-menu.php:54
+msgid "Orders"
+msgstr ""
+
+#: inc/class-text.php:72 admin/inc/tabs-content/textedit.php:67
+msgid "Our All Delicious Foods"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:134 widgets/Falsh_Sale_Products.php:208
+#: widgets/Products_Card.php:158
+msgid "Padding"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:110
+msgid "Padding Bottom"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:108
+msgid "Padding Top"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:42
+msgid "Page Description"
+msgstr ""
+
+#: admin/inc/admin-template.php:73 admin/inc/tabs-content/page-settings.php:23
+msgid "Page Settings"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:36
+msgid "Page Title"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:30
+msgid "Page Top Image"
+msgstr ""
+
+#: view/template-modal-loginreg.php:72
+#: frontend-admin/templates/template-admin.php:54
+msgid "Password"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:61
+msgid "Pay"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:183
+msgid "Payment Method"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:504
+#: frontend-admin/template-admin-components.php:523
+msgid "Payment Method/Status"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:107
+msgid "Payment method:"
+msgstr ""
+
+#: inc/class-components-ajax.php:803 inc/class-components.php:387
+#: inc/class-components.php:524 inc/class-components.php:693
+#: frontend-admin/js-templates/template-order-modal.php:39
+#, php-format
+msgid "Payment Method: %s"
+msgstr ""
+
+#: inc/class-components.php:330 inc/class-components.php:395
+#: inc/class-components.php:532 inc/class-components.php:703
+#: frontend-admin/js-templates/template-order-modal.php:50
+msgid "Phone: "
+msgstr ""
+
+#: inc/class-woo-hooks.php:151
+msgid "Pickup Branch Name"
+msgstr ""
+
+#: inc/custom-hooks.php:39
+msgid "Pickup by me"
+msgstr ""
+
+#: restrofood.php:101
+msgid ""
+"Please activate your license to get full access to the Plugin, updates, "
+"premium support, etc."
+msgstr ""
+
+#: inc/class-woo-hooks.php:655
+msgid "Please check delivery availability on your location, Before place order"
+msgstr ""
+
+#: view/template-modal-product-content.php:184
+#, php-format
+msgid "Please choose at list %s and max %s options."
+msgstr ""
+
+#: view/template-modal-product-content.php:198
+#, php-format
+msgid "Please choose at list %s options."
+msgstr ""
+
+#: inc/class-text.php:64
+msgid "Please select the branch"
+msgstr ""
+
+#: inc/class-text.php:66
+msgid "Please Select the branch before add to cart"
+msgstr ""
+
+#: inc/class-woo-hooks.php:481 inc/class-woo-hooks.php:511
+#: inc/helper-functions.php:252
+msgid "Pre Order"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:77
+msgid "Pre order active"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:127
+msgid "Pre Order Days Limit"
+msgstr ""
+
+#: inc/class-text.php:49
+msgid "Price"
+msgstr ""
+
+#: view/template-modal-product-content.php:60
+msgid "Price:"
+msgstr ""
+
+#: inc/class-components-ajax.php:780
+#: frontend-admin/js-templates/template-order-modal.php:17
+msgid "Print Invoice"
+msgstr ""
+
+#: inc/helper-functions.php:255 admin/inc/tabs-content/statustext.php:115
+msgid "Processing"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:113
+msgid "Processing Text"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:91
+msgid "Product Column"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:25
+msgid "Product Cost"
+msgstr ""
+
+#: inc/class-text.php:24
+msgid "Product don't added in the cart. please try again."
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:73
+msgid "Product Layout"
+msgstr ""
+
+#: inc/class-components-ajax.php:272
+msgid "Product not found."
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:63
+msgid "Product Order By"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:29
+msgid "Product Page Shortcode:"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:57
+msgid "Product Per Page"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:89
+msgid "Product quick search bar?"
+msgstr ""
+
+#: inc/class-hooks.php:232
+msgid "Product Visibility"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:60
+msgid "Products"
+msgstr ""
+
+#: widgets/Products_Card.php:41
+msgid "Products Card"
+msgstr ""
+
+#: widgets/Products_Card.php:60
+msgid "Products Card Content"
+msgstr ""
+
+#: widgets/Products_Card.php:150
+msgid "Products Card Style"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:65
+msgid "Products Top Title Text"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:12
+msgid "Promo code"
+msgstr ""
+
+#: inc/class-components-ajax.php:843 inc/class-text.php:63
+#: view/template-modal-product-content.php:255
+#: frontend-admin/js-templates/template-order-modal.php:165
+msgid "Quantity"
+msgstr ""
+
+#: inc/class-text.php:44
+msgid "Radio"
+msgstr ""
+
+#: inc/class-product-layout.php:103
+msgid "Ratings"
+msgstr ""
+
+#: inc/helper-functions.php:260 admin/inc/tabs-content/statustext.php:87
+msgid "Ready To Delivery"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:85
+msgid "Ready To Delivery Text"
+msgstr ""
+
+#: restrofood.php:385
+msgid "Regular License"
+msgstr ""
+
+#: inc/class-text.php:54 view/template-modal-billing-summary.php:38
+#: admin/inc/settings-fields/km-fee-repeater.php:63
+#: admin/inc/settings-fields/product-visibility-time.php:69
+#: admin/inc/settings-fields/zipcode-multiinput.php:65
+#: admin/inc/settings-fields/zipcode.php:63
+msgid "Remove"
+msgstr ""
+
+#: inc/class-text.php:51
+msgid "Remove Group"
+msgstr ""
+
+#: template/woocommerce/cart/mini-cart.php:122
+msgid "Remove this item"
+msgstr ""
+
+#: restrofood.php:330 restrofood.php:343
+msgid "Renew"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:242
+msgid "Restaurant Location"
+msgstr ""
+
+#. Name of the plugin
+#: admin/inc/class-admin-menu.php:43
+msgid "Restrofood"
+msgstr ""
+
+#. Description of the plugin
+msgid ""
+"Restrofood is an online food ordering and delivery system for WordPress. You "
+"can manage your restaurant & other food ordering stuff with Restrofood. It "
+"has plenty of amazing features. That helps you to build a successful online "
+"business."
+msgstr ""
+
+#: restrofood.php:371
+msgid "Restrofood Licensing"
+msgstr ""
+
+#: widgets/Elementor_Init.php:30
+msgid "Restrofood Plugin"
+msgstr ""
+
+#: restrofood.php:147
+#, php-format
+msgid ""
+"RestroFood requires the WooCommerce plugin to be installed and active. You "
+"can download %s woocommerce %s here. Thanks."
+msgstr ""
+
+#: admin/inc/class-admin-menu.php:42 admin/inc/class-admin-menu.php:49
+msgid "Restrofood Settings"
+msgstr ""
+
+#: inc/class-text.php:25
+msgid "Review has been submitted successfully."
+msgstr ""
+
+#: inc/class-text.php:26
+msgid "Review submission Failed. Please try again."
+msgstr ""
+
+#: inc/helper-functions.php:904
+msgid "Saturday"
+msgstr ""
+
+#: admin/inc/settings-fields/class-settings-fields-base.php:81
+msgid "Save Setting"
+msgstr ""
+
+#: inc/class-text.php:37
+msgid "Schedule Delivery/Pickup"
+msgstr ""
+
+#: restrofood.php:389 restrofood.php:398
+msgid "Screenshot"
+msgstr ""
+
+#: inc/class-hooks.php:134
+msgid "Search"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:40
+msgid "search - search=\"yes\" available value like yes or no"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:34
+msgid "Search Section Show"
+msgstr ""
+
+#: admin/inc/settings-fields/location-search.php:51
+msgid "Search Shop Location"
+msgstr ""
+
+#: view/template-part-woo-search.php:96
+msgid "Search svg"
+msgstr ""
+
+#: view/template-part-woo-search.php:90
+msgid "Search your favorite food..."
+msgstr ""
+
+#: inc/class-ability-checker-form.php:248
+msgid "Search your location"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:112
+msgid "Search...."
+msgstr ""
+
+#: inc/helper-functions.php:572
+msgid "second"
+msgstr ""
+
+#: admin/inc/tabs-content/page-settings.php:57
+msgid "Select Admin Page"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:55 inc/class-ability-checker-form.php:64
+#: inc/class-components.php:54 view/modal-checkout.php:39
+#: view/modal-footer-fixed-checkout.php:40
+#: frontend-admin/js-templates/template-order-modal.php:140
+msgid "Select Branch"
+msgstr ""
+
+#: admin/inc/tabs-content/page-settings.php:36
+msgid "Select Branch Manager Page"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:94
+msgid "Select Categoty"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:69
+msgid "Select Column"
+msgstr ""
+
+#: view/modal-checkout.php:103 view/modal-footer-fixed-checkout.php:104
+msgid "Select Date"
+msgstr ""
+
+#: admin/inc/tabs-content/page-settings.php:50
+msgid "Select Delivery Page"
+msgstr ""
+
+#: admin/inc/tabs-content/page-settings.php:43
+msgid "Select Kitchen Manager Page"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:64
+msgid "Select layout type"
+msgstr ""
+
+#: inc/class-product-layout.php:365
+msgid "Select Options"
+msgstr ""
+
+#: inc/class-order-metabox.php:37
+msgid "Select Order Tracking Status"
+msgstr ""
+
+#: admin/inc/tabs-content/page-settings.php:29
+msgid "Select Restrofood Shop Page"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:76
+msgid "Select Style"
+msgstr ""
+
+#: inc/class-text.php:65
+msgid "Select Table Number"
+msgstr ""
+
+#: inc/class-ability-checker-form.php:211
+msgid "Select Your Location Zip Code"
+msgstr ""
+
+#: inc/helper-functions.php:257 admin/inc/tabs-content/statustext.php:52
+msgid "Send To Cooking"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:54
+msgid "Send To Cooking Notification Text"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:50
+msgid "Send To Cooking Text"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:106
+msgid "Set Delivery Availability Checker Modal Show Page"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:47
+msgid "Set Delivery Fee"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:36
+msgid "Set Delivery Options"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:197
+msgid "Set Delivery time"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:202
+msgid "Set Delivery time tool tip text"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:69
+msgid "Set Distance Restrict (KM)"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:46
+msgid "Set Google API Key"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:109
+msgid "Set List View Product Description Characters"
+msgstr ""
+
+#: inc/class-text.php:61
+msgid "Set Meta"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:187
+msgid "Set Preparing time"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:192
+msgid "Set Preparing time tool tip text"
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:64
+msgid "Set Single Branch Shop Location"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:133
+msgid "Set Time Zone"
+msgstr ""
+
+#: admin/inc/class-admin-menu.php:49
+msgid "Settings"
+msgstr ""
+
+#: admin/inc/admin-template.php:32
+msgid "Settings Saved"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:246
+#: template/woocommerce/checkout/thankyou.php:247
+msgid "Share on facebook"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:238
+#: template/woocommerce/checkout/thankyou.php:239
+msgid "Share on twitter"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:153
+msgid "Shipping address"
+msgstr ""
+
+#: inc/class-components-ajax.php:943 inc/class-components.php:461
+#: inc/class-components.php:598 inc/class-components.php:787
+#: frontend-admin/js-templates/template-order-modal.php:247
+msgid "Shipping Fee"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:29
+msgid "Shipping fee"
+msgstr ""
+
+#: inc/class-components.php:344 inc/class-components.php:402
+#: inc/class-components.php:539 inc/class-components.php:715
+#: frontend-admin/js-templates/template-order-modal.php:59
+msgid "Shipping Information"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:59
+msgid "Shortcode For ?"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:56
+msgid "Shortcode Generator"
+msgstr ""
+
+#: admin/inc/admin-template.php:83 admin/inc/tabs-content/shortcode.php:22
+#: admin/inc/tabs-content/shortcode.php:27
+msgid "Shortcode List"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:95 widgets/Products_Card.php:138
+msgid "Show"
+msgstr ""
+
+#: inc/woo-product-tab/woo-product-tab.php:182
+msgid "Show In Flash Sale"
+msgstr ""
+
+#: inc/class-text.php:27
+msgid "Show More"
+msgstr ""
+
+#: widgets/Products_Card.php:136
+msgid "Show Search"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:93
+msgid "Show View All Button"
+msgstr ""
+
+#: frontend-admin/templates/template-admin.php:21
+msgid "Sign In"
+msgstr ""
+
+#: view/template-modal-loginreg.php:18
+msgid "Sign-In"
+msgstr ""
+
+#: view/template-modal-loginreg.php:32
+msgid "Sign-Up"
+msgstr ""
+
+#: view/template-modal-loginreg.php:140
+msgid "SignUp"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:132
+msgid "Single Branch"
+msgstr ""
+
+#: inc/class-text.php:33
+msgid "Sorry, We are not available to delivery in your area"
+msgstr ""
+
+#: view/template-part-woo-items.php:96
+msgid "Sort by average rating"
+msgstr ""
+
+#: view/template-part-woo-items.php:97
+msgid "Sort by latest"
+msgstr ""
+
+#: view/template-part-woo-items.php:95
+msgid "Sort by popularity"
+msgstr ""
+
+#: view/template-part-woo-items.php:99
+msgid "Sort by price: high to low"
+msgstr ""
+
+#: view/template-part-woo-items.php:98
+msgid "Sort by price: low to high"
+msgstr ""
+
+#: view/template-modal-product-content.php:269
+msgid "Special Instructions?"
+msgstr ""
+
+#: inc/class-hooks.php:223 inc/class-text.php:70
+#: admin/inc/tabs-content/textedit.php:46
+msgid "Special Offer"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:44
+msgid "Special Offer Categories Heading Text"
+msgstr ""
+
+#: inc/class-product-layout.php:191
+msgid "Start From"
+msgstr ""
+
+#: inc/class-text.php:31
+msgid "Start Order"
+msgstr ""
+
+#: restrofood.php:308
+msgid "Status"
+msgstr ""
+
+#: admin/inc/admin-template.php:77 admin/inc/tabs-content/statustext.php:23
+msgid "Status Text"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:580
+#: inc/class-components-ajax.php:750
+#, php-format
+msgid "Status: %s"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:38
+msgid "style - style=\"1\" available value like 1,2,3"
+msgstr ""
+
+#: widgets/Products_Card.php:92 admin/inc/tabs-content/general.php:83
+#: admin/inc/tabs-content/shortcode.php:77
+msgid "Style 1"
+msgstr ""
+
+#: widgets/Products_Card.php:93 admin/inc/tabs-content/general.php:84
+#: admin/inc/tabs-content/shortcode.php:78
+msgid "Style 2"
+msgstr ""
+
+#: widgets/Products_Card.php:94 admin/inc/tabs-content/general.php:85
+#: admin/inc/tabs-content/shortcode.php:79
+msgid "Style 3"
+msgstr ""
+
+#: view/modal-footer-fixed-cart.php:35 view/template-part-woo-items.php:125
+msgid "Sub Total:"
+msgstr ""
+
+#: admin/inc/tabs-content/email.php:42
+msgid "Subject Text"
+msgstr ""
+
+#: inc/class-woo-hooks.php:731
+msgid "Subtotal :"
+msgstr ""
+
+#: inc/helper-functions.php:898
+msgid "Sunday"
+msgstr ""
+
+#: restrofood.php:338
+msgid "Support Expired on"
+msgstr ""
+
+#: frontend-admin/js-templates/template-order-modal.php:36
+#, php-format
+msgid "Table Number: %s"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:220
+msgid "Text Color"
+msgstr ""
+
+#: admin/inc/admin-template.php:78 admin/inc/tabs-content/textedit.php:23
+msgid "Text Edit"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:69
+#: template/woocommerce/checkout/thankyou.php:277
+msgid "Thank you. Your order has been received."
+msgstr ""
+
+#: inc/class-components-ajax.php:575
+msgid "Thanks for sending invitation"
+msgstr ""
+
+#: inc/class-mail-notifier.php:127
+msgid "Thanks for shopping with us"
+msgstr ""
+
+#: inc/class-mail-notifier.php:128
+msgid "Thanks for shopping with us."
+msgstr ""
+
+#: restrofood.php:388 restrofood.php:397
+msgid "codecanyon.net/downloads"
+msgstr ""
+
+#. Author of the plugin
+msgid "ThemeLooks"
+msgstr ""
+
+#: admin/inc/tabs-content/invoice-settings.php:34
+msgid "Thermal/Receipt Printer"
+msgstr ""
+
+#: inc/class-text.php:57
+msgid "This is break time. Not available for order."
+msgstr ""
+
+#: inc/class-text.php:67
+msgid "This is closing time. So you can't order."
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:111
+msgid "This option work only for list style 3."
+msgstr ""
+
+#: inc/class-text.php:55
+msgid "This time slot is full. Try another time slot"
+msgstr ""
+
+#: inc/helper-functions.php:902
+msgid "Thursday"
+msgstr ""
+
+#: inc/class-woo-hooks.php:147
+msgid "Time to Deliver/Pickup"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:157
+msgid "Title Color"
+msgstr ""
+
+#: admin/inc/settings-fields/class-settings-fields-base.php:53
+msgid "Title goes to here"
+msgstr ""
+
+#: inc/class-text.php:36
+msgid "Today Delivery/Pickup"
+msgstr ""
+
+#: view/modal-checkout.php:145 view/modal-footer-fixed-checkout.php:147
+msgid "Toggle Delivery Availability Form"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:84
+msgid "Top Title"
+msgstr ""
+
+#: inc/class-components-ajax.php:952 inc/class-components.php:486
+#: inc/class-components.php:623 inc/class-components.php:821
+#: frontend-admin/js-templates/template-order-modal.php:254
+msgid "Total"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:191
+#: frontend-admin/template-admin-components.php:445
+msgid "Total Cancel Order"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:215
+#: frontend-admin/template-admin-components.php:463
+msgid "Total Cancel Order Value"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:183
+#: frontend-admin/template-admin-components.php:439
+msgid "Total Completed Order"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:207
+#: frontend-admin/template-admin-components.php:457
+msgid "Total Completed Order Value"
+msgstr ""
+
+#: view/template-modal-billing-summary.php:42
+msgid "Total Cost :"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:175
+#: frontend-admin/template-admin-components.php:433
+msgid "Total Order"
+msgstr ""
+
+#: view/template-modal-product-content.php:281
+msgid "Total Price"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:199
+#: frontend-admin/template-admin-components.php:451
+msgid "Total Value"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:101
+msgid "Total:"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:320
+#: frontend-admin/template-admin-components.php:393
+#: frontend-admin/template-admin-components.php:505
+#: frontend-admin/template-admin-components.php:524
+msgid "Tracking Status"
+msgstr ""
+
+#: inc/class-components-ajax.php:811
+#: frontend-admin/js-templates/template-order-modal.php:95
+msgid "Tracking Status Action"
+msgstr ""
+
+#: inc/class-components.php:61
+#: frontend-admin/js-templates/template-order-modal.php:149
+msgid "Transfer"
+msgstr ""
+
+#: inc/helper-functions.php:900
+msgid "Tuesday"
+msgstr ""
+
+#: admin/inc/tabs-content/order-received.php:72
+msgid "Twitter Share Link"
+msgstr ""
+
+#: widgets/Falsh_Sale_Products.php:168
+msgid "Typography"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:58
+msgid ""
+"Unfortunately your order cannot be processed as the originating "
+"bank/merchant has declined your transaction. Please attempt your purchase "
+"again."
+msgstr ""
+
+#: inc/class-woo-hooks.php:415
+msgid "Unpaid order cancelled - time limit reached."
+msgstr ""
+
+#: admin/inc/settings-fields/media.php:50
+msgid "Upload"
+msgstr ""
+
+#: admin/inc/tabs-content/general.php:146
+msgid "Upload Notification Audio MP3"
+msgstr ""
+
+#: inc/class-components-ajax.php:176
+msgid "User name already exixts."
+msgstr ""
+
+#: inc/class-components-ajax.php:172
+msgid "User Name and Email are mandatory"
+msgstr ""
+
+#: view/template-modal-loginreg.php:102
+msgid "username"
+msgstr ""
+
+#: view/template-modal-loginreg.php:56
+#: frontend-admin/templates/template-admin.php:38
+msgid "username/email"
+msgstr ""
+
+#: restrofood.php:311
+msgid "Valid"
+msgstr ""
+
+#: view/template-modal-product-content.php:82
+#: view/template-modal-product-content.php:97
+msgid "Variations"
+msgstr ""
+
+#: view/template-woo-flash-sale-items.php:61
+msgid "View All"
+msgstr ""
+
+#: inc/class-text.php:22
+msgid "View Cart"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:374
+#: frontend-admin/template-admin-components.php:596
+#: inc/class-components-ajax.php:767
+msgid "View Details"
+msgstr ""
+
+#: frontend-admin/template-admin-components.php:321
+#: frontend-admin/template-admin-components.php:394
+#: frontend-admin/template-admin-components.php:506
+#: frontend-admin/template-admin-components.php:525
+msgid "View Order"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:77
+msgid "View Orders"
+msgstr ""
+
+#: inc/class-hooks.php:254 inc/class-hooks.php:281
+msgid "Visibility End Time"
+msgstr ""
+
+#: inc/class-hooks.php:250 inc/class-hooks.php:273
+msgid "Visibility Start Time"
+msgstr ""
+
+#: admin/inc/tabs-content/textedit.php:58
+msgid "Visiblity Alert Message"
+msgstr ""
+
+#: inc/helper-functions.php:258 admin/inc/tabs-content/statustext.php:73
+msgid "Waiting For Kitchen Accept"
+msgstr ""
+
+#: admin/inc/tabs-content/statustext.php:71
+msgid "Waiting For Kitchen Accept Text"
+msgstr ""
+
+#: admin/inc/tabs-content/delivertimebranch.php:149
+msgid "Walking"
+msgstr ""
+
+#: restrofood.php:414
+msgid ""
+"We will send update news of this product by this email address, don't worry, "
+"we hate spam"
+msgstr ""
+
+#: inc/helper-functions.php:901
+msgid "Wednesday"
+msgstr ""
+
+#: inc/helper-functions.php:568
+msgid "week"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:42
+msgid "Wrapper Padding Bottom - padding_bottom=\"120px\" "
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:41
+msgid "Wrapper Padding Top - padding_top=\"120px\" "
+msgstr ""
+
+#: inc/class-components-ajax.php:127 inc/class-components-ajax.php:166
+msgid "Wrong username or password."
+msgstr ""
+
+#: restrofood.php:406
+msgid "xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx"
+msgstr ""
+
+#: inc/helper-functions.php:566
+msgid "year"
+msgstr ""
+
+#: admin/inc/tabs-content/shortcode.php:90
+msgid "Yes"
+msgstr ""
+
+#: view/template-modal-product-content.php:191
+#, php-format
+msgid "You could choose max %s options."
+msgstr ""
+
+#: inc/class-woo-hooks.php:681
+#, php-format
+msgid ""
+"Your current cart total is %s — you must have an order with a minimum of %s "
+"to place your order"
+msgstr ""
+
+#: inc/class-woo-hooks.php:703
+#, php-format
+msgid ""
+"Your current order sub total is %s — you must have an order with a minimum "
+"of %s to place your order"
+msgstr ""
+
+#: template/woocommerce/checkout/thankyou.php:215
+msgid "Your email Address"
+msgstr ""
+
+#: restrofood.php:351
+msgid "Your License Key"
+msgstr ""
+
+#: view/modal-checkout.php:192 view/modal-footer-fixed-checkout.php:185
+msgid "Your order"
+msgstr ""
+
+#: view/modal-footer-fixed-cart.php:29 view/template-part-woo-items.php:123
+msgid "Your Orders"
+msgstr ""
+
+#: view/template-modal-reviews.php:14
+msgid "Your rating"
+msgstr ""
+
+#: view/template-modal-reviews.php:28
+msgid "Your review"
+msgstr ""
+
+#: inc/class-text.php:56
+msgid "Your selected time slot is not available for order."
+msgstr ""
+
+#: admin/inc/tabs-content/location.php:40
+msgid "Zip Code"
+msgstr ""

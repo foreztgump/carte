@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "orderable-pro/postcode-locator",
+  "version": "0.1.0",
+  "title": "Orderable: Postcode Locator",
+  "category": "widgets",
+  "textdomain": "orderable-pro",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css"
+}

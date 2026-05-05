@@ -1,0 +1,12 @@
+.orderable-dashicons {
+	transition: none;
+	cursor: pointer;
+}
+
+.orderable-dashicons--trash {
+	margin-top: -1px;
+}
+
+.orderable-dashicons--trash:hover {
+	color: #dc3232;
+}

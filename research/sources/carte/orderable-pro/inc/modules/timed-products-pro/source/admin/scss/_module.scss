@@ -1,0 +1,13 @@
+// Module specific overrides.
+#orderable-timed-product-rules-metabox {
+	z-index: 2;
+
+	.orderable-fields-row--empty {
+		padding: 0;
+		margin: 0;
+	}
+
+	.orderable-fields-row__body-row-right--empty {
+		justify-content: left;
+	}
+}

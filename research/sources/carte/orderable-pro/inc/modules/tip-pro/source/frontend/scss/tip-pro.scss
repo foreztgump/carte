@@ -1,0 +1,139 @@
+/* Container */
+
+.orderable-tip-row {
+
+	td {
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+	}
+}
+
+/* Block */
+
+.orderable-tip {
+	padding: 24px 0 36px;
+}
+
+/* Elements */
+
+.orderable-tip__row {
+	display: flex;
+	align-content: space-between;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	column-gap: 2%;
+
+	&:last-child {
+
+		.orderable-button {
+			margin-bottom: 0 !important;
+		}
+	}
+}
+
+.orderable-tip__title {
+	margin: 0 0 30px;
+	display: block;
+}
+
+.orderable-tip__button {
+	flex: auto;
+	margin: 0 0 2%;
+}
+
+.orderable-tip__button--half {
+	width: 49%;
+}
+
+.orderable-tip__currency {
+	padding: 0;
+	position: absolute;
+	top: 50%;
+	margin: 0;
+	transform: translate(0, -50%);
+	line-height: 1;
+
+	.orderable-tip__amount-wrap--left &,
+	.orderable-tip__amount-wrap--left_space & {
+		left: 12px;
+	}
+
+	.orderable-tip__amount-wrap--right &,
+	.orderable-tip__amount-wrap--right_space & {
+		right: 12px;
+	}
+}
+
+.orderable-tip__amount-wrap {
+	position: relative;
+	width: 68% !important;
+}
+
+.orderable-tip__custom-form {
+	display: none;
+	align-content: space-between;
+	flex-wrap: wrap;
+	align-items: center;
+	width: 100%;
+	margin: 0;
+	justify-content: space-between;
+
+	&--active {
+		display: flex;
+	}
+}
+
+.orderable-tip__custom-form-field {
+	width: 100%;
+	margin: 0;
+	-moz-appearance: textfield !important;
+
+	&::-webkit-inner-spin-button,
+	&::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+}
+
+.orderable-tip__custom-form-button {
+	width: 30%;
+	margin: 0 0 0 2%;
+}
+
+/* Overrides */
+
+body.woocommerce-checkout {
+
+	.orderable-tip__custom-form-field {
+		margin-top: 0;
+	}
+
+	.orderable-tip__amount-wrap--left .orderable-tip__custom-form-field {
+		padding-left: 22px;
+	}
+
+	.orderable-tip__amount-wrap--left_space .orderable-tip__custom-form-field {
+		padding-left: 26px;
+	}
+
+	.orderable-tip__amount-wrap--right .orderable-tip__custom-form-field,
+	.orderable-tip__amount-wrap--right_space .orderable-tip__custom-form-field {
+		text-align: right;
+	}
+
+	.orderable-tip__amount-wrap--right .orderable-tip__custom-form-field {
+		padding-right: 22px;
+	}
+
+	.orderable-tip__amount-wrap--right_space .orderable-tip__custom-form-field {
+		padding-right: 26px;
+		text-align: right;
+	}
+
+	.orderable-tip__custom-form.orderable-tip__custom-form--active {
+		align-items: center;
+		overflow: hidden;
+		margin-top: 2em;
+	}
+}

@@ -1,0 +1,14 @@
+// Block.
+.orderable-dashicons {
+	transition: none;
+	cursor: pointer;
+}
+
+// Modifiers.
+.orderable-dashicons--trash {
+	margin-top: -1px;
+
+	&:hover {
+		color: #dc3232;
+	}
+}

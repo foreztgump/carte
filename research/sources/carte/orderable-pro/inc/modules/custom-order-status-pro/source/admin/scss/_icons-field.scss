@@ -1,0 +1,74 @@
+.orderable-cos-icons-field {
+	width: 402px;
+	margin: 20px 0;
+}
+
+.orderable-cos-icons-field__list {
+	display: grid;
+	grid-template-columns: repeat(9, 1fr);
+	grid-gap: 1px;
+}
+
+.orderable-cos-icons-field__list-wrap {
+	width: 400px;
+	height: 300px;
+	overflow: scroll;
+}
+
+.orderable-cos-icons-field__icon {
+
+	i {
+		text-align: center;
+		width: 100%;
+		height: 30px;
+		font-size: 16px;
+		line-height: 30px;
+		display: inline-block;
+		background: #f7f7f7;
+		cursor: pointer;
+	}
+
+	i:hover {
+		background: #3788cb;
+		color: #fff;
+	}
+
+	&--selected i {
+		background: #3788cb;
+		color: #fff;
+	}
+}
+
+.orderable-cos-icons-field__wrap {
+	background: #ddd;
+	padding-right: 2px;
+	border: 1px solid #000;
+	margin-top: 10px;
+}
+
+.orderable-cos-icons-field__heading {
+	display: flex;
+	align-items: center;
+
+	&-left {
+		width: 50%;
+		padding: 5px;
+	}
+
+	&-right {
+		width: 50%;
+		padding: 5px;
+		text-align: right;
+	}
+}
+
+#orderable-cos-icons-preview {
+	line-height: 20px;
+	font-size: 20px !important;
+	margin-left: 10px;
+}
+
+.orderable-cos-icon--text {
+	padding: 3px;
+	color: #fff;
+}

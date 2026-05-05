@@ -1,0 +1,43 @@
+.orderable-wa-variables {
+	margin-top: 30px;
+
+	&__variable {
+		margin-bottom: 15px;
+	}
+
+	&__label {
+		font-weight: 700;
+	}
+}
+
+
+@keyframes wa_loading {
+
+	0% {
+		transform: rotate(360deg);
+	}
+
+	100% {
+		transform: rotate(0);
+	}
+}
+
+
+.orderable-wa-refresh-btn {
+	line-height: 1 !important;
+
+	&.orderable-wa-refresh-btn--loading {
+
+		span {
+			animation-name: wa_loading;
+			animation-iteration-count: infinite;
+			animation-duration: 2s;
+			animation-timing-function: linear;
+		}
+	}
+
+	span {
+		font-size: 16px;
+		line-height: 20px;
+	}
+}

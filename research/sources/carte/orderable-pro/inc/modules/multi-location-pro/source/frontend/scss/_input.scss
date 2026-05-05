@@ -1,0 +1,73 @@
+/* 'body' to increase the priority */
+body {
+
+	.opml-store-locator-input {
+		position: relative;
+		max-width: 420px;
+
+		&::before {
+			content: "";
+			width: 20px;
+			height: 20px;
+			background-image: url(../../images/location-pin.svg);
+			display: block;
+			background-repeat: no-repeat;
+			position: absolute;
+			top: 22px;
+			left: 26px;
+		}
+
+		&.opml-is-active label {
+			top: -8px;
+			left: 32px;
+		}
+
+		&.opml-is-loading {
+
+			&::after {
+				content: "";
+				display: block;
+				width: 16px;
+				height: 16px;
+				border: 1px solid #a7a7ab;
+				border-top: 1px solid #24242e;
+				position: absolute;
+				border-radius: 50%;
+				top: 21px;
+				right: 23px;
+				animation: opml-rotate 1s linear infinite;
+			}
+		}
+
+		&__label {
+			position: absolute;
+			background: #fff;
+			padding: 0 7px;
+			transition: 0.2s all ease-out;
+			top: 22.5px;
+			left: 44px;
+			color: #000;
+			font-size: 16px;
+			line-height: 1 !important;
+		}
+
+		.opml-store-locator-input__input[type="text"] {
+			width: 100%;
+			box-shadow: none;
+			border-radius: 47px;
+			border: 2px solid #c7d4db;
+			background: #fff;
+			outline: none;
+			padding: 0 0 0 52px !important;
+			height: 60px;
+			margin: 0;
+
+			&:hover,
+			&:active,
+			&:focus {
+				background: #fff;
+				border-color: #24242d;
+			}
+		}
+	}
+}

@@ -1,0 +1,56 @@
+.post-type-orderable_status .wp-list-table {
+
+	th#icon {
+		text-align: center;
+		width: 90px;
+	}
+
+	th#title {
+		width: 20%;
+	}
+
+	th#slug {
+		width: 15%;
+	}
+
+	th#notifications {
+		width: 10%;
+	}
+
+	th#next_steps {
+		width: 25%;
+	}
+
+	td.icon.column-icon {
+		text-align: center;
+	}
+
+	.orderable-cos-icon--visual i {
+		font-size: 20px;
+	}
+
+	span.orderable-cos-icon.orderable-cos-icon--text {
+		white-space: nowrap;
+	}
+
+	.column-notifications {
+		text-align: center;
+		vertical-align: middle;
+	}
+}
+
+
+.orderable-cos-table-icon-notification {
+	font-size: 20px !important;
+	display: inline-block;
+	margin-right: 7px;
+	color: #2271b1;
+
+	&:last-child {
+		margin-right: 0;
+	}
+
+	&--disabled {
+		opacity: 0.5;
+	}
+}

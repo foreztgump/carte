@@ -1,0 +1,61 @@
+.restrofood-extra-featured {
+	padding: 30px;
+}
+.restrofood-fields-group {
+	background: #fb942605;
+	border: 1px solid #eee;
+	padding: 25px;
+	margin-bottom: 10px;
+}
+.restrofood-fields-group .field-repeater {
+	display: flex;
+	margin-bottom: 12px;
+}
+.restrofood-fields-group .field-repeater input{
+	margin: 0px 8px;
+}
+.restrofood-extra-featured .fb-btn {
+	background: #000;
+	cursor: pointer;
+	transition: 0.5s;
+    padding: 6px 8px;
+    display: inline-block;
+    border-radius: 5px;
+    color: #fecc35;
+    font-weight: 600;
+    border: none;
+}
+.restrofood-extra-featured .fb-btn:hover {
+	background: #e58701;
+	color: #fff;
+}
+.restrofood-extra-featured .fb-btn-margin-top {
+	margin-top: 15px;
+}
+.restrofood-extra-featured .fb-btn-margin-bottom {
+	margin-bottom: 15px;
+}
+.restrofood-extra-featured input{
+	border: 1px solid #f0f0f1;
+    border-radius: 4px;
+}
+.restrofood-extra-featured input[type="number"]{
+	width: 60px !important;
+}
+.group-title-wrapper-list-type {
+    margin-bottom: 22px;
+    padding-left: 11px;
+}
+.group-title-wrapper-list-type label {
+    margin: 0px !important; 
+}
+.group-title-wrapper-list-type-inner {
+    display: flex;
+    align-items: center;
+}
+.group-title-wrapper-list-type-inner div { 
+    margin: 0px 20px;
+}
+.group-title-wrapper-list-type-inner div span {
+	margin-right: 5px;
+}

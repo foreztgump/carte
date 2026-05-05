@@ -1,0 +1,56 @@
+div.opml-popup {
+	background: #0000005e;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	align-items: center;
+	z-index: 10000;
+	display: none;
+
+	* {
+		box-sizing: border-box;
+		letter-spacing: unset;
+		line-height: 1.4;
+		// font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+	}
+
+	&__content {
+		border-radius: 10px;
+		max-width: 560px;
+		background-color: #fff;
+		padding: 45px 70px;
+		margin: 0 auto;
+		position: relative;
+
+		@media screen and (max-width: 600px) {
+			padding: 45px 40px;
+		}
+
+		@media screen and (max-width: 380px) {
+			padding: 30px 25px;
+		}
+	}
+
+	&--open {
+		display: flex;
+
+		.opml-popup__content {
+			animation: opml_fade_in_show 0.2s cubic-bezier(0.33, 1, 0.68, 1) 0s 1 normal none running;
+		}
+	}
+
+	&__close {
+		width: 14px;
+		position: absolute;
+		right: 20px;
+		top: 20px;
+		cursor: pointer;
+		height: 14px;
+
+		svg {
+			max-width: 100%;
+		}
+	}
+}

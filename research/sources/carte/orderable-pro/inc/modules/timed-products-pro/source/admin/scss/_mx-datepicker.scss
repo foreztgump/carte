@@ -1,0 +1,13 @@
+// Overrides.
+div.mx-zoom-in-down-enter-active,
+div.mx-zoom-in-down-leave-active {
+	opacity: 1;
+	transform: none;
+	transition: opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+div.mx-zoom-in-down-enter,
+div.mx-zoom-in-down-enter-from,
+div.mx-zoom-in-down-leave-to {
+	opacity: 0;
+}
