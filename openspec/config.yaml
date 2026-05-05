@@ -1,0 +1,121 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+context: |
+  Project: Carte — restaurant plugin family for EmDash (a Cloudflare-Workers-first,
+  Astro-integrated, TypeScript full-stack CMS).
+
+  Reference docs: PRD.md (root) and research/ (vendored sources). Read these before
+  generating artifacts.
+
+  v0.1 plugin family (6 plugins):
+    - @carte/core (MIT, sandboxed) — menus, items, sections, restaurant info,
+      hours, schema.org JSON-LD
+    - @carte/reservations (MIT, sandboxed) — booking form, time-slot logic,
+      capacity, email confirmations
+    - @carte/orders-backend (MIT, sandboxed) — Stripe Checkout, webhook handling,
+      order state machine
+    - @carte/orders-admin (MIT, native React) — order management, modifier editor,
+      refund UI
+    - @carte/views (MIT, npm peer-dep) — Astro components for theme integration
+    - @carte/ai (commercial $99/yr w/ 14-day trial, native React) — chat panel +
+      MCP tools + inline AI
+
+  Tech stack (verified):
+    - Language: TypeScript
+    - Host platform: EmDash — target v0.9.x (UNVERIFIED, PRD says "verify before
+      lock"; do not lock to a specific patch version yet)
+    - Runtime: Cloudflare Workers (D1, R2, KV, Dynamic Workers,
+      ctx.waitUntil/after())
+    - Storefront: Astro
+    - Native admin plugins: React
+    - Payments: Stripe Checkout (not Payment Intent for v0.1)
+    - Rich content: Portable Text
+    - SEO: schema.org JSON-LD
+
+  Plugin runtime split:
+    - Sandboxed plugins (HARD limits): 50ms CPU per invocation, 10 subrequests
+      max. No raw SQL — use ctx.content.* exclusively. KV is plugin-scoped
+      automatically.
+    - Native plugins: uncapped runtime; React allowed for admin UI.
+
+  Capabilities used (Cloudflare-blog canonical naming):
+    read:content, write:content, read:media, network:fetch (with allowedHosts),
+    email:send.
+    NOTE (open question): SKILL.md uses content:read / content:write /
+    network:request — naming source-of-truth must be locked with EmDash
+    maintainers before code lock.
+
+  Plugin route convention:
+    /_emdash/api/plugins/<plugin-id>/<route>
+
+  Sandboxed admin UI rules (Block Kit JSON):
+    - Use `label`, not `text`
+    - Use `items`, not `stats`
+    - No markdown inside section text
+    - No HTTP redirects from plugin routes
+
+  Repo layout (current):
+    - PRD.md           — product requirements, locked v0.1 scope
+    - research/        — vendored research sources
+    - openspec/        — OpenSpec changes + specs (this file lives here)
+    - No package.json, tsconfig, linter, formatter, or test framework configured
+      yet — greenfield. Tooling will be selected during implementation; do not
+      assume Vitest/Jest/ESLint/Biome until chosen.
+
+  Conventions:
+    - Capability manifests are mandatory for every plugin
+    - Sandboxed plugins must respect the 50ms / 10-subrequest budget — design
+      around it, do not assume it can be raised
+    - All Stripe card data stays in Stripe Checkout; PCI scope is "we accept
+      webhooks" only
+    - Menu content uses Portable Text; never HTML strings
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then format
+  design:
+    - Include sequence diagrams for complex flows
+    - Explicitly evaluate module depth — prefer deep modules (simple interface, complex implementation)
+    - Address information hiding — what design decisions does each module encapsulate?
+    - Consider at least two design approaches before committing (design it twice)
+    - Document dependency direction — high-level modules depend on abstractions
+  tasks:
+    - Each task < 2 hours
+    - Include acceptance criteria
+    - Specify test files to create/update
+    - Include applicable code quality constraints from CODE_PRINCIPLES.md
+    - Specify error handling strategy for the task's scope
+  code:
+    - Functions do one thing — if a function needs 'and' in its description, split it
+    - No magic values — all literals that aren't self-evident must be named constants
+    - Prefer deep modules — simple interface, complex implementation hidden behind it
+    - Error handling is mandatory for all async operations and external boundaries
+    - Names reveal intent — no abbreviations, no generic names (data, info, item, temp)
+    - Maximum 3 levels of nesting — use early returns, extraction, or guard clauses
+    - Comments explain WHY, not WHAT — code should be self-documenting for the what
+    - No duplicated logic — extract shared behavior into functions or modules
+    - KISS — pick the simplest solution that works; no unnecessary patterns or indirection
+    - YAGNI — only build what the task requires; no speculative abstractions
+    - Law of Demeter — talk to direct collaborators only; no chaining through objects
+    - Composition over inheritance — combine objects, don't extend class hierarchies
