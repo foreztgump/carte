@@ -13,14 +13,14 @@ describe("reservation public routes", () => {
     const context = await createRouteContext();
     await context.capacityStore.setCapacity(SLOT, 4);
 
-    const result = await factory().routes.submit.handler(context);
+    const result = await route("submit").handler(context);
 
     expect(result).toMatchObject({ ok: true, status: 200, reservationId: expect.any(String) });
     expect(context.reservations).toHaveLength(1);
     expect(context.reservations[0]?.data).toMatchObject({ status: "pending", partySize: 2 });
     await expect(context.capacityStore.getCapacity(SLOT)).resolves.toBe(2);
     expect(context.waitUntil).toHaveBeenCalledTimes(1);
-    await expect(context.waitUntil.mock.calls[0]?.[0]).resolves.toBeUndefined();
+    await expect(firstWaitUntilPromise(context)).resolves.toBeUndefined();
     expect(context.email.send).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "guest@example.com",
@@ -38,11 +38,11 @@ describe("reservation public routes", () => {
     );
     context.input = { token };
 
-    const result = await factory().routes.confirm.handler(context);
+    const result = await route("confirm").handler(context);
 
     expect(result).toMatchObject({ ok: true, status: 200, reservationId });
     expect(context.reservations[0]?.data.status).toBe("confirmed");
-    await expect(context.waitUntil.mock.calls[0]?.[0]).resolves.toBeUndefined();
+    await expect(firstWaitUntilPromise(context)).resolves.toBeUndefined();
     expect(context.email.send).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "guest@example.com",
@@ -55,7 +55,7 @@ describe("reservation public routes", () => {
     const context = await createRouteContext();
     context.input = { token: "not-a-valid-token" };
 
-    await expect(factory().routes.confirm.handler(context)).resolves.toMatchObject({
+    await expect(route("confirm").handler(context)).resolves.toMatchObject({
       ok: false,
       status: 400,
     });
@@ -74,11 +74,11 @@ describe("reservation public routes", () => {
     );
     context.input = { token };
 
-    const result = await factory().routes["cancel-by-token"].handler(context);
+    const result = await route("cancel-by-token").handler(context);
 
     expect(result).toMatchObject({ ok: true, status: 200, reservationId });
     expect(context.reservations[0]?.data.status).toBe("cancelled");
-    await expect(context.waitUntil.mock.calls[0]?.[0]).resolves.toBeUndefined();
+    await expect(firstWaitUntilPromise(context)).resolves.toBeUndefined();
     await expect(context.capacityStore.getCapacity(SLOT)).resolves.toBe(2);
     expect(context.email.send).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -96,7 +96,7 @@ describe("reservation admin route", () => {
     await context.putReservation({ status: "confirmed", guestName: "Confirmed Guest" });
     await context.putReservation({ status: "cancelled", guestName: "Cancelled Guest" });
 
-    const result = await factory().routes.admin.handler(context);
+    const result = await route("admin").handler(context);
     const serialized = JSON.stringify(result);
 
     expect(result).toMatchObject({ type: "page", title: "Reservations" });
@@ -145,6 +145,20 @@ async function createRouteContext(): Promise<TestRouteContext> {
     },
   };
   return context as unknown as TestRouteContext;
+}
+
+function route(name: string) {
+  const pluginRoute = factory().routes[name];
+  if (pluginRoute === undefined) throw new Error(`Missing route ${name}`);
+  return pluginRoute;
+}
+
+function firstWaitUntilPromise(context: TestRouteContext): Promise<unknown> {
+  const call = context.waitUntil.mock.calls[0];
+  if (call === undefined) throw new Error("waitUntil was not called");
+  const [promise] = call;
+  if (!(promise instanceof Promise)) throw new Error("waitUntil did not receive a promise");
+  return promise;
 }
 
 function baseReservationData(): ReservationData {

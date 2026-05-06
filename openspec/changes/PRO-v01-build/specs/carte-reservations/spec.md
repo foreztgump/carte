@@ -39,3 +39,41 @@ The reservations plugin SHALL reserve seats by atomically decrementing `capacity
 - **When** the hold expires or is cancelled
 - **Then** the capacity restoration is scheduled through `ctx.waitUntil`
 - **And** the original party size is restored to `capacity:{date}:{slot}`
+
+### Requirement: Public reservation routes manage reservation lifecycle
+
+The reservations plugin SHALL expose public `submit`, `confirm`, and `cancel-by-token` routes that create pending reservations, confirm by HMAC token, and cancel by HMAC token while keeping capacity and email side effects consistent.
+
+#### Scenario: Submit creates a pending reservation and queues receipt email
+
+- **Given** a reservable slot has enough remaining capacity
+- **When** a guest submits a reservation request
+- **Then** a pending reservation is persisted
+- **And** slot capacity is decremented by the party size
+- **And** the received email is queued through `ctx.waitUntil`
+
+#### Scenario: Confirm token flips reservation state
+
+- **Given** a pending reservation exists with a valid confirmation token
+- **When** the `confirm` route receives that token
+- **Then** the reservation status becomes `confirmed`
+- **And** the confirmation email is queued through `ctx.waitUntil`
+
+#### Scenario: Cancel token restores capacity after response
+
+- **Given** a confirmed reservation exists with a valid cancellation token
+- **When** the `cancel-by-token` route receives that token
+- **Then** the reservation status becomes `cancelled`
+- **And** capacity restoration and cancellation email are queued through `ctx.waitUntil`
+
+### Requirement: Reservations admin lists active bookings
+
+The reservations plugin SHALL render a sandbox-safe Block Kit admin page listing pending and confirmed reservations without forbidden Block Kit primitives.
+
+#### Scenario: Admin page excludes cancelled reservations
+
+- **Given** pending, confirmed, and cancelled reservations exist
+- **When** the reservations admin route renders
+- **Then** pending and confirmed reservations are listed
+- **And** cancelled reservations are omitted
+- **And** the response uses `label` and `items`, not `text` or `stats`

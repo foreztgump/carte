@@ -11,6 +11,10 @@
 import { definePlugin } from "emdash";
 
 import type { PluginStorageConfig, RouteContext } from "emdash";
+import { renderReservationsAdmin } from "./routes/admin.js";
+import { cancelReservationByToken } from "./routes/cancel.js";
+import { confirmReservation } from "./routes/confirm.js";
+import { submitReservation } from "./routes/submit.js";
 
 const PLUGIN_ID = "carte-reservations";
 const PLUGIN_VERSION = "0.1.0";
@@ -70,12 +74,12 @@ const factory = () =>
     storage: RESERVATION_STORAGE,
     hooks: {},
     routes: {
-      admin: { handler: stubRoute("admin") },
+      admin: { handler: renderReservationsAdmin },
       "admin/blocks": { handler: stubRoute("admin/blocks") },
       "admin/settings": { handler: stubRoute("admin/settings") },
-      submit: { handler: stubRoute("submit"), public: true },
-      confirm: { handler: stubRoute("confirm"), public: true },
-      "cancel-by-token": { handler: stubRoute("cancel-by-token"), public: true },
+      submit: { handler: submitReservation, public: true },
+      confirm: { handler: confirmReservation, public: true },
+      "cancel-by-token": { handler: cancelReservationByToken, public: true },
     },
     admin: {
       settingsSchema: RESERVATION_SETTINGS,
