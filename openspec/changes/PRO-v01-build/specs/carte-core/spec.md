@@ -54,18 +54,6 @@ When a menu item is "86'd," the system SHALL set `available: false` and `unavail
 - **WHEN** the menu is read at 06:01 next day
 - **THEN** the item's `available` is `true` again.
 
-#### Scenario: Item stays unavailable before the restore time
-
-- **GIVEN** a menu item with `available = false` and `unavailableUntil = 06:00`
-- **WHEN** the menu is read at 05:59
-- **THEN** the item's `available` remains `false` and no content update is written.
-
-#### Scenario: Concurrent reads restore once
-
-- **GIVEN** two concurrent menu reads see the same expired 86'd menu item
-- **WHEN** both reads perform lazy restore
-- **THEN** only one content update is written for that item and timestamp.
-
 #### Scenario: No cron in source
 
 - **GIVEN** the source under `packages/core/src/`
@@ -75,12 +63,6 @@ When a menu item is "86'd," the system SHALL set `available: false` and `unavail
 ### Requirement: Schema.org JSON-LD generator validates against Google Rich Results Test
 
 The `/schema-jsonld` route SHALL emit a `@type: Restaurant` payload with `address` (PostalAddress), `openingHoursSpecification`, `acceptsReservations`, `priceRange`, `servesCuisine`, and `hasMenu` → Menu → MenuSection → MenuItem with `offers` and `suitableForDiet`. The payload SHALL be cached in plugin KV under key `schema-jsonld` with TTL 1800 seconds, invalidated on any `carte_*` write via `ctx.waitUntil`. The payload SHALL pass the Google Rich Results Test.
-
-#### Scenario: Restaurant payload has menu hierarchy
-
-- **GIVEN** a restaurant profile, active menu, menu section, and available menu item
-- **WHEN** GET `/schema-jsonld` runs
-- **THEN** the response contains `@type: Restaurant`, `address.@type: PostalAddress`, `openingHoursSpecification`, `acceptsReservations`, `priceRange`, `servesCuisine`, and `hasMenu.hasMenuSection[].hasMenuItem[]` entries with `offers` and `suitableForDiet`.
 
 #### Scenario: KV cache TTL 30 minutes
 
