@@ -6,8 +6,8 @@
 
 import { definePlugin } from "emdash";
 
-import type { RouteContext } from "emdash";
 import { afterSave, beforeSave } from "./hooks.js";
+import { routes } from "./routes.js";
 
 const PLUGIN_ID = "carte-core";
 const PLUGIN_VERSION = "0.1.0";
@@ -15,13 +15,6 @@ const DEFAULT_CURRENCY = "USD";
 const DEFAULT_MENU_LOCALE = "en";
 const DEFAULT_TIMEZONE = "America/Los_Angeles";
 const DEFAULT_X402_WALLET_ADDRESS = "";
-
-const stubRoute =
-  (route: string) =>
-  async (ctx: RouteContext): Promise<{ ok: true; plugin: string; route: string }> => {
-    void ctx;
-    return { ok: true, plugin: PLUGIN_ID, route };
-  };
 
 const factory = () =>
   definePlugin({
@@ -32,14 +25,7 @@ const factory = () =>
       "content:beforeSave": beforeSave,
       "content:afterSave": afterSave,
     },
-    routes: {
-      admin: { handler: stubRoute("admin") },
-      "admin/hours": { handler: stubRoute("admin/hours") },
-      "admin/restaurant": { handler: stubRoute("admin/restaurant") },
-      "admin/settings": { handler: stubRoute("admin/settings") },
-      "menu-feed": { handler: stubRoute("menu-feed") },
-      "schema-jsonld": { handler: stubRoute("schema-jsonld") },
-    },
+    routes,
     admin: {
       settingsSchema: {
         defaultCurrency: {
