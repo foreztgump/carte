@@ -8,7 +8,7 @@
 **Tag:** MUST-ADOPT
 **Source:** `research/sources/carte/latepoint/lib/views/steps/_booking__datepicker.php:24`, `research/sources/carte/orderable-pro/inc/modules/timings-pro/class-timings-pro.php:136`, `research/sources/carte/restrofood/inc/class-date-time-map.php:56`
 **Carte target:** `packages/reservations/src/availability/read-time-slots.ts` and `packages/orders-backend/src/fulfillment/read-time-slots.ts`
-**Linear:** `PRO-414`
+**Linear:** `PRO-476`
 
 All three products compute availability from live inputs at request time: booking request + timezone in LatePoint, timestamp + order counts in Orderable, and day/branch schedule data in RestroFood. Carte should adopt the read-time computation pattern across reservations and pickup/delivery windows, but keep the PRD divergence that slots are derived instead of persisted rows. Capacity must be enforced by bounded counters and not by pre-generated slot records.
 
@@ -16,7 +16,7 @@ All three products compute availability from live inputs at request time: bookin
 **Tag:** MUST-ADOPT
 **Source:** `research/sources/carte/orderable-pro/woocommerce/checkout/form-checkout.php:37`
 **Carte target:** `packages/views/src/components/checkout/mobile-checkout-shell.astro` and `packages/orders-admin/src/routes/checkout-preview.tsx`
-**Linear:** `PRO-416`
+**Linear:** `PRO-471`
 
 Orderable’s checkout promotes a mobile header that always exposes the running total and lets the user reveal or collapse the order summary without leaving the form. Carte should preserve that interaction model in Astro storefront components so phones can complete checkout with one-thumb navigation and minimal scrolling friction. The structure should be native to Carte rather than inherited from Woo templates.
 
@@ -24,7 +24,7 @@ Orderable’s checkout promotes a mobile header that always exposes the running 
 **Tag:** MUST-ADOPT
 **Source:** `research/sources/carte/orderable-pro/inc/modules/addons-pro/class-addons-pro-field-groups.php:50`, `research/sources/carte/orderable-pro/inc/modules/addons-pro/class-addons-pro-fields.php:274`
 **Carte target:** `packages/orders-admin/src/modifiers/modifier-group-form.tsx` and `packages/views/src/components/menu-item/modifier-group.astro`
-**Linear:** `PRO-416`
+**Linear:** `PRO-473`
 
 Orderable models add-ons as one custom post type with a direct field/options payload, and each rendered option carries its own price delta and selection rules. Carte should adopt that single-tier grouping concept for v0.1 because it matches the PRD data model and avoids nested modifier complexity. The UI should support min/max group rules and option-level fee adjustments, but not recursive group trees.
 
@@ -32,7 +32,7 @@ Orderable models add-ons as one custom post type with a direct field/options pay
 **Tag:** MUST-ADOPT
 **Source:** `research/sources/carte/restrofood/inc/class-woo-hooks.php:137`, `research/sources/carte/restrofood/frontend-admin/template-admin-components.php:549`, `research/sources/carte/latepoint/lib/views/steps/partials/_booking_summary.php:46`
 **Carte target:** `packages/orders-backend/src/content/order-record.ts` and `packages/reservations/src/content/reservation-record.ts`
-**Linear:** `PRO-415`
+**Linear:** `PRO-470`
 
 RestroFood and LatePoint both show that downstream operator views depend on stable order/booking metadata like branch, fulfillment time, customer, and manage-link identifiers. Carte should adopt the idea of one durable record per order/reservation that every UI surface reads, but encode it in typed `ctx.content` collections instead of Woo meta or PHP globals. This keeps cross-package coordination explicit while still giving operators one coherent operational picture.
 
@@ -40,7 +40,7 @@ RestroFood and LatePoint both show that downstream operator views depend on stab
 **Tag:** SHOULD-ADOPT
 **Source:** `research/sources/carte/restrofood/admin/inc/class-admin-menu.php:38`, `research/sources/carte/latepoint/lib/views/bookings/index.php:66`
 **Carte target:** `packages/core/src/admin/navigation.ts` and `packages/orders-admin/src/admin/navigation.ts`
-**Linear:** `PRO-409`
+**Linear:** `PRO-472`
 
 RestroFood proves that restaurants do not need a sprawling sidebar if the high-frequency workflows are reachable from a few focused destinations, while LatePoint shows the value of dense list/calendar views within those destinations. Carte should keep the planned small admin nav surface and make each page task-centric rather than settings-centric. The adoption is about information architecture, not copying wp-admin layout primitives.
 
@@ -48,7 +48,7 @@ RestroFood proves that restaurants do not need a sprawling sidebar if the high-f
 **Tag:** SHOULD-ADOPT
 **Source:** `research/sources/carte/orderable-pro/inc/modules/custom-order-status-pro/class-custom-order-status-pro.php:45`, `research/sources/carte/latepoint/lib/views/orders/quick_edit.php:51`
 **Carte target:** `packages/orders-backend/src/orders/status-machine.ts` and `packages/orders-admin/src/routes/order-detail.tsx`
-**Linear:** `PRO-415`
+**Linear:** `PRO-474`
 
 Orderable centers admin actions and downstream notifications on explicit order status transitions, and LatePoint mirrors the same concept with editable order and fulfillment states in one operator form. Carte should adopt a first-class status machine for orders and reservations so receipts, kitchen transitions, and audit logs hang off deterministic state changes. This also gives Milestone 1 a clean place to lock email-only notifications in v0.1.
 
@@ -56,7 +56,7 @@ Orderable centers admin actions and downstream notifications on explicit order s
 **Tag:** SHOULD-ADOPT
 **Source:** `research/sources/carte/latepoint/lib/views/settings/notifications.php:72`, `research/sources/carte/orderable-pro/inc/modules/custom-order-status-pro/templates/admin/notifications-metabox.php:68`
 **Carte target:** `packages/reservations/src/notifications/email-templates.ts` and `packages/orders-backend/src/notifications/email-templates.ts`
-**Linear:** `PRO-417`
+**Linear:** `PRO-475`
 
 LatePoint invests in editable email templates and variables, while Orderable treats SMS and WhatsApp as optional expansions attached to the same event model. Carte should adopt the email-first posture for v0.1 and design template data contracts so extra channels can be added later without reworking trigger semantics. This aligns with the PRD’s likely OQ outcome around notifications and avoids overcommitting sandbox subrequest budgets.
 
