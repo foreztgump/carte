@@ -54,9 +54,9 @@ Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dy
 
 ## Linear Integration
 - **Repo Label**: `repo:carte` — all issues MUST have this label
-- **Project**: `CART` (PLANNED — Linear not yet configured; PREFIX is TBD pending Linear setup, treat `CART` as the working assumption)
-- **Branch**: `feature/CART-XXX-desc` or `fix/CART-XXX-desc`
-- **Commit**: `type(scope): desc [CART-XXX]`
+- **Project**: `CART` (working project assumption only; if the Linear team key is ever renamed in future, revisit this separately)
+- **Branch**: `feature/PRO-XXX-desc` or `fix/PRO-XXX-desc`
+- **Commit**: `type(scope): desc [PRO-XXX]`
 
 ## Tool Workflow
 - **Research**: Context7 (`resolve-library-id` → `query-docs`) → Tavily (`tavily_search`, `tavily_extract`, `tavily_research`, `tavily_crawl`, `tavily_map`) → OpenMemory (`openmemory query`). Never use built-in WebSearch or WebFetch.
@@ -72,7 +72,7 @@ Mandatory at every workflow phase boundary. Run `openmemory query` before starti
 See `skills/openmemory_checkpoints` for the full checkpoint schedule.
 
 ## Workflows
-- `/work CART-XXX` — Linear issue to PR
+- `/work PRO-XXX` — Linear issue to PR
 - `/work-local '<description>'` — standalone workflow
 - `/resume` — continue where you left off
 - `/fix '<bug>'` — debug and fix
