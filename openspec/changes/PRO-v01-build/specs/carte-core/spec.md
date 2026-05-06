@@ -76,6 +76,12 @@ When a menu item is "86'd," the system SHALL set `available: false` and `unavail
 
 The `/schema-jsonld` route SHALL emit a `@type: Restaurant` payload with `address` (PostalAddress), `openingHoursSpecification`, `acceptsReservations`, `priceRange`, `servesCuisine`, and `hasMenu` → Menu → MenuSection → MenuItem with `offers` and `suitableForDiet`. The payload SHALL be cached in plugin KV under key `schema-jsonld` with TTL 1800 seconds, invalidated on any `carte_*` write via `ctx.waitUntil`. The payload SHALL pass the Google Rich Results Test.
 
+#### Scenario: Restaurant payload has menu hierarchy
+
+- **GIVEN** a restaurant profile, active menu, menu section, and available menu item
+- **WHEN** GET `/schema-jsonld` runs
+- **THEN** the response contains `@type: Restaurant`, `address.@type: PostalAddress`, `openingHoursSpecification`, `acceptsReservations`, `priceRange`, `servesCuisine`, and `hasMenu.hasMenuSection[].hasMenuItem[]` entries with `offers` and `suitableForDiet`.
+
 #### Scenario: KV cache TTL 30 minutes
 
 - **GIVEN** a request to `/schema-jsonld`

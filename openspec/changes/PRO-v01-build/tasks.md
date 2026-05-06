@@ -24,7 +24,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
   - Acceptance: A3.button86.lazyRestore.
   - Tests: `packages/core/src/__tests__/availability.test.ts` (uses fake timers).
   - Constraints: pure function for `shouldRestore(item, now)`; no cron references anywhere in the package.
-- [ ] **f-m3-core-jsonld** — schema.org JSON-LD generator + KV cache + invalidation.
+- [x] **f-m3-core-jsonld** — schema.org JSON-LD generator + KV cache + invalidation.
   - Acceptance: A3.jsonld.shape, A3.jsonld.cacheTtl, A3.jsonld.invalidation, A3.jsonld.richResults.
   - Tests: `packages/core/src/__tests__/jsonld.test.ts`, `packages/core/src/__tests__/jsonld.cache.test.ts`.
   - Constraints: deep module — caller sees `getJsonLd(restaurantId)`; KV/composition hidden.

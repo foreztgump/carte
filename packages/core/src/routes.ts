@@ -1,16 +1,8 @@
-import type { PluginRoute, RouteContext } from "emdash";
+import type { PluginRoute } from "emdash";
 
 import { createAdminRoute } from "./admin-pages.js";
 import { eightySixMenuItem, listMenuItems } from "./availability.js";
-
-const PLUGIN_ID = "carte-core";
-
-const stubRoute =
-  (route: string) =>
-  async (ctx: RouteContext): Promise<{ ok: true; plugin: string; route: string }> => {
-    void ctx;
-    return { ok: true, plugin: PLUGIN_ID, route };
-  };
+import { createSchemaJsonLd } from "./jsonld.js";
 
 const createMenuFeedRoute = (): PluginRoute => ({
   handler: async (ctx) => listMenuItems(ctx.content),
@@ -30,5 +22,5 @@ export const routes = {
   "admin/settings": createAdminRoute("settings"),
   "menu-feed": createMenuFeedRoute(),
   "menu-items/86": createEightySixRoute(),
-  "schema-jsonld": { handler: stubRoute("schema-jsonld") },
+  "schema-jsonld": { handler: createSchemaJsonLd },
 } satisfies Record<string, PluginRoute>;
