@@ -19,15 +19,15 @@ strategic programming. See CODE_PRINCIPLES.md for full details.
 # boundaries, fallback values, platform constraints. Pull from audit_findings.
 
 ## EmDash Plugin Constraints
-Carte ships 6 plugins on the EmDash plugin SDK (target v0.9.x — verify before lock). The constraints below are non-negotiable; violating any one is grounds for blocking review.
+Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constraints below are non-negotiable; violating any one is grounds for blocking review.
 
-- **Sandboxed CPU/subrequest budget is HARD**: 50ms CPU + 10 subrequests per invocation. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
+- **Sandboxed runtime budget is HARD**: 50ms CPU + 10 subrequests + 30s wall time + ~128MB memory per invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
 - **`ctx.waitUntil` / `after()` is mandatory** for any async work that must run after the response is returned (EmDash Issue #710). Fire-and-forget without it will be killed mid-flight.
 - **Block Kit gotchas**: use `label` not `text`; use `items` not `stats`; no markdown in section text; no HTTP redirects from plugin routes.
 - **No raw SQL** — plugins use `ctx.content.*`. Plugin KV is auto-scoped; do not declare it in the manifest.
 - **Plugin routes mount at** `/_emdash/api/plugins/<plugin-id>/<route>`. Never assume root paths or hardcode prefixes.
 - **Capability naming is locked**: use only canonical resource:verb names from `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md` — `content:read`, `content:write`, `media:read`, `media:write`, `network:request` / `network:request:unrestricted`, `email:send`, `users:read`, plus `hooks.<x>:register` forms.
-- **Cloudflare Free plan has no Dynamic Workers** — sandboxed plugins lose isolation on Free. Document this in plugin READMEs and surface in install flow.
+- **Cloudflare Free plan has no Dynamic Workers** — Cloudflare Free cannot host sandboxed plugins (see `emdash` Issue #149), so sandboxed plugins lose isolation and run trusted on Free. Document this in plugin READMEs and surface in install flow.
 - **Stripe webhook MUST be idempotent**: dedupe via KV `idempotency:{stripeEventId}` with 7-day TTL. Re-deliveries are routine, not exceptional.
 - **Reservation capacity uses KV atomic decrement** — race-safe pattern is non-negotiable. No read-modify-write on capacity counters.
 - **AI plugin contract**: read-by-default, write-on-confirm. PII never leaves to LLM without explicit user consent — enforce at the tool-call boundary, not in prompts.
@@ -44,7 +44,7 @@ Carte ships 6 plugins on the EmDash plugin SDK (target v0.9.x — verify before 
 | `@carte/views` | MIT (npm peer-dep) | Astro components |
 | `@carte/ai` | Commercial $99/yr (14-day trial) | Native React |
 
-Stack: TypeScript, EmDash plugin SDK (target v0.9.x), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
+Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
 
 ## Existing Conventions
 [Document what was found, not what we wish existed]

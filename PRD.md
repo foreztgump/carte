@@ -1,7 +1,7 @@
 # PRD: Carte — Restaurant Plugin for EmDash
 
 > **Status:** Draft v0.1 · **Owner:** Claudeflare · **Last updated:** 2026-04-29
-> **EmDash target:** v0.9.x (verify before lock)
+> **EmDash target:** ^0.9.0
 
 ---
 
@@ -49,15 +49,15 @@ This shifts v0.1 scope from 6 weeks to 12 weeks. Acceptable trade — single coh
 These are non-negotiable runtime realities that shape every decision below.
 
 1. **Two plugin formats:** standard (sandboxed, Block Kit JSON admin) vs. native (locally-registered, React allowed).
-2. **Sandbox runtime limits:** 50ms CPU, 10 subrequests per invocation. Trusted (native or self-hosted Node) plugins are uncapped.
+2. **Sandbox runtime limits:** 50ms CPU, 10 subrequests, 30s wall time, and ~128MB memory per sandboxed plugin invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Trusted (native or self-hosted Node) plugins are uncapped.
 3. **`ctx.waitUntil` / `after()` mandatory** for any async work after the response (Issue #710).
 4. **Block Kit gotchas:** `label` not `text`, `items` not `stats`, no markdown in section text, no HTTP redirects from plugin routes.
-5. **Cloudflare Free plan:** No Dynamic Workers — sandboxed plugins lose isolation.
+5. **Cloudflare Free plan:** No Dynamic Workers — Cloudflare Free cannot host sandboxed plugins, so standard plugins lose isolation and run trusted instead.
 6. **Self-hosted Node:** Plugins run in-process; sandbox pitch applies fully only on Cloudflare.
 7. **Plugin routes mount at:** `/_emdash/api/plugins/<plugin-id>/<route>`.
 8. **No raw SQL** — plugins use `ctx.content.*`.
 9. **`ctx.kv` is plugin-scoped automatically** — no declaration required.
-10. **MCP is core** — `ctx.content.*` operations are MCP-exposed automatically. Custom MCP tool registration API needs verification (open question).
+10. **MCP is core** — `ctx.content.*` operations are MCP-exposed automatically. Custom MCP tool registration remains an open question until the v0.1 interim plan is applied.
 11. **x402 is core** — micropayment gating is configured per content item; no plugin capability.
 
 Verified capabilities used (per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`): `content:read`, `content:write`, `media:read`, `network:request` (with `allowedHosts`), `email:send`.
@@ -916,7 +916,7 @@ Plugin-to-plugin isolation: a vulnerability in `@carte/ai` (talks to LLMs) canno
 
 **Native-format plugins** (`@carte/orders-admin`, `@carte/ai`) are NOT sandboxed. They're trusted code, installed with explicit trust grant. We document this clearly at install time.
 
-**On Cloudflare Free plan:** Dynamic Workers unavailable; standard plugins run trusted. Carte marketing accurately reflects this.
+**On Cloudflare Free plan:** Dynamic Workers are unavailable, so Cloudflare Free cannot host sandboxed plugins at all (`emdash` Issue #149). Standard plugins therefore run trusted instead, and Carte's install flow and marketing must surface that loss of isolation before operators choose a free-plan deployment.
 
 **PCI compliance:** Stripe Checkout handles all card data. Card details never touch our infrastructure. PCI scope minimized to "we accept Stripe webhooks."
 
@@ -1002,7 +1002,7 @@ Out of scope for v0.1:
 - 50 EmDash sites with `@carte/core` installed
 - 10 paying customers on `@carte/ai` after trials convert
 - Schema.org validation passes Google's Rich Results Test for Restaurant + Menu
-- All sandboxed handlers within 50ms CPU / 10 subrequest budget
+- All sandboxed handlers within the 50ms CPU / 10 subrequest / 30s wall / ~128MB sandbox budget
 - AI chat panel handles 86 / price update / block date / move reservation end-to-end
 
 **v1.0 (12 months):**
@@ -1038,6 +1038,6 @@ Out of scope for v0.1:
 - Schema.org validation passes Google Rich Results Test
 - AI chat panel handles all common menu/reservation/order operations
 - Stripe Checkout integration end-to-end with idempotent webhook handling
-- All sandboxed handlers verified within 50ms CPU / 10 subrequest limits
+- All sandboxed handlers verified within the 50ms CPU / 10 subrequest / 30s wall / ~128MB sandbox limits
 - Public docs site with quickstart and recipe library
 - 1+ showcase restaurant beyond your client
