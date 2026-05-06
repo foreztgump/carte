@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import factory from "../index.js";
 
+import type { PluginContext } from "emdash";
+
+const EMPTY_CONTEXT = {} as PluginContext;
+
 const menuItemEvent = (content: Record<string, unknown>) => ({
   collection: "carte_menu_items",
   content,
@@ -23,7 +27,7 @@ describe("@carte/core content:beforeSave", () => {
   it("rejects negative menu item prices", async () => {
     const handler = getHookHandler("content:beforeSave");
 
-    await expect(handler(menuItemEvent({ price: -1 }), {})).rejects.toThrow(
+    await expect(handler(menuItemEvent({ price: -1 }), EMPTY_CONTEXT)).rejects.toThrow(
       "price must be a non-negative number",
     );
   });
@@ -31,16 +35,16 @@ describe("@carte/core content:beforeSave", () => {
   it("rejects non-canonical allergen tags", async () => {
     const handler = getHookHandler("content:beforeSave");
 
-    await expect(handler(menuItemEvent({ allergens: ["made-up-allergen"] }), {})).rejects.toThrow(
-      "Unknown allergen tag",
-    );
+    await expect(
+      handler(menuItemEvent({ allergens: ["made-up-allergen"] }), EMPTY_CONTEXT),
+    ).rejects.toThrow("Unknown allergen tag");
   });
 
   it("normalizes canonical allergen tags", async () => {
     const handler = getHookHandler("content:beforeSave");
 
     await expect(
-      handler(menuItemEvent({ price: 12.5, allergens: [" Tree Nuts ", "MILK"] }), {}),
+      handler(menuItemEvent({ price: 12.5, allergens: [" Tree Nuts ", "MILK"] }), EMPTY_CONTEXT),
     ).resolves.toMatchObject({
       allergens: ["tree-nuts", "milk"],
     });
@@ -50,7 +54,7 @@ describe("@carte/core content:beforeSave", () => {
     const handler = getHookHandler("content:beforeSave");
 
     await expect(
-      handler(menuItemEvent({ price: 12.5, hours: ["9am until late"] }), {}),
+      handler(menuItemEvent({ price: 12.5, hours: ["9am until late"] }), EMPTY_CONTEXT),
     ).rejects.toThrow("hours must use HH:mm-HH:mm format");
   });
 });
@@ -61,10 +65,14 @@ describe("@carte/core content:afterSave", () => {
     const scheduled: Promise<unknown>[] = [];
     const waitUntil = vi.fn((promise: Promise<unknown>) => scheduled.push(promise));
     const kv = {
+      get: vi.fn(),
+      set: vi.fn(),
       delete: vi.fn(async () => true),
+      list: vi.fn(),
     };
+    const ctx = { kv, waitUntil } as unknown as PluginContext;
 
-    await handler(menuItemEvent({ price: 10 }), { kv, waitUntil });
+    await handler(menuItemEvent({ price: 10 }), ctx);
 
     expect(waitUntil).toHaveBeenCalledTimes(1);
     expect(kv.delete).not.toHaveBeenCalledWith("unrelated");
@@ -76,8 +84,9 @@ describe("@carte/core content:afterSave", () => {
   it("ignores non-carte collections", async () => {
     const handler = getHookHandler("content:afterSave");
     const waitUntil = vi.fn();
+    const ctx = { waitUntil } as unknown as PluginContext;
 
-    await handler({ collection: "posts", content: {}, isNew: false }, { waitUntil });
+    await handler({ collection: "posts", content: {}, isNew: false }, ctx);
 
     expect(waitUntil).not.toHaveBeenCalled();
   });

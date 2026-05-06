@@ -12,7 +12,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
   - Acceptance: A3.pro423.deferred passes; PRO-423 state = `Done` with closing comment.
   - Tests: none (doc-only); `grep -nE 'OQ#(3|12)' PRD.md` returns deferred lines.
   - Constraints: descriptive section headers; YAGNI (no extra OQ touches).
-- [ ] **f-m3-core-manifest** — `definePlugin` manifest + hooks for `@carte/core`.
+- [x] **f-m3-core-manifest** — `definePlugin` manifest + hooks for `@carte/core`.
   - Acceptance: A3.manifest.canonicalCaps, A3.manifest.validates, A3.hooks.beforeSave, A3.hooks.afterSave.waitUntil.
   - Tests: `packages/core/src/__tests__/index.test.ts`, `packages/core/src/__tests__/hooks.test.ts`.
   - Constraints: SRP per hook handler; no magic strings (collection prefix `carte_` as named const).
