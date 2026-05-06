@@ -6,17 +6,18 @@ import type { ContentItem, RouteContext } from "emdash";
 
 const MENU_COLLECTION = "carte_menu_items";
 
-const item = (data: Record<string, unknown>): ContentItem => ({
-  id: "item-1",
-  type: MENU_COLLECTION,
-  slug: "daily-soup",
-  status: "published",
-  locale: "en",
-  data,
-  createdAt: "2026-05-06T00:00:00.000Z",
-  updatedAt: "2026-05-06T00:00:00.000Z",
-  publishedAt: "2026-05-06T00:00:00.000Z",
-});
+const item = (data: Record<string, unknown>): ContentItem =>
+  ({
+    id: "item-1",
+    type: MENU_COLLECTION,
+    slug: "daily-soup",
+    status: "published",
+    locale: "en",
+    data,
+    createdAt: "2026-05-06T00:00:00.000Z",
+    updatedAt: "2026-05-06T00:00:00.000Z",
+    publishedAt: "2026-05-06T00:00:00.000Z",
+  }) as unknown as ContentItem;
 
 const makeContext = (
   items: ContentItem[],
@@ -56,11 +57,10 @@ describe("@carte/core menu item availability", () => {
   it("keeps 86'd items unavailable before unavailableUntil passes", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 4, 7, 5, 59, 0));
-    const ctx = makeContext([
-      item({ name: "Soup", available: false, unavailableUntil: "2026-05-07T06:00:00.000Z" }),
-    ]);
+    const unavailableUntil = new Date(2026, 4, 7, 6, 0, 0).toISOString();
+    const ctx = makeContext([item({ name: "Soup", available: false, unavailableUntil })]);
 
-    const result = await routes["menu-feed"].handler(ctx);
+    const result = (await routes["menu-feed"].handler(ctx)) as { items: ContentItem[] };
 
     expect(result.items[0]?.data.available).toBe(false);
     expect(ctx.content.update).not.toHaveBeenCalled();
@@ -70,11 +70,10 @@ describe("@carte/core menu item availability", () => {
   it("restores 86'd items after unavailableUntil passes on menu read", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 4, 7, 6, 1, 0));
-    const ctx = makeContext([
-      item({ name: "Soup", available: false, unavailableUntil: "2026-05-07T06:00:00.000Z" }),
-    ]);
+    const unavailableUntil = new Date(2026, 4, 7, 6, 0, 0).toISOString();
+    const ctx = makeContext([item({ name: "Soup", available: false, unavailableUntil })]);
 
-    const result = await routes["menu-feed"].handler(ctx);
+    const result = (await routes["menu-feed"].handler(ctx)) as { items: ContentItem[] };
 
     expect(result.items[0]?.data.available).toBe(true);
     expect(ctx.content.update).toHaveBeenCalledTimes(1);
@@ -87,7 +86,7 @@ describe("@carte/core menu item availability", () => {
     const staleItem = item({
       name: "Soup",
       available: false,
-      unavailableUntil: "2026-05-07T06:00:00.000Z",
+      unavailableUntil: new Date(2026, 4, 7, 6, 0, 0).toISOString(),
     });
     const ctx = makeContext([staleItem]);
 

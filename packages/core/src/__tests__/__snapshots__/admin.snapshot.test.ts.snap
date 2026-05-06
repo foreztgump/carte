@@ -52,6 +52,13 @@ exports[`@carte/core Block Kit admin pages > admin renders stable canonical Bloc
           "label": "Create item",
           "type": "button",
         },
+        {
+          "action": "route.post.menu-items/86",
+          "id": "eighty-six-item",
+          "label": "86 item",
+          "style": "warning",
+          "type": "button",
+        },
       ],
       "label": "Menu actions",
       "type": "actions",

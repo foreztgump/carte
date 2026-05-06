@@ -26,6 +26,7 @@ describe("@carte/core manifest", () => {
       "admin/restaurant",
       "admin/settings",
       "menu-feed",
+      "menu-items/86",
       "schema-jsonld",
     ]);
   });

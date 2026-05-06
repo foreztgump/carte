@@ -20,7 +20,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
   - Acceptance: A3.blockkit.canonical.
   - Tests: `packages/core/src/__tests__/admin.snapshot.test.ts`.
   - Constraints: `label` not `text`; `items` not `stats`; no markdown in section text; max 40 LoC per page builder.
-- [ ] **f-m3-core-86-button** — 86 button + lazy-on-read auto-restore.
+- [x] **f-m3-core-86-button** — 86 button + lazy-on-read auto-restore.
   - Acceptance: A3.button86.lazyRestore.
   - Tests: `packages/core/src/__tests__/availability.test.ts` (uses fake timers).
   - Constraints: pure function for `shouldRestore(item, now)`; no cron references anywhere in the package.

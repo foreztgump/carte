@@ -54,6 +54,18 @@ When a menu item is "86'd," the system SHALL set `available: false` and `unavail
 - **WHEN** the menu is read at 06:01 next day
 - **THEN** the item's `available` is `true` again.
 
+#### Scenario: Item stays unavailable before the restore time
+
+- **GIVEN** a menu item with `available = false` and `unavailableUntil = 06:00`
+- **WHEN** the menu is read at 05:59
+- **THEN** the item's `available` remains `false` and no content update is written.
+
+#### Scenario: Concurrent reads restore once
+
+- **GIVEN** two concurrent menu reads see the same expired 86'd menu item
+- **WHEN** both reads perform lazy restore
+- **THEN** only one content update is written for that item and timestamp.
+
 #### Scenario: No cron in source
 
 - **GIVEN** the source under `packages/core/src/`

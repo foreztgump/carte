@@ -100,6 +100,12 @@ const buildMenusPage = (summary: AdminSummary): BlockKitPage =>
         label: "Create item",
         action: "content.create.carte_menu_items",
       }),
+      button({
+        id: "eighty-six-item",
+        label: "86 item",
+        action: "route.post.menu-items/86",
+        style: "warning",
+      }),
     ]),
   ]);
 
