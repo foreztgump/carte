@@ -28,7 +28,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
   - Acceptance: A3.jsonld.shape, A3.jsonld.cacheTtl, A3.jsonld.invalidation, A3.jsonld.richResults.
   - Tests: `packages/core/src/__tests__/jsonld.test.ts`, `packages/core/src/__tests__/jsonld.cache.test.ts`.
   - Constraints: deep module — caller sees `getJsonLd(restaurantId)`; KV/composition hidden.
-- [ ] **f-m3-core-allergen-taxonomy** — EU FIC 14 + US extensions + diet URI map.
+- [x] **f-m3-core-allergen-taxonomy** — EU FIC 14 + US extensions + diet URI map.
   - Acceptance: A3.taxonomy.fic14, A3.taxonomy.dietUris, A3.audit.allergenEdits.
   - Tests: `packages/core/src/taxonomy/__tests__/allergens.test.ts`.
   - Constraints: enum members stable (test asserts exact membership); diet URIs are canonical schema.org URIs (no shortened forms).

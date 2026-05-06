@@ -1,26 +1,12 @@
 import type { ContentHookEvent, KVAccess, PluginContext } from "emdash";
 
+import { emitAllergenAuditIfChanged, hasAllergenAuditChange } from "./audit/log.js";
+import { normalizeAllergenTags } from "./taxonomy/allergens.js";
+
 const CARTE_COLLECTION_PREFIX = "carte_";
 const MENU_ITEM_COLLECTION = "carte_menu_items";
 const CACHE_KEYS = ["menu-feed", "schema-jsonld"] as const;
 const HOURS_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
-
-const CANONICAL_ALLERGENS = new Set([
-  "celery",
-  "cereals-containing-gluten",
-  "crustaceans",
-  "eggs",
-  "fish",
-  "lupin",
-  "milk",
-  "molluscs",
-  "mustard",
-  "peanuts",
-  "sesame",
-  "soybeans",
-  "sulphur-dioxide-and-sulphites",
-  "tree-nuts",
-]);
 
 type WaitUntilContext = PluginContext & { waitUntil(promise: Promise<unknown>): void };
 
@@ -38,6 +24,7 @@ export const beforeSave = async (
 export const afterSave = async (event: ContentHookEvent, ctx: PluginContext): Promise<void> => {
   if (!isCarteCollection(event.collection)) return;
   getWaitUntil(ctx)(invalidateCarteCache(ctx.kv));
+  if (hasAllergenAuditChange(event)) getWaitUntil(ctx)(emitAllergenAuditIfChanged(event, ctx));
 };
 
 const validateMenuItem = (content: Record<string, unknown>): Record<string, unknown> => {
@@ -46,7 +33,7 @@ const validateMenuItem = (content: Record<string, unknown>): Record<string, unkn
 
   return {
     ...content,
-    allergens: normalizeAllergens(content.allergens),
+    allergens: normalizeAllergenTags(content.allergens),
   };
 };
 
@@ -55,20 +42,6 @@ const validatePrice = (price: unknown): void => {
   if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
     throw new Error("Menu item price must be a non-negative number.");
   }
-};
-
-const normalizeAllergens = (allergens: unknown): string[] | undefined => {
-  if (allergens === undefined || allergens === null) return undefined;
-  if (!Array.isArray(allergens)) throw new Error("Menu item allergens must be an array.");
-
-  return allergens.map(normalizeAllergen);
-};
-
-const normalizeAllergen = (allergen: unknown): string => {
-  if (typeof allergen !== "string") throw new Error("Allergen tags must be strings.");
-  const normalized = allergen.trim().toLowerCase().replace(/\s+/g, "-");
-  if (!CANONICAL_ALLERGENS.has(normalized)) throw new Error(`Unknown allergen tag: ${allergen}`);
-  return normalized;
 };
 
 const validateHoursField = (content: Record<string, unknown>): void => {

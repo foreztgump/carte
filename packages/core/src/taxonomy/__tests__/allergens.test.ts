@@ -55,10 +55,11 @@ describe("@carte/core allergen audit", () => {
   it("emits an audit entry when menu item allergens change", async () => {
     const scheduled: Promise<unknown>[] = [];
     const content = { create: vi.fn(async () => ({ id: "audit-1" })) };
+    const waitUntil = vi.fn((promise: Promise<unknown>) => scheduled.push(promise));
     const ctx = {
       content,
       kv: { delete: vi.fn(async () => true) },
-      waitUntil: vi.fn((promise: Promise<unknown>) => scheduled.push(promise)),
+      waitUntil,
       actor: { id: "admin-1" },
     } as unknown as PluginContext;
 
@@ -72,7 +73,7 @@ describe("@carte/core allergen audit", () => {
       ctx,
     );
 
-    expect(ctx.waitUntil).toHaveBeenCalledTimes(2);
+    expect(waitUntil).toHaveBeenCalledTimes(2);
     await Promise.all(scheduled);
     expect(content.create).toHaveBeenCalledWith("carte_audit_log", {
       action: "menu_item_allergens_changed",

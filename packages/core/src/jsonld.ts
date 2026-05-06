@@ -1,5 +1,7 @@
 import type { ContentAccess, KVAccess, RouteContext } from "emdash";
 
+import { DIETARY_TAG_TO_SCHEMA_URI } from "./taxonomy/allergens.js";
+
 const JSONLD_CONTEXT = "https://schema.org";
 const JSONLD_CACHE_KEY = "schema-jsonld";
 const JSONLD_CACHE_TTL_SECONDS = 1_800;
@@ -18,20 +20,6 @@ const WEEKDAY_URIS: Record<string, string> = {
   saturday: "https://schema.org/Saturday",
   sunday: "https://schema.org/Sunday",
 };
-const DIET_URIS: Record<string, string> = {
-  diabetic: "https://schema.org/DiabeticDiet",
-  glutenFree: "https://schema.org/GlutenFreeDiet",
-  halal: "https://schema.org/HalalDiet",
-  hindu: "https://schema.org/HinduDiet",
-  kosher: "https://schema.org/KosherDiet",
-  lowCalorie: "https://schema.org/LowCalorieDiet",
-  lowFat: "https://schema.org/LowFatDiet",
-  lowLactose: "https://schema.org/LowLactoseDiet",
-  lowSalt: "https://schema.org/LowSaltDiet",
-  vegan: "https://schema.org/VeganDiet",
-  vegetarian: "https://schema.org/VegetarianDiet",
-};
-
 type JsonLdKv = KVAccess & {
   put?: (key: string, value: string, options: { expirationTtl: number }) => Promise<void>;
 };
@@ -211,10 +199,19 @@ const offer = (amount: number, currency: string): JsonLdNode => ({
 
 const asDietUris = (value: unknown): string[] | undefined => {
   const uris = asStringArray(value)
-    ?.map((tag) => DIET_URIS[toCamelKey(tag)])
+    ?.map((tag) => dietUriForTag(tag))
     .filter((uri): uri is string => Boolean(uri));
   return uris?.length ? uris : undefined;
 };
+
+const dietUriForTag = (tag: string): string | undefined => {
+  const key = toCamelKey(tag);
+  if (!isDietaryTag(key)) return undefined;
+  return DIETARY_TAG_TO_SCHEMA_URI[key];
+};
+
+const isDietaryTag = (key: string): key is keyof typeof DIETARY_TAG_TO_SCHEMA_URI =>
+  key in DIETARY_TAG_TO_SCHEMA_URI;
 
 const firstActiveMenu = (menus: ListedContentItem[]): ListedContentItem | undefined =>
   menus.filter((menu) => menu.data.active !== false).sort(sortByPosition)[0];
