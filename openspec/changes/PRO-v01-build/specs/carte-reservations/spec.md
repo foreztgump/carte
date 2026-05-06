@@ -77,3 +77,23 @@ The reservations plugin SHALL render a sandbox-safe Block Kit admin page listing
 - **Then** pending and confirmed reservations are listed
 - **And** cancelled reservations are omitted
 - **And** the response uses `label` and `items`, not `text` or `stats`
+
+### Requirement: Reservation slots are read-time projections
+
+The reservations plugin SHALL derive available slots at read time from restaurant hours, reservation blocks, current bookings, and active holds, without persisting slot rows.
+
+#### Scenario: Slot generation subtracts mutable booking state
+
+- **Given** a restaurant has opening hours, closure blocks, a per-slot capacity override, current reservations, and active holds
+- **When** available reservation slots are computed for that date
+- **Then** slots outside hours and inside closure blocks are omitted
+- **And** remaining capacity is bounded by the default setting or per-slot override
+- **And** pending and confirmed bookings plus unexpired holds reduce remaining capacity
+- **And** cancelled bookings and expired holds do not reduce remaining capacity
+
+#### Scenario: Slot reads stay inside sandbox budgets
+
+- **Given** the worst-case day contains 5-minute reservation slots
+- **When** availability is computed at read time
+- **Then** the bounded read plan uses no more than 10 sandbox subrequests
+- **And** the pure slot projection completes under the 50ms CPU budget

@@ -39,7 +39,7 @@ describe("read-time reservation slots", () => {
 
     const slots = computeAvailableSlots({
       date: DATE,
-      now: "2026-05-06T15:00:00.000Z",
+      now: "2026-05-05T15:00:00.000Z",
       settings: { capacityPerSlot: 20, slotMinutes: 5, leadMinutes: 0 },
       hours: [{ weekday: WEDNESDAY, opensAt: "00:00", closesAt: "23:55" }],
       blocks: [],
