@@ -884,9 +884,12 @@ Per-field "✨ AI" buttons in the editor:
 
 - 14-day free trial starts on first chat interaction
 - Trial state in KV: `trial:{workspaceId} = { startedAt: ISO8601 }`
-- License check on every chat turn (cached 24hr): hit `license.carteplugin.dev/check?key={licenseKey}&workspace={id}`
-- Expired trial without license: chat panel shows "Subscribe to continue" CTA, MCP tools and inline actions still work for read operations only
-- License revoked: graceful degradation to read-only
+- License authority lives server-side at `license.carteplugin.dev`, implemented as a dedicated Cloudflare Worker backed by D1 for license, subscription, and workspace state
+- License check on every chat turn (cached 24hr): hit `license.carteplugin.dev/check?key={licenseKey}&workspace={id}` and persist the last known result in plugin KV as `license:{workspaceId}` with a 24-hour TTL
+- Billing provider recommendation: Lemon Squeezy owns checkout, renewals, cancellations, and license lifecycle events; the Carte license Worker consumes those events and answers runtime license checks
+- Graceful degrade on outage is mandatory: if the license Worker is unreachable, continue at the last cached trial/license state and never lock out restaurant operations because of a licensing outage
+- Expired trial without license: chat panel shows "Subscribe to continue" CTA, while MCP tools and inline actions remain read-only until a valid license is restored
+- License revoked: graceful degradation to read-only after the cached state expires or a fresh server check returns revoked
 
 ---
 
@@ -1020,7 +1023,7 @@ Out of scope for v0.1:
 2. **RESOLVED — Custom MCP tool registration API** — EmDash 0.9.0 has no public plugin-defined MCP tool registration API yet (`github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 ships plugin routes at `/_emdash/api/plugins/<id>/<route>` plus a standalone MCP wrapper Worker; see §"AI Layer" → "Surface 1: Operations as MCP tools".
 3. **Order-tracking notifications** — email is in v0.1. SMS/push needs a third-party (Twilio?) or PWA push API. Defer to v0.2.
 4. **Tax calculation** — Stripe Tax (built into Checkout) for US sales tax; manual override for VAT countries. Document the limit clearly: Carte does NOT do international tax. Use Stripe Tax or manual.
-5. **Free trial enforcement model** — local check (KV-based) is bypassable. Server-side check via license.carteplugin.dev is reliable but adds dependency. Recommend **server-side check with 24hr cache**, gracefully degrade if license server unreachable (not block the restaurant from running).
+5. **RESOLVED** — `@carte/ai` enforces trials and paid licenses through the server-side `license.carteplugin.dev` Worker + D1 service, caching the last known result for 24 hours in plugin KV and degrading to that cached state on outages so restaurant operations never lock out; see §"Trial & licensing".
 6. **GDPR / right-to-erasure** — Required from day one for guest data (reservations, orders). Ship export + erasure handlers in v0.1.
 7. **Plugin name "Carte" final lock** — verified clear in WP/CMS plugin space; confirm with developer.
 8. **Stripe Connect for v0.3 multi-location** — when shipping multi-location, do we use Stripe Connect (each location = separate Stripe account) or single account with metadata-based separation? Single account is simpler; Connect is correct for multi-owner. Defer decision to v0.3 design phase.
