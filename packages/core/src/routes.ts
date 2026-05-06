@@ -1,5 +1,7 @@
 import type { PluginRoute, RouteContext } from "emdash";
 
+import { createAdminRoute } from "./admin-pages.js";
+
 const PLUGIN_ID = "carte-core";
 
 const stubRoute =
@@ -10,10 +12,10 @@ const stubRoute =
   };
 
 export const routes = {
-  admin: { handler: stubRoute("admin") },
-  "admin/hours": { handler: stubRoute("admin/hours") },
-  "admin/restaurant": { handler: stubRoute("admin/restaurant") },
-  "admin/settings": { handler: stubRoute("admin/settings") },
+  admin: createAdminRoute("menus"),
+  "admin/hours": createAdminRoute("hours"),
+  "admin/restaurant": createAdminRoute("restaurant"),
+  "admin/settings": createAdminRoute("settings"),
   "menu-feed": { handler: stubRoute("menu-feed") },
   "schema-jsonld": { handler: stubRoute("schema-jsonld") },
 } satisfies Record<string, PluginRoute>;

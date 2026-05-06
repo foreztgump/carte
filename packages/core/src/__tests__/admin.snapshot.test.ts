@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { routes } from "../routes.js";
 
-import type { ContentItem, PaginatedResult, RouteContext } from "emdash";
+import type { RouteContext } from "emdash";
 
 const ADMIN_ROUTES = ["admin", "admin/restaurant", "admin/hours", "admin/settings"] as const;
 const FORBIDDEN_SECTION_MARKERS = ["**", "[", "]"] as const;
 
-const pageItems = (collection: string): PaginatedResult<ContentItem> => ({
+type ContentListResult = { items: Array<Record<string, unknown>>; hasMore: boolean };
+
+const pageItems = (collection: string): ContentListResult => ({
   items: [
     {
       id: `${collection}-1`,

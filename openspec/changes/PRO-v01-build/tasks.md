@@ -16,7 +16,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
   - Acceptance: A3.manifest.canonicalCaps, A3.manifest.validates, A3.hooks.beforeSave, A3.hooks.afterSave.waitUntil.
   - Tests: `packages/core/src/__tests__/index.test.ts`, `packages/core/src/__tests__/hooks.test.ts`.
   - Constraints: SRP per hook handler; no magic strings (collection prefix `carte_` as named const).
-- [ ] **f-m3-core-blockkit-admin** — Block Kit admin pages.
+- [x] **f-m3-core-blockkit-admin** — Block Kit admin pages.
   - Acceptance: A3.blockkit.canonical.
   - Tests: `packages/core/src/__tests__/admin.snapshot.test.ts`.
   - Constraints: `label` not `text`; `items` not `stats`; no markdown in section text; max 40 LoC per page builder.

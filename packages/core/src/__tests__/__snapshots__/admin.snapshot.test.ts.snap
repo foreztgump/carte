@@ -1,0 +1,231 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`@carte/core Block Kit admin pages > admin renders stable canonical Block Kit JSON 1`] = `
+{
+  "blocks": [
+    {
+      "id": "menus-intro",
+      "text": "Create menus, sections, and menu items for storefront display.",
+      "title": "Menu library",
+      "type": "section",
+    },
+    {
+      "id": "menus-summary-divider",
+      "type": "divider",
+    },
+    {
+      "id": "menus-summary",
+      "items": [
+        {
+          "label": "Menus",
+          "value": "1",
+        },
+        {
+          "label": "Sections",
+          "value": "1",
+        },
+        {
+          "label": "Items",
+          "value": "1",
+        },
+      ],
+      "label": "Menu summary",
+      "type": "metrics",
+    },
+    {
+      "id": "menus-actions-divider",
+      "type": "divider",
+    },
+    {
+      "id": "menus-actions",
+      "items": [
+        {
+          "action": "content.create.carte_menus",
+          "id": "create-menu",
+          "label": "Create menu",
+          "style": "primary",
+          "type": "button",
+        },
+        {
+          "action": "content.create.carte_menu_items",
+          "id": "create-item",
+          "label": "Create item",
+          "type": "button",
+        },
+      ],
+      "label": "Menu actions",
+      "type": "actions",
+    },
+  ],
+  "plugin": "carte-core",
+  "title": "Menus",
+  "type": "page",
+}
+`;
+
+exports[`@carte/core Block Kit admin pages > admin/hours renders stable canonical Block Kit JSON 1`] = `
+{
+  "blocks": [
+    {
+      "id": "hours-intro",
+      "text": "Maintain regular service windows and dated closures.",
+      "title": "Weekly hours",
+      "type": "section",
+    },
+    {
+      "id": "hours-summary-divider",
+      "type": "divider",
+    },
+    {
+      "id": "hours-summary",
+      "items": [
+        {
+          "label": "Weekly entries",
+          "value": "1",
+        },
+        {
+          "label": "Closures",
+          "value": "1",
+        },
+      ],
+      "label": "Hours summary",
+      "type": "metrics",
+    },
+    {
+      "id": "hours-actions-divider",
+      "type": "divider",
+    },
+    {
+      "id": "hours-actions",
+      "items": [
+        {
+          "action": "content.create.carte_hours",
+          "id": "add-hours",
+          "label": "Add hours",
+          "style": "primary",
+          "type": "button",
+        },
+        {
+          "action": "content.create.carte_closures",
+          "id": "add-closure",
+          "label": "Add closure",
+          "type": "button",
+        },
+      ],
+      "label": "Hours actions",
+      "type": "actions",
+    },
+  ],
+  "plugin": "carte-core",
+  "title": "Hours",
+  "type": "page",
+}
+`;
+
+exports[`@carte/core Block Kit admin pages > admin/restaurant renders stable canonical Block Kit JSON 1`] = `
+{
+  "blocks": [
+    {
+      "id": "restaurant-intro",
+      "text": "Manage public restaurant identity and contact details.",
+      "title": "Restaurant profile",
+      "type": "section",
+    },
+    {
+      "id": "restaurant-summary-divider",
+      "type": "divider",
+    },
+    {
+      "id": "restaurant-summary",
+      "items": [
+        {
+          "label": "Profiles",
+          "value": "1",
+        },
+      ],
+      "label": "Restaurant summary",
+      "type": "metrics",
+    },
+    {
+      "id": "restaurant-actions-divider",
+      "type": "divider",
+    },
+    {
+      "id": "restaurant-actions",
+      "items": [
+        {
+          "action": "content.edit.carte_restaurants",
+          "id": "edit-restaurant",
+          "label": "Edit restaurant",
+          "style": "primary",
+          "type": "button",
+        },
+      ],
+      "label": "Restaurant actions",
+      "type": "actions",
+    },
+  ],
+  "plugin": "carte-core",
+  "title": "Restaurant",
+  "type": "page",
+}
+`;
+
+exports[`@carte/core Block Kit admin pages > admin/settings renders stable canonical Block Kit JSON 1`] = `
+{
+  "blocks": [
+    {
+      "id": "settings-intro",
+      "text": "Configure currency, locale, timezone, and x402 wallet details.",
+      "title": "Carte settings",
+      "type": "section",
+    },
+    {
+      "id": "cloudflare-free-warning-divider",
+      "type": "divider",
+    },
+    {
+      "id": "cloudflare-free-warning",
+      "text": "Cloudflare Free means sandboxed isolation is degraded and plugins run trusted. See EmDash Issue #149.",
+      "title": "Cloudflare Free warning",
+      "type": "section",
+    },
+    {
+      "id": "settings-summary-divider",
+      "type": "divider",
+    },
+    {
+      "id": "settings-summary",
+      "items": [
+        {
+          "label": "Settings records",
+          "value": "1",
+        },
+      ],
+      "label": "Settings summary",
+      "type": "metrics",
+    },
+    {
+      "id": "settings-actions-divider",
+      "type": "divider",
+    },
+    {
+      "id": "settings-actions",
+      "items": [
+        {
+          "action": "content.edit.carte_settings",
+          "id": "edit-settings",
+          "label": "Edit settings",
+          "style": "warning",
+          "type": "button",
+        },
+      ],
+      "label": "Settings actions",
+      "type": "actions",
+    },
+  ],
+  "plugin": "carte-core",
+  "title": "Settings",
+  "type": "page",
+}
+`;
