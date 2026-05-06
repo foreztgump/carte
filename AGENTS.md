@@ -26,7 +26,7 @@ Carte ships 6 plugins on the EmDash plugin SDK (target v0.9.x — verify before 
 - **Block Kit gotchas**: use `label` not `text`; use `items` not `stats`; no markdown in section text; no HTTP redirects from plugin routes.
 - **No raw SQL** — plugins use `ctx.content.*`. Plugin KV is auto-scoped; do not declare it in the manifest.
 - **Plugin routes mount at** `/_emdash/api/plugins/<plugin-id>/<route>`. Never assume root paths or hardcode prefixes.
-- **Capability naming is unresolved**: Cloudflare blog uses `read:content`, `network:fetch`; repo SKILL.md uses `content:read`, `network:request`. Open question — lock with EmDash maintainers before code lock; do not pick silently.
+- **Capability naming is locked**: use only canonical resource:verb names from `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md` — `content:read`, `content:write`, `media:read`, `media:write`, `network:request` / `network:request:unrestricted`, `email:send`, `users:read`, plus `hooks.<x>:register` forms.
 - **Cloudflare Free plan has no Dynamic Workers** — sandboxed plugins lose isolation on Free. Document this in plugin READMEs and surface in install flow.
 - **Stripe webhook MUST be idempotent**: dedupe via KV `idempotency:{stripeEventId}` with 7-day TTL. Re-deliveries are routine, not exceptional.
 - **Reservation capacity uses KV atomic decrement** — race-safe pattern is non-negotiable. No read-modify-write on capacity counters.
@@ -89,4 +89,4 @@ After every implementation, check and update: README.md, CHANGELOG.md, API docs,
 ## Reference Documents
 - `PRD.md` — full v0.1 product requirements (~1040 lines, exhaustive spec for all 6 plugins)
 - `research/` — supporting research notes (EmDash SDK behavior, Cloudflare Workers limits, Stripe integration patterns)
-- **Open Questions**: PRD §"Open Questions" lists 12 items that MUST be resolved before code lock — including capability naming (`read:content` vs `content:read`), MCP tool registration API surface, and free-trial enforcement strategy for `@carte/ai`. Do not assume defaults; surface and resolve with EmDash maintainers and the product owner.
+- **Open Questions**: PRD §"Open Questions" lists 12 items that MUST be resolved before code lock — including MCP tool registration API surface and free-trial enforcement strategy for `@carte/ai`. Follow the locked canonical capability names from the EmDash SKILL.md source of truth rather than any deprecated aliases.

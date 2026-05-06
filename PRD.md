@@ -60,7 +60,7 @@ These are non-negotiable runtime realities that shape every decision below.
 10. **MCP is core** — `ctx.content.*` operations are MCP-exposed automatically. Custom MCP tool registration API needs verification (open question).
 11. **x402 is core** — micropayment gating is configured per content item; no plugin capability.
 
-Verified capabilities used (Cloudflare-blog canonical naming): `read:content`, `write:content`, `read:media`, `network:fetch` (with `allowedHosts`), `email:send`. Capability naming inconsistency between docs noted; lock against EmDash maintainers before code lock.
+Verified capabilities used (per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`): `content:read`, `content:write`, `media:read`, `network:request` (with `allowedHosts`), `email:send`.
 
 ---
 
@@ -96,7 +96,7 @@ import { definePlugin } from "emdash";
 export default () => definePlugin({
   id: "carte-core",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "read:media"],
+  capabilities: ["content:read", "content:write", "media:read"],
   // No external network, no email — fully self-contained
   hooks: {
     "content:beforeSave": async (event, ctx) => {
@@ -133,7 +133,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-reservations",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "email:send"],
+  capabilities: ["content:read", "content:write", "email:send"],
   hooks: {
     "content:afterSave": async (event, ctx) => {
       if (event.collection !== "carte_reservations") return;
@@ -164,7 +164,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-orders-backend",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "email:send", "network:fetch"],
+  capabilities: ["content:read", "content:write", "email:send", "network:request"],
   allowedHosts: ["api.stripe.com", "checkout.stripe.com"],
   hooks: {
     "content:afterSave": async (event, ctx) => {
@@ -198,7 +198,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-orders-admin",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content"],
+  capabilities: ["content:read", "content:write"],
   hooks: {},
   routes: ["modifier-update", "order-state-change"],  // called by React admin
   admin: {
@@ -216,7 +216,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-ai",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "network:fetch"],
+  capabilities: ["content:read", "content:write", "network:request"],
   allowedHosts: [
     "api.anthropic.com",
     "api.openai.com",
@@ -808,7 +808,7 @@ Each tool has JSON Schema + examples + natural-language description for the LLM 
 Persistent panel in EmDash admin (when `@carte/ai` installed):
 
 - BYO API key per workspace (Anthropic / OpenAI / Gemini)
-- Calls go through `network:fetch` to declared LLM hostnames
+- Calls go through `network:request` to declared LLM hostnames
 - Chat history in plugin KV scoped per user, 30-day retention
 - All write actions show diff preview + confirm UI
 - Per-tool "auto-approve" flag for trusted users
@@ -1012,7 +1012,7 @@ Out of scope for v0.1:
 
 ## Open Questions
 
-1. **Capability naming source of truth** — Cloudflare blog uses `read:content` / `write:content` / `network:fetch`; the repo's SKILL.md uses `content:read` / `content:write` / `network:request`. Lock with EmDash maintainers before code lock.
+1. **RESOLVED — Capability naming source of truth** — Carte standardizes on `content:read`, `content:write`, `media:read`, `media:write`, and `network:request`, following `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. All manifest examples and capability references in this PRD use those canonical resource:verb names.
 2. **Custom MCP tool registration API** — confirm 0.6.x API for plugins to register MCP tools. If absent, file upstream feature request and ship REST + standalone MCP wrapper as interim.
 3. **Order-tracking notifications** — email is in v0.1. SMS/push needs a third-party (Twilio?) or PWA push API. Defer to v0.2.
 4. **Tax calculation** — Stripe Tax (built into Checkout) for US sales tax; manual override for VAT countries. Document the limit clearly: Carte does NOT do international tax. Use Stripe Tax or manual.
