@@ -1,0 +1,25 @@
+Carte AI (@carte/ai) — Commercial Plugin
+
+Copyright (c) 2026 Carte contributors.
+
+This package is distributed under a commercial license. Use of this software
+in production requires a paid subscription via Lemon Squeezy. A 14-day free
+trial is available for evaluation purposes.
+
+Source code in this package is published in the Carte repository for
+transparency and security review. It is NOT licensed under MIT or any
+open-source license. Forking, redistribution, or running this software in
+production without a valid subscription violates the license terms.
+
+The other Carte plugins (@carte/core, @carte/reservations,
+@carte/orders-backend, @carte/orders-admin, @carte/views) ARE licensed under
+MIT — see the root LICENSE file. This commercial NOTICE applies only to the
+contents of the packages/ai/ directory.
+
+For full licensing terms, billing details, and the trial flow, see
+<https://carteplugin.dev/license>. (The carteplugin.dev domain is not yet
+live as of v0.1; this URL is the planned canonical home for the license
+terms and will be populated before the @carte/ai mission ships.)
+
+For licensing questions before the public site is live, open a GitHub issue
+on foreztgump/carte with the "license" label.

@@ -1,0 +1,16 @@
+# Carte plugin family — local development secrets template.
+#
+# Copy this file to `.dev.vars` (gitignored) and fill in real values for
+# local development. NEVER commit `.dev.vars`. NEVER put real values here.
+# `wrangler dev` reads `.dev.vars` for each sandboxed package; the EmDash
+# host injects them into `ctx.env` at runtime.
+
+# Stripe (orders-backend)
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PUBLIC_KEY=
+
+# License server (ai) — LICENSE_SERVER_URL is a public hostname, not a secret.
+LICENSE_SERVER_URL=https://license.carteplugin.dev
+LEMON_SQUEEZY_API_KEY=
+LEMON_SQUEEZY_WEBHOOK_SECRET=
