@@ -747,7 +747,11 @@ EmDash core handles x402. Carte contributes:
 
 ### Surface 1: Operations as MCP tools
 
-Confirm exact EmDash API for plugins to register custom MCP tools (open question for finalization). Interim: REST routes + standalone MCP wrapper installed by the user into their MCP client.
+EmDash 0.9.0 does not expose a public custom MCP tool registration API yet (upstream feature request: `github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 therefore ships an interim integration:
+
+- Plugin routes mounted at `/_emdash/api/plugins/<plugin-id>/<route>` for every AI-facing write or query surface.
+- A standalone MCP wrapper Worker, installed by the operator into their MCP client, that proxies MCP tool calls to those plugin routes.
+- When EmDash ships first-class custom MCP tool registration, Carte migrates the wrapper to the native API and removes the proxy layer in a follow-up release.
 
 Tools to expose:
 
@@ -1013,7 +1017,7 @@ Out of scope for v0.1:
 ## Open Questions
 
 1. **RESOLVED — Capability naming source of truth** — Carte standardizes on `content:read`, `content:write`, `media:read`, `media:write`, and `network:request`, following `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. All manifest examples and capability references in this PRD use those canonical resource:verb names.
-2. **Custom MCP tool registration API** — confirm 0.6.x API for plugins to register MCP tools. If absent, file upstream feature request and ship REST + standalone MCP wrapper as interim.
+2. **RESOLVED — Custom MCP tool registration API** — EmDash 0.9.0 has no public plugin-defined MCP tool registration API yet (`github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 ships plugin routes at `/_emdash/api/plugins/<id>/<route>` plus a standalone MCP wrapper Worker; see §"AI Layer" → "Surface 1: Operations as MCP tools".
 3. **Order-tracking notifications** — email is in v0.1. SMS/push needs a third-party (Twilio?) or PWA push API. Defer to v0.2.
 4. **Tax calculation** — Stripe Tax (built into Checkout) for US sales tax; manual override for VAT countries. Document the limit clearly: Carte does NOT do international tax. Use Stripe Tax or manual.
 5. **Free trial enforcement model** — local check (KV-based) is bypassable. Server-side check via license.carteplugin.dev is reliable but adds dependency. Recommend **server-side check with 24hr cache**, gracefully degrade if license server unreachable (not block the restaurant from running).
