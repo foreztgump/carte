@@ -48,18 +48,30 @@ Carte agent configs.
 
 Recorded by Task 8. Captured to `/tmp/agentshield-baseline.txt`.
 
-**Status:** _filled in after the scan runs_ — see "Status update" at
-the bottom of this file. The text below describes the three possible
-outcomes and how each is interpreted:
+**Result (local, executed during this feature):**
 
-- **Zero findings:** confirms the local environment is clean. `continue-
-on-error: true` STAYS until CI confirms the same across multiple
-  runs.
-- **>0 findings:** list severity counts and the decision to defer
-  triage. `continue-on-error: true` STAYS.
-- **Tool unavailable (404 / not installed):** document the unavailability
-  and rely on CI as the first execution site. `continue-on-error: true`
-  STAYS.
+- `.factory/` — **20 low-severity findings, 0 medium/high/critical**.
+  All 20 are "Skill is missing observation hooks / version metadata"
+  notes against `.factory/commands/opsx-*.md` example skill configs.
+  Runtime confidence is `docs/example`, not active runtime exposure.
+- `.claude/` — **0 findings** of any severity.
+
+**Decision:** keep `continue-on-error: true` on both AgentShield CI
+steps. Rationale per SKILL: the flag stays ON until baseline is
+confirmed clean across CI runs, AND triaging the 20 low-severity
+opsx-\* skill metadata notes is out of M2 scope (those skills are
+mission-lane infra owned by the orchestrator's `.factory/` layout, not
+Carte product code). A future change record will (a) decide whether to
+backfill skill metadata or suppress the finding class, and (b) flip the
+flag once that decision lands.
+
+**CLI shape note (deviation from SKILL template):** the SKILL example
+shows `npx ecc-agentshield scan .factory/ .claude/` (positional args).
+The installed CLI (`ecc-agentshield` 0.x) only accepts `-p <path>` and
+refuses positional args ("too many arguments for 'scan'. Expected 0
+arguments but got 2"). The workflow therefore invokes two separate
+steps, one per directory, using the `-p` form. This is a no-op
+syntactic correction; the security coverage is unchanged.
 
 ## Decision: Changesets `commit: false` + GitHub changelog plugin
 
@@ -153,5 +165,6 @@ that haven't landed yet), that's their change record, not ours.
 
 ## Status update — AgentShield baseline (filled at Task 8 execution time)
 
-See "AgentShield baseline" section above; the executable scan output
-is appended below by Task 8.
+See "AgentShield baseline" section above. The executable scan output
+is captured at `/tmp/agentshield-baseline.txt` (worker session only —
+not committed).

@@ -24,15 +24,21 @@
   6. `pnpm -r lint`
   7. `pnpm -r build --if-present`
   8. `pnpm -r test`
-  9. `npx ecc-agentshield scan .factory/ .claude/`
-     (with `continue-on-error: true`).
+  9. AgentShield scan of `.factory/` via `npx --yes
+ecc-agentshield scan -p .factory/` (with
+     `continue-on-error: true`).
+  10. AgentShield scan of `.claude/` via `npx --yes
+ecc-agentshield scan -p .claude/` (with
+      `continue-on-error: true`).
 
 ### Fulfills
 
 - `A2.ci.workflow` — CI workflow file exists, parses, and runs the
   documented quality gauntlet on PR + push to main.
-- `A2.security.agentShield` — CI step invokes
-  `npx ecc-agentshield scan .factory/ .claude/`.
+- `A2.security.agentShield` — CI invokes
+  `npx --yes ecc-agentshield scan -p .factory/` and `... -p .claude/`
+  (two steps; the installed CLI requires the `-p` flag rather than
+  positional paths — see design.md).
 
 ## Capability: Changesets supports independent per-plugin semver
 
