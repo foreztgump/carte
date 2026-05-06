@@ -44,6 +44,9 @@ Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constra
 | `@carte/views` | MIT (npm peer-dep) | Astro components |
 | `@carte/ai` | Commercial $99/yr (14-day trial) | Native React |
 
+## Stack Pins (locked 2026-05-06)
+- EmDash plugin SDK: pinned to `^0.9.0` (released 2026-05-01). Avoid `emdash@1.0.0` — it is on npm but not `latest`-tagged, and it removes `locals.emdash.invalidateManifest`, which Carte may rely on.
+
 Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
 
 ## Existing Conventions
