@@ -1,0 +1,16 @@
+name = "carte-core"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV bindings — placeholder ids; the deploy mission will substitute real
+# 32-character hex ids produced by `wrangler kv:namespace create PLUGIN_KV`.
+[[kv_namespaces]]
+binding = "PLUGIN_KV"
+id = "PLACEHOLDER_KV_ID"
+preview_id = "PLACEHOLDER_PREVIEW_KV_ID"
+
+# Per-env overrides. Empty bodies inherit the top-level config.
+[env.development]
+[env.preview]
+[env.production]
