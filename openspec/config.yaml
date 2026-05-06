@@ -54,8 +54,8 @@ context: |
 
   Plugin runtime split:
     - Sandboxed plugins (HARD limits): 50ms CPU per invocation, 10 subrequests
-      max. No raw SQL — use ctx.content.* exclusively. KV is plugin-scoped
-      automatically.
+      max, 30s wall time, ~128MB memory. No raw SQL — use ctx.content.*
+      exclusively. KV is plugin-scoped automatically.
     - Native plugins: uncapped runtime; React allowed for admin UI.
 
   Capabilities used (canonical resource:verb naming):

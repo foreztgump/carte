@@ -885,7 +885,7 @@ Per-field "✨ AI" buttons in the editor:
 - 14-day free trial starts on first chat interaction
 - Trial state in KV: `trial:{workspaceId} = { startedAt: ISO8601 }`
 - License authority lives server-side at `license.carteplugin.dev`, implemented as a dedicated Cloudflare Worker backed by D1 for license, subscription, and workspace state
-- License check on every chat turn (cached 24hr): hit `license.carteplugin.dev/check?key={licenseKey}&workspace={id}` and persist the last known result in plugin KV as `license:{workspaceId}` with a 24-hour TTL
+- License check on every chat turn (cached 24hr): `POST license.carteplugin.dev/check` with the license key in the `Authorization: Bearer {licenseKey}` header and `{ workspaceId }` in the JSON body, then persist the last known result in plugin KV as `license:{workspaceId}` with a 24-hour TTL. Never place the license key in the URL or query string — query parameters are routinely logged by Cloudflare's edge, intermediary proxies, and referrer headers
 - Billing provider recommendation: Lemon Squeezy owns checkout, renewals, cancellations, and license lifecycle events; the Carte license Worker consumes those events and answers runtime license checks
 - Graceful degrade on outage is mandatory: if the license Worker is unreachable, continue at the last cached trial/license state and never lock out restaurant operations because of a licensing outage
 - Expired trial without license: chat panel shows "Subscribe to continue" CTA, while MCP tools and inline actions remain read-only until a valid license is restored
