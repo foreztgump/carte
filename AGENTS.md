@@ -19,15 +19,15 @@ strategic programming. See CODE_PRINCIPLES.md for full details.
 # boundaries, fallback values, platform constraints. Pull from audit_findings.
 
 ## EmDash Plugin Constraints
-Carte ships 6 plugins on the EmDash plugin SDK (target v0.9.x — verify before lock). The constraints below are non-negotiable; violating any one is grounds for blocking review.
+Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constraints below are non-negotiable; violating any one is grounds for blocking review.
 
-- **Sandboxed CPU/subrequest budget is HARD**: 50ms CPU + 10 subrequests per invocation. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
+- **Sandboxed runtime budget is HARD**: 50ms CPU + 10 subrequests + 30s wall time + ~128MB memory per invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
 - **`ctx.waitUntil` / `after()` is mandatory** for any async work that must run after the response is returned (EmDash Issue #710). Fire-and-forget without it will be killed mid-flight.
 - **Block Kit gotchas**: use `label` not `text`; use `items` not `stats`; no markdown in section text; no HTTP redirects from plugin routes.
 - **No raw SQL** — plugins use `ctx.content.*`. Plugin KV is auto-scoped; do not declare it in the manifest.
 - **Plugin routes mount at** `/_emdash/api/plugins/<plugin-id>/<route>`. Never assume root paths or hardcode prefixes.
-- **Capability naming is unresolved**: Cloudflare blog uses `read:content`, `network:fetch`; repo SKILL.md uses `content:read`, `network:request`. Open question — lock with EmDash maintainers before code lock; do not pick silently.
-- **Cloudflare Free plan has no Dynamic Workers** — sandboxed plugins lose isolation on Free. Document this in plugin READMEs and surface in install flow.
+- **Capability naming is locked**: use only canonical resource:verb names from `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md` — `content:read`, `content:write`, `media:read`, `media:write`, `network:request` / `network:request:unrestricted`, `email:send`, `users:read`, plus `hooks.<x>:register` forms.
+- **Cloudflare Free plan has no Dynamic Workers** — Cloudflare Free cannot host sandboxed plugins (see `emdash` Issue #149), so sandboxed plugins lose isolation and run trusted on Free. Document this in plugin READMEs and surface in install flow.
 - **Stripe webhook MUST be idempotent**: dedupe via KV `idempotency:{stripeEventId}` with 7-day TTL. Re-deliveries are routine, not exceptional.
 - **Reservation capacity uses KV atomic decrement** — race-safe pattern is non-negotiable. No read-modify-write on capacity counters.
 - **AI plugin contract**: read-by-default, write-on-confirm. PII never leaves to LLM without explicit user consent — enforce at the tool-call boundary, not in prompts.
@@ -44,7 +44,10 @@ Carte ships 6 plugins on the EmDash plugin SDK (target v0.9.x — verify before 
 | `@carte/views` | MIT (npm peer-dep) | Astro components |
 | `@carte/ai` | Commercial $99/yr (14-day trial) | Native React |
 
-Stack: TypeScript, EmDash plugin SDK (target v0.9.x), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
+## Stack Pins (locked 2026-05-06)
+- EmDash plugin SDK: pinned to `^0.9.0` (released 2026-05-01). Avoid `emdash@1.0.0` — it is on npm but not `latest`-tagged, and it removes `locals.emdash.invalidateManifest`, which Carte may rely on.
+
+Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
 
 ## Existing Conventions
 [Document what was found, not what we wish existed]
@@ -54,9 +57,9 @@ Stack: TypeScript, EmDash plugin SDK (target v0.9.x), Cloudflare Workers (D1/R2/
 
 ## Linear Integration
 - **Repo Label**: `repo:carte` — all issues MUST have this label
-- **Project**: `CART` (PLANNED — Linear not yet configured; PREFIX is TBD pending Linear setup, treat `CART` as the working assumption)
-- **Branch**: `feature/CART-XXX-desc` or `fix/CART-XXX-desc`
-- **Commit**: `type(scope): desc [CART-XXX]`
+- **Project**: `CART` (working project assumption only; if the Linear team key is ever renamed in future, revisit this separately)
+- **Branch**: `feature/PRO-XXX-desc` or `fix/PRO-XXX-desc`
+- **Commit**: `type(scope): desc [PRO-XXX]`
 
 ## Tool Workflow
 - **Research**: Context7 (`resolve-library-id` → `query-docs`) → Tavily (`tavily_search`, `tavily_extract`, `tavily_research`, `tavily_crawl`, `tavily_map`) → OpenMemory (`openmemory query`). Never use built-in WebSearch or WebFetch.
@@ -72,7 +75,7 @@ Mandatory at every workflow phase boundary. Run `openmemory query` before starti
 See `skills/openmemory_checkpoints` for the full checkpoint schedule.
 
 ## Workflows
-- `/work CART-XXX` — Linear issue to PR
+- `/work PRO-XXX` — Linear issue to PR
 - `/work-local '<description>'` — standalone workflow
 - `/resume` — continue where you left off
 - `/fix '<bug>'` — debug and fix
@@ -89,4 +92,4 @@ After every implementation, check and update: README.md, CHANGELOG.md, API docs,
 ## Reference Documents
 - `PRD.md` — full v0.1 product requirements (~1040 lines, exhaustive spec for all 6 plugins)
 - `research/` — supporting research notes (EmDash SDK behavior, Cloudflare Workers limits, Stripe integration patterns)
-- **Open Questions**: PRD §"Open Questions" lists 12 items that MUST be resolved before code lock — including capability naming (`read:content` vs `content:read`), MCP tool registration API surface, and free-trial enforcement strategy for `@carte/ai`. Do not assume defaults; surface and resolve with EmDash maintainers and the product owner.
+- **Open Questions**: PRD §"Open Questions" lists 12 items that MUST be resolved before code lock — including MCP tool registration API surface and free-trial enforcement strategy for `@carte/ai`. Follow the locked canonical capability names from the EmDash SKILL.md source of truth rather than any deprecated aliases.

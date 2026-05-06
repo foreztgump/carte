@@ -41,8 +41,9 @@ context: |
 
   Tech stack (verified):
     - Language: TypeScript
-    - Host platform: EmDash — target v0.9.x (UNVERIFIED, PRD says "verify before
-      lock"; do not lock to a specific patch version yet)
+    - Host platform: EmDash plugin SDK pinned to ^0.9.0 (released 2026-05-01).
+      Carte avoids emdash@1.0.0 because it is not latest-tagged and removes
+      locals.emdash.invalidateManifest, which Carte may rely on.
     - Runtime: Cloudflare Workers (D1, R2, KV, Dynamic Workers,
       ctx.waitUntil/after())
     - Storefront: Astro
@@ -53,16 +54,13 @@ context: |
 
   Plugin runtime split:
     - Sandboxed plugins (HARD limits): 50ms CPU per invocation, 10 subrequests
-      max. No raw SQL — use ctx.content.* exclusively. KV is plugin-scoped
-      automatically.
+      max, 30s wall time, ~128MB memory. No raw SQL — use ctx.content.*
+      exclusively. KV is plugin-scoped automatically.
     - Native plugins: uncapped runtime; React allowed for admin UI.
 
-  Capabilities used (Cloudflare-blog canonical naming):
-    read:content, write:content, read:media, network:fetch (with allowedHosts),
-    email:send.
-    NOTE (open question): SKILL.md uses content:read / content:write /
-    network:request — naming source-of-truth must be locked with EmDash
-    maintainers before code lock.
+  Capabilities used (canonical resource:verb naming):
+    content:read, content:write, media:read, network:request (with
+    allowedHosts), email:send.
 
   Plugin route convention:
     /_emdash/api/plugins/<plugin-id>/<route>
@@ -88,6 +86,12 @@ context: |
     - All Stripe card data stays in Stripe Checkout; PCI scope is "we accept
       webhooks" only
     - Menu content uses Portable Text; never HTML strings
+
+stack:
+  emdashPluginSdk:
+    version: "^0.9.0"
+    released: "2026-05-01"
+    rationale: "Avoid emdash@1.0.0 because it is not latest-tagged and removes locals.emdash.invalidateManifest, which Carte may rely on."
 
 rules:
   proposal:

@@ -1,7 +1,7 @@
 # PRD: Carte — Restaurant Plugin for EmDash
 
 > **Status:** Draft v0.1 · **Owner:** Claudeflare · **Last updated:** 2026-04-29
-> **EmDash target:** v0.9.x (verify before lock)
+> **EmDash target:** ^0.9.0
 
 ---
 
@@ -49,18 +49,18 @@ This shifts v0.1 scope from 6 weeks to 12 weeks. Acceptable trade — single coh
 These are non-negotiable runtime realities that shape every decision below.
 
 1. **Two plugin formats:** standard (sandboxed, Block Kit JSON admin) vs. native (locally-registered, React allowed).
-2. **Sandbox runtime limits:** 50ms CPU, 10 subrequests per invocation. Trusted (native or self-hosted Node) plugins are uncapped.
+2. **Sandbox runtime limits:** 50ms CPU, 10 subrequests, 30s wall time, and ~128MB memory per sandboxed plugin invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Trusted (native or self-hosted Node) plugins are uncapped.
 3. **`ctx.waitUntil` / `after()` mandatory** for any async work after the response (Issue #710).
 4. **Block Kit gotchas:** `label` not `text`, `items` not `stats`, no markdown in section text, no HTTP redirects from plugin routes.
-5. **Cloudflare Free plan:** No Dynamic Workers — sandboxed plugins lose isolation.
+5. **Cloudflare Free plan:** No Dynamic Workers — Cloudflare Free cannot host sandboxed plugins, so standard plugins lose isolation and run trusted instead.
 6. **Self-hosted Node:** Plugins run in-process; sandbox pitch applies fully only on Cloudflare.
 7. **Plugin routes mount at:** `/_emdash/api/plugins/<plugin-id>/<route>`.
 8. **No raw SQL** — plugins use `ctx.content.*`.
 9. **`ctx.kv` is plugin-scoped automatically** — no declaration required.
-10. **MCP is core** — `ctx.content.*` operations are MCP-exposed automatically. Custom MCP tool registration API needs verification (open question).
+10. **MCP is core** — `ctx.content.*` operations are MCP-exposed automatically. Custom MCP tool registration remains an open question until the v0.1 interim plan is applied.
 11. **x402 is core** — micropayment gating is configured per content item; no plugin capability.
 
-Verified capabilities used (Cloudflare-blog canonical naming): `read:content`, `write:content`, `read:media`, `network:fetch` (with `allowedHosts`), `email:send`. Capability naming inconsistency between docs noted; lock against EmDash maintainers before code lock.
+Verified capabilities used (per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`): `content:read`, `content:write`, `media:read`, `network:request` (with `allowedHosts`), `email:send`.
 
 ---
 
@@ -96,7 +96,7 @@ import { definePlugin } from "emdash";
 export default () => definePlugin({
   id: "carte-core",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "read:media"],
+  capabilities: ["content:read", "content:write", "media:read"],
   // No external network, no email — fully self-contained
   hooks: {
     "content:beforeSave": async (event, ctx) => {
@@ -133,7 +133,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-reservations",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "email:send"],
+  capabilities: ["content:read", "content:write", "email:send"],
   hooks: {
     "content:afterSave": async (event, ctx) => {
       if (event.collection !== "carte_reservations") return;
@@ -164,7 +164,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-orders-backend",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "email:send", "network:fetch"],
+  capabilities: ["content:read", "content:write", "email:send", "network:request"],
   allowedHosts: ["api.stripe.com", "checkout.stripe.com"],
   hooks: {
     "content:afterSave": async (event, ctx) => {
@@ -198,7 +198,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-orders-admin",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content"],
+  capabilities: ["content:read", "content:write"],
   hooks: {},
   routes: ["modifier-update", "order-state-change"],  // called by React admin
   admin: {
@@ -216,7 +216,7 @@ export default () => definePlugin({
 export default () => definePlugin({
   id: "carte-ai",
   version: "0.1.0",
-  capabilities: ["read:content", "write:content", "network:fetch"],
+  capabilities: ["content:read", "content:write", "network:request"],
   allowedHosts: [
     "api.anthropic.com",
     "api.openai.com",
@@ -747,7 +747,11 @@ EmDash core handles x402. Carte contributes:
 
 ### Surface 1: Operations as MCP tools
 
-Confirm exact EmDash API for plugins to register custom MCP tools (open question for finalization). Interim: REST routes + standalone MCP wrapper installed by the user into their MCP client.
+EmDash 0.9.0 does not expose a public custom MCP tool registration API yet (upstream feature request: `github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 therefore ships an interim integration:
+
+- Plugin routes mounted at `/_emdash/api/plugins/<plugin-id>/<route>` for every AI-facing write or query surface.
+- A standalone MCP wrapper Worker, installed by the operator into their MCP client, that proxies MCP tool calls to those plugin routes.
+- When EmDash ships first-class custom MCP tool registration, Carte migrates the wrapper to the native API and removes the proxy layer in a follow-up release.
 
 Tools to expose:
 
@@ -808,7 +812,7 @@ Each tool has JSON Schema + examples + natural-language description for the LLM 
 Persistent panel in EmDash admin (when `@carte/ai` installed):
 
 - BYO API key per workspace (Anthropic / OpenAI / Gemini)
-- Calls go through `network:fetch` to declared LLM hostnames
+- Calls go through `network:request` to declared LLM hostnames
 - Chat history in plugin KV scoped per user, 30-day retention
 - All write actions show diff preview + confirm UI
 - Per-tool "auto-approve" flag for trusted users
@@ -880,9 +884,12 @@ Per-field "✨ AI" buttons in the editor:
 
 - 14-day free trial starts on first chat interaction
 - Trial state in KV: `trial:{workspaceId} = { startedAt: ISO8601 }`
-- License check on every chat turn (cached 24hr): hit `license.carteplugin.dev/check?key={licenseKey}&workspace={id}`
-- Expired trial without license: chat panel shows "Subscribe to continue" CTA, MCP tools and inline actions still work for read operations only
-- License revoked: graceful degradation to read-only
+- License authority lives server-side at `license.carteplugin.dev`, implemented as a dedicated Cloudflare Worker backed by D1 for license, subscription, and workspace state
+- License check on every chat turn (cached 24hr): `POST license.carteplugin.dev/check` with the license key in the `Authorization: Bearer {licenseKey}` header and `{ workspaceId }` in the JSON body, then persist the last known result in plugin KV as `license:{workspaceId}` with a 24-hour TTL. Never place the license key in the URL or query string — query parameters are routinely logged by Cloudflare's edge, intermediary proxies, and referrer headers
+- Billing provider recommendation: Lemon Squeezy owns checkout, renewals, cancellations, and license lifecycle events; the Carte license Worker consumes those events and answers runtime license checks
+- Graceful degrade on outage is mandatory: if the license Worker is unreachable, continue at the last cached trial/license state and never lock out restaurant operations because of a licensing outage
+- Expired trial without license: chat panel shows "Subscribe to continue" CTA, while MCP tools and inline actions remain read-only until a valid license is restored
+- License revoked: graceful degradation to read-only after the cached state expires or a fresh server check returns revoked
 
 ---
 
@@ -912,7 +919,7 @@ Plugin-to-plugin isolation: a vulnerability in `@carte/ai` (talks to LLMs) canno
 
 **Native-format plugins** (`@carte/orders-admin`, `@carte/ai`) are NOT sandboxed. They're trusted code, installed with explicit trust grant. We document this clearly at install time.
 
-**On Cloudflare Free plan:** Dynamic Workers unavailable; standard plugins run trusted. Carte marketing accurately reflects this.
+**On Cloudflare Free plan:** Dynamic Workers are unavailable, so Cloudflare Free cannot host sandboxed plugins at all (`emdash` Issue #149). Standard plugins therefore run trusted instead, and Carte's install flow and marketing must surface that loss of isolation before operators choose a free-plan deployment.
 
 **PCI compliance:** Stripe Checkout handles all card data. Card details never touch our infrastructure. PCI scope minimized to "we accept Stripe webhooks."
 
@@ -933,17 +940,14 @@ Plugin-to-plugin isolation: a vulnerability in `@carte/ai` (talks to LLMs) canno
 
 ## Competitive Analysis
 
-| Plugin | Installs | Strengths | Weaknesses (vs Carte) |
-|---|---|---|---|
-| **WPCafe** | 30K+ | Visual table layout, complete cafe UX | No isolation, no AI, slow on large menus |
-| **FoodMaster** | 10K+ restaurants | Most complete (POS, KDS, multi-location) | Heavy footprint, $499/yr, no AI |
-| **Orderable** | 10K+ | Best mobile checkout | No reservations, no menu builder for non-WC sites |
-| **GloriaFood** | Multi-million restaurants | Free, fast setup | Proprietary widget, no real customization, no AI |
-| **RestroFood** | 4K+ restaurants | All-in-one with add-ons | Newer, smaller community |
-| **Five Star Restaurant Reservations** | Most-installed reservations | Free, simple | Reservations only, no menu/orders |
-| **Toast / Square POS** | Industry standard | Full restaurant ops | Not a website plugin; proprietary; expensive |
+Detailed evidence-grounded teardowns of the three closest WordPress competitors live in:
 
-**Carte's positioning:** *"FoodMaster's depth, Orderable's mobile UX, with native AI workflow and Cloudflare-edge speed."*
+- [`docs/competitive-analysis/latepoint.md`](docs/competitive-analysis/latepoint.md) — reservations
+- [`docs/competitive-analysis/orderable-pro.md`](docs/competitive-analysis/orderable-pro.md) — orders + mobile checkout
+- [`docs/competitive-analysis/restrofood.md`](docs/competitive-analysis/restrofood.md) — full-stack (menus + orders + reservations)
+- [`docs/competitive-analysis/adoptable-patterns.md`](docs/competitive-analysis/adoptable-patterns.md) — synthesis: patterns to ADOPT / ADAPT / REJECT
+
+Carte's positioning context (the six chronic WordPress restaurant problems EmDash architecture solves) is in §"Problem Statement" above.
 
 Out of scope for v0.1:
 - Multi-location chains (5+ locations)
@@ -998,7 +1002,7 @@ Out of scope for v0.1:
 - 50 EmDash sites with `@carte/core` installed
 - 10 paying customers on `@carte/ai` after trials convert
 - Schema.org validation passes Google's Rich Results Test for Restaurant + Menu
-- All sandboxed handlers within 50ms CPU / 10 subrequest budget
+- All sandboxed handlers within the 50ms CPU / 10 subrequest / 30s wall / ~128MB sandbox budget
 - AI chat panel handles 86 / price update / block date / move reservation end-to-end
 
 **v1.0 (12 months):**
@@ -1012,18 +1016,18 @@ Out of scope for v0.1:
 
 ## Open Questions
 
-1. **Capability naming source of truth** — Cloudflare blog uses `read:content` / `write:content` / `network:fetch`; the repo's SKILL.md uses `content:read` / `content:write` / `network:request`. Lock with EmDash maintainers before code lock.
-2. **Custom MCP tool registration API** — confirm 0.6.x API for plugins to register MCP tools. If absent, file upstream feature request and ship REST + standalone MCP wrapper as interim.
-3. **Order-tracking notifications** — email is in v0.1. SMS/push needs a third-party (Twilio?) or PWA push API. Defer to v0.2.
-4. **Tax calculation** — Stripe Tax (built into Checkout) for US sales tax; manual override for VAT countries. Document the limit clearly: Carte does NOT do international tax. Use Stripe Tax or manual.
-5. **Free trial enforcement model** — local check (KV-based) is bypassable. Server-side check via license.carteplugin.dev is reliable but adds dependency. Recommend **server-side check with 24hr cache**, gracefully degrade if license server unreachable (not block the restaurant from running).
-6. **GDPR / right-to-erasure** — Required from day one for guest data (reservations, orders). Ship export + erasure handlers in v0.1.
-7. **Plugin name "Carte" final lock** — verified clear in WP/CMS plugin space; confirm with developer.
-8. **Stripe Connect for v0.3 multi-location** — when shipping multi-location, do we use Stripe Connect (each location = separate Stripe account) or single account with metadata-based separation? Single account is simpler; Connect is correct for multi-owner. Defer decision to v0.3 design phase.
-9. **Photo handling** — menu photos go through EmDash media library + Cloudflare Images? Or just media library? Recommend leverage **Cloudflare Images when available** for auto WebP/AVIF + responsive variants; fall back to media library otherwise.
-10. **Rate limiting on public reservation/order endpoints** — implement KV-based rate limit per IP; configurable by restaurant. Critical anti-spam.
-11. **Modifier complexity ceiling for v0.1** — current spec supports single-tier modifier groups (Size, Add-ons). NOT supporting nested modifiers ("if you choose pizza, then choose toppings, then choose crust"). Confirm acceptable for v0.1 scope.
-12. **Cancellation policy enforcement** — restaurant sets cancellation policy in settings ("free up to 24hr before, $X fee after"). Stripe charge for late cancellation = adds complexity. Defer to v0.2; v0.1 just records cancellation, no charge.
+1. **RESOLVED — Capability naming source of truth** — Carte standardizes on `content:read`, `content:write`, `media:read`, `media:write`, and `network:request`, following `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. All manifest examples and capability references in this PRD use those canonical resource:verb names.
+2. **RESOLVED — Custom MCP tool registration API** — EmDash 0.9.0 has no public plugin-defined MCP tool registration API yet (`github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 ships plugin routes at `/_emdash/api/plugins/<id>/<route>` plus a standalone MCP wrapper Worker; see §"AI Layer" → "Surface 1: Operations as MCP tools".
+3. **DEFERRED to v0.2 — Order-tracking notifications** — v0.1 ships email-only notifications for receipts, confirmations, and status changes. SMS and push stay out of scope until v0.2 because they add third-party delivery and consent surface area that the first launch does not need; see §"Hooks Used" for the v0.1 email triggers.
+4. **RESOLVED — Tax calculation** — Carte v0.1 uses Stripe Tax inside Stripe Checkout for US sales-tax calculation and supports a restaurant-configured manual VAT override when operators need a flat rate. Carte does not compute international tax itself; this decision is locked in §"Order checkout pattern (race-safe + Stripe-integrated)" and tracked for implementation under PRO-420.
+5. **RESOLVED** — `@carte/ai` enforces trials and paid licenses through the server-side `license.carteplugin.dev` Worker + D1 service, caching the last known result for 24 hours in plugin KV and degrading to that cached state on outages so restaurant operations never lock out; see §"Trial & licensing".
+6. **RESOLVED — GDPR / right-to-erasure** — export and erasure handlers for reservation and order guest data are required in v0.1 rather than deferred, because Carte stores guest PII from day one. The implementation work is already tracked as PRO-462, so the product decision is locked and no longer open.
+7. **RESOLVED — Plugin name "Carte" final lock** — the mission's naming review cleared `Carte` for the WordPress/CMS plugin landscape and the supporting domain plan already centers on `carteplugin.dev` in §"Trial & licensing". v0.1 proceeds with `Carte` as the locked product name; follow-up trademark monitoring lives outside this PRD.
+8. **DEFERRED to v0.3 — Stripe Connect for multi-location** — v0.1 is single-location only, so Stripe Connect would add marketplace-account complexity before there is a multi-owner deployment model to justify it. The account-topology decision moves to the v0.3 multi-location design phase described in §"Roadmap".
+9. **RESOLVED — Photo handling** — Carte uses Cloudflare Images when the operator has it available so menu photos get responsive WebP/AVIF delivery automatically, and falls back to the EmDash media library when they do not. This delivery split is locked for the `@carte/views` storefront layer and was informed by the Milestone 0 competitive-analysis notes on image-heavy menu UX.
+10. **RESOLVED — Rate limiting on public reservation/order endpoints** — public `submit` and `checkout` surfaces will ship with KV-backed per-IP throttling as a v0.1 baseline rather than an optional hardening pass. The implementation is already tracked under PRO-463, so the open-question decision is closed here.
+11. **RESOLVED — Modifier complexity ceiling for v0.1** — Carte v0.1 keeps the current single-tier `ModifierGroup` shape and explicitly defers nested modifier trees to v0.2. `docs/competitive-analysis/orderable-pro.md` shows Orderable's mobile flow succeeds with flat field groups while its cart/order payloads stay single-layer, which is the right complexity ceiling for the first launch.
+12. **DEFERRED to v0.2 — Cancellation policy enforcement** — v0.1 stores and communicates the restaurant's cancellation policy, but it does not attempt automated Stripe charges for late cancellations. Charging penalties is deferred to v0.2 because it adds payment-auth timing, dispute, and consent complexity that is unnecessary for the first launch; see §"Roadmap" for the deferred operations work.
 
 ---
 
@@ -1034,6 +1038,6 @@ Out of scope for v0.1:
 - Schema.org validation passes Google Rich Results Test
 - AI chat panel handles all common menu/reservation/order operations
 - Stripe Checkout integration end-to-end with idempotent webhook handling
-- All sandboxed handlers verified within 50ms CPU / 10 subrequest limits
+- All sandboxed handlers verified within the 50ms CPU / 10 subrequest / 30s wall / ~128MB sandbox limits
 - Public docs site with quickstart and recipe library
 - 1+ showcase restaurant beyond your client

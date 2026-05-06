@@ -1,0 +1,18 @@
+# Per-worktree workflow state (used by /work, /mission hooks).
+# These files are local to a worktree and do not belong in source.
+.factory-state/
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Future-proof for Milestone 2 (no harm pre-scaffold)
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+coverage/
+*.tsbuildinfo
