@@ -1,0 +1,3 @@
+# f-m1-competitive-pointer — design
+
+The marketing table is now redundant; evidence-grounded teardowns of the three closest WordPress competitors (LatePoint, Orderable Pro, RestroFood) live in `docs/competitive-analysis/`, with `adoptable-patterns.md` synthesizing patterns to ADOPT / ADAPT / REJECT. Carte's positioning argument — the six chronic WordPress restaurant problems EmDash architecture solves — is already stated authoritatively in PRD §"Problem Statement". Keeping a duplicative summary table in §"Competitive Analysis" creates two sources of truth that will drift; replacing it with a pointer collapses to one home for evidence and one home for positioning.

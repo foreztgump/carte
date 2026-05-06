@@ -940,17 +940,14 @@ Plugin-to-plugin isolation: a vulnerability in `@carte/ai` (talks to LLMs) canno
 
 ## Competitive Analysis
 
-| Plugin | Installs | Strengths | Weaknesses (vs Carte) |
-|---|---|---|---|
-| **WPCafe** | 30K+ | Visual table layout, complete cafe UX | No isolation, no AI, slow on large menus |
-| **FoodMaster** | 10K+ restaurants | Most complete (POS, KDS, multi-location) | Heavy footprint, $499/yr, no AI |
-| **Orderable** | 10K+ | Best mobile checkout | No reservations, no menu builder for non-WC sites |
-| **GloriaFood** | Multi-million restaurants | Free, fast setup | Proprietary widget, no real customization, no AI |
-| **RestroFood** | 4K+ restaurants | All-in-one with add-ons | Newer, smaller community |
-| **Five Star Restaurant Reservations** | Most-installed reservations | Free, simple | Reservations only, no menu/orders |
-| **Toast / Square POS** | Industry standard | Full restaurant ops | Not a website plugin; proprietary; expensive |
+Detailed evidence-grounded teardowns of the three closest WordPress competitors live in:
 
-**Carte's positioning:** *"FoodMaster's depth, Orderable's mobile UX, with native AI workflow and Cloudflare-edge speed."*
+- [`docs/competitive-analysis/latepoint.md`](docs/competitive-analysis/latepoint.md) — reservations
+- [`docs/competitive-analysis/orderable-pro.md`](docs/competitive-analysis/orderable-pro.md) — orders + mobile checkout
+- [`docs/competitive-analysis/restrofood.md`](docs/competitive-analysis/restrofood.md) — full-stack (menus + orders + reservations)
+- [`docs/competitive-analysis/adoptable-patterns.md`](docs/competitive-analysis/adoptable-patterns.md) — synthesis: patterns to ADOPT / ADAPT / REJECT
+
+Carte's positioning context (the six chronic WordPress restaurant problems EmDash architecture solves) is in §"Problem Statement" above.
 
 Out of scope for v0.1:
 - Multi-location chains (5+ locations)
