@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from "react";
 
 import type {
   ModifierUpdateRequest,
@@ -57,6 +57,7 @@ export const OrdersAdminApp = ({
 
   return (
     <main aria-labelledby="carte-orders-title">
+      <a href="#orders-panel-title">Skip to orders queue</a>
       <header>
         <p>Carte</p>
         <h1 id="carte-orders-title">Carte Orders</h1>
@@ -204,14 +205,17 @@ type OrderDetailProps = {
 };
 
 const OrderDetail = ({ backendBasePath, onOrderChange, order }: OrderDetailProps): ReactElement => {
+  const detailRef = useDetailFocus(order?.id ?? "");
   if (!order) {
     return <p>Select an order to review line item snapshots.</p>;
   }
 
   return (
-    <article aria-labelledby="order-detail-title">
+    <article aria-labelledby="order-detail-title" ref={detailRef} tabIndex={-1}>
       <h3 id="order-detail-title">Order {order.id}</h3>
-      <p>Status: {order.status}</p>
+      <p aria-live="polite" role="status">
+        Status: {order.status}
+      </p>
       <LineItems order={order} />
       <StatusActions
         backendBasePath={backendBasePath}
@@ -249,19 +253,29 @@ const StatusActions = ({
   onOrderChange,
   order,
 }: OrderActionProps): ReactElement => {
+  const [error, setError] = useState("");
   const nextStatus = getNextStatus(order.status);
   const changeStatus = async (status: ActiveOrderStatus): Promise<void> => {
-    const response = await postJson<OrderStateChangeRequest, OrderStateChangeResponse>(
-      `${backendBasePath}${ordersBackendRoutes.orderStateChange}`,
-      { orderId: order.id, nextStatus: status },
-    );
-    onOrderChange((orders) => updateOrderStatus(orders, response.orderId, response.status));
+    try {
+      const response = await postJson<OrderStateChangeRequest, OrderStateChangeResponse>(
+        `${backendBasePath}${ordersBackendRoutes.orderStateChange}`,
+        { orderId: order.id, nextStatus: status },
+      );
+      setError("");
+      onOrderChange((orders) => updateOrderStatus(orders, response.orderId, response.status));
+    } catch {
+      setError("Could not update order status. Try again.");
+    }
   };
 
   return (
     <div aria-label="Status workflow">
+      <p id="status-workflow-help">
+        Next valid transition: {nextStatus ? `Mark ${nextStatus}` : "workflow complete"}.
+      </p>
       {ACTIVE_STATUSES.slice(1).map((status) => (
         <button
+          aria-describedby="status-workflow-help"
           disabled={nextStatus !== status}
           key={status}
           type="button"
@@ -270,21 +284,32 @@ const StatusActions = ({
           Mark {status}
         </button>
       ))}
+      {error ? (
+        <p aria-live="assertive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 };
 
 const RefundPanel = ({ backendBasePath, onOrderChange, order }: OrderActionProps): ReactElement => {
+  const [error, setError] = useState("");
   const issueRefund = async (): Promise<void> => {
-    const response = await postJson<RefundRequest, RefundResponse>(
-      `${backendBasePath}${ordersBackendRoutes.refund}`,
-      { orderId: order.id },
-    );
-    onOrderChange((orders) => updateRefundedOrder(orders, response));
+    try {
+      const response = await postJson<RefundRequest, RefundResponse>(
+        `${backendBasePath}${ordersBackendRoutes.refund}`,
+        { orderId: order.id },
+      );
+      setError("");
+      onOrderChange((orders) => updateRefundedOrder(orders, response));
+    } catch {
+      setError("Could not issue refund. Try again.");
+    }
   };
 
   return (
-    <div>
+    <section aria-label="Refund controls">
       <button
         disabled={order.status === "refunded"}
         type="button"
@@ -293,11 +318,16 @@ const RefundPanel = ({ backendBasePath, onOrderChange, order }: OrderActionProps
         Issue refund
       </button>
       {order.refund ? (
-        <p>
+        <p aria-live="polite" role="status">
           Refund {order.refund.refundId} issued at {formatTimestamp(order.refund.refundedAt)}
         </p>
       ) : null}
-    </div>
+      {error ? (
+        <p aria-live="assertive" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 };
 
@@ -332,7 +362,11 @@ const EmailTemplateEditor = ({
       <button type="button" onClick={() => saveTemplate(draft, onSave, setSaved)}>
         Save email template
       </button>
-      {saved ? <p>Template saved for email notifications.</p> : null}
+      {saved ? (
+        <p aria-live="polite" role="status">
+          Template saved for email notifications.
+        </p>
+      ) : null}
       {previewOrder ? <TemplatePreview order={previewOrder} template={draft} /> : null}
     </section>
   );
@@ -370,6 +404,18 @@ const TemplatePreview = ({
     <p>{renderTemplate(template.body, order)}</p>
   </aside>
 );
+
+const useDetailFocus = (orderId: string): RefObject<HTMLElement | null> => {
+  const detailRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (orderId) {
+      detailRef.current?.focus();
+    }
+  }, [orderId]);
+
+  return detailRef;
+};
 
 const postJson = async <Request, Response>(url: string, body: Request): Promise<Response> => {
   const response = await fetch(url, {
