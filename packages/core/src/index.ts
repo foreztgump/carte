@@ -23,14 +23,24 @@ const GDPR_EXPORT_COLLECTIONS = [
   {
     collection: "carte_reservations",
     emailPath: ["guest", "email"],
+    piiContainer: "guest",
   },
   {
     collection: "carte_orders",
     emailPath: ["customer", "email"],
+    piiContainer: "customer",
   },
 ] as const;
+const PII_FIELDS = ["name", "email", "phone", "notes"] as const;
 
 type ExportedContentItem = Awaited<ReturnType<ContentAccess["list"]>>["items"][number];
+type ContentUpdate = NonNullable<ContentAccess["update"]>;
+type EraseCollectionArgs = {
+  collection: (typeof GDPR_EXPORT_COLLECTIONS)[number];
+  content: ContentAccess & { update: ContentUpdate };
+  normalizedEmail: string;
+  placeholder: string;
+};
 
 const stubRoute =
   (route: string) =>
@@ -62,8 +72,20 @@ const hasAdminScope = (request: Request): boolean => {
   return scope === "true" || scope === "admin" || scope === "1";
 };
 
+const hasContentUpdate = (
+  content: ContentAccess,
+): content is ContentAccess & { update: ContentUpdate } => typeof content.update === "function";
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const deterministicPlaceholder = async (normalizedEmail: string): Promise<string> => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalizedEmail));
+  const hash = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return `erased:${hash}`;
+};
 
 const nestedValue = (source: Record<string, unknown>, path: readonly string[]): unknown => {
   let current: unknown = source;
@@ -104,6 +126,42 @@ const matchingItems = async (
   return matches;
 };
 
+const dataWithErasedPii = (
+  data: Record<string, unknown>,
+  containerKey: string,
+  placeholder: string,
+): Record<string, unknown> => {
+  const sourceContainer = data[containerKey];
+  const container = isRecord(sourceContainer) ? sourceContainer : {};
+  const erasedContainer: Record<string, unknown> = { ...container };
+  for (const field of PII_FIELDS) erasedContainer[field] = placeholder;
+  return { ...data, [containerKey]: erasedContainer };
+};
+
+const eraseCollection = async ({
+  collection,
+  content,
+  normalizedEmail,
+  placeholder,
+}: EraseCollectionArgs): Promise<number> => {
+  const matches = await matchingItems(
+    content,
+    collection.collection,
+    collection.emailPath,
+    normalizedEmail,
+  );
+  await Promise.all(
+    matches.map((item) =>
+      content.update(
+        collection.collection,
+        item.id,
+        dataWithErasedPii(item.data, collection.piiContainer, placeholder),
+      ),
+    ),
+  );
+  return matches.length;
+};
+
 const gdprExportRoute = async (ctx: RouteContext): Promise<Response> => {
   if (!hasAdminScope(ctx.request)) {
     return jsonResponse({ error: "Admin scope required" }, 401);
@@ -129,6 +187,34 @@ const gdprExportRoute = async (ctx: RouteContext): Promise<Response> => {
   }
 };
 
+const gdprEraseRoute = async (ctx: RouteContext): Promise<Response> => {
+  if (!hasAdminScope(ctx.request)) {
+    return jsonResponse({ error: "Admin scope required" }, 401);
+  }
+  const email = parseEmail(ctx.request);
+  if (email === null) return jsonResponse({ error: "Valid email query parameter required" }, 400);
+  if (ctx.content === undefined) return jsonResponse({ error: "Content access unavailable" }, 500);
+  const content = ctx.content;
+  if (!hasContentUpdate(content))
+    return jsonResponse({ error: "Content write access unavailable" }, 500);
+  try {
+    const placeholder = await deterministicPlaceholder(email);
+    const [reservations, orders] = await Promise.all(
+      GDPR_EXPORT_COLLECTIONS.map((collection) =>
+        eraseCollection({ collection, content, normalizedEmail: email, placeholder }),
+      ),
+    );
+    return jsonResponse({
+      email,
+      erasedAt: new Date().toISOString(),
+      erased: { reservations, orders },
+    });
+  } catch (error) {
+    ctx.log.error("GDPR erasure failed", { error });
+    return jsonResponse({ error: "GDPR erasure failed" }, 500);
+  }
+};
+
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -137,6 +223,7 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: stubRoute("admin") },
+      "gdpr/erase": { handler: gdprEraseRoute },
       "gdpr/export": { handler: gdprExportRoute },
       "menu-feed": { handler: stubRoute("menu-feed") },
       "schema-jsonld": { handler: stubRoute("schema-jsonld") },

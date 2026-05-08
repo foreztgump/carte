@@ -165,7 +165,8 @@ describe("@carte/core GDPR erasure route", () => {
       erased: { reservations: 1, orders: 1 },
     });
     expect(updated).toHaveLength(2);
-    const [erasedReservation, erasedOrder] = updated.map((entry) => entry.data);
+    const erasedReservation = updated[0]!.data;
+    const erasedOrder = updated[1]!.data;
     expect(erasedReservation).toMatchObject({
       guest: {
         email: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
