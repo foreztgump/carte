@@ -14,6 +14,8 @@ const componentNames = [
   "MenuDisplay",
   "MenuItem",
   "MenuSection",
+  "OrderingCart",
+  "OrderingCheckout",
   "ReservationForm",
   "RestaurantHero",
   "RestaurantInfo",
@@ -64,5 +66,21 @@ describe("@carte/views Astro shell package", () => {
     const componentSource = readFileSync(join(componentRoot, "DietaryFilter.astro"), "utf8");
 
     expect(componentSource).toContain("@carte/core/taxonomy");
+  });
+
+  it("exports ordering cart and checkout prop types", () => {
+    const typesSource = readFileSync(join(sourceRoot, "types.ts"), "utf8");
+
+    expect(typesSource).toContain("OrderingCartProps");
+    expect(typesSource).toContain("OrderingCheckoutProps");
+    expect(typesSource).toContain("CarteOrderModifier");
+  });
+
+  it("keeps checkout submission on the typed orders-backend checkout route", () => {
+    const componentSource = readFileSync(join(componentRoot, "OrderingCheckout.astro"), "utf8");
+
+    expect(componentSource).toContain("data-carte-checkout-form");
+    expect(componentSource).toContain("checkoutUrl");
+    expect(componentSource).toContain('globalThis["fetch"]');
   });
 });

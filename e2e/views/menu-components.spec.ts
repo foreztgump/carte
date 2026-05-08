@@ -113,6 +113,52 @@ test("@carte/views ReservationForm surfaces error UI", async ({ page }) => {
   await expect(page.getByRole("alert")).toContainText("Selected time is no longer available.");
 });
 
+test("@carte/views OrderingCart renders modifiers and totals", async ({ page }) => {
+  await page.goto(fixtureUrl);
+
+  await expect(page.getByRole("heading", { name: "Your order", level: 2 })).toBeVisible();
+  await expect(page.getByText("Charred Broccolini")).toBeVisible();
+  await expect(page.getByText("Extra almond crunch")).toBeVisible();
+  await expect(page.getByText("Subtotal")).toBeVisible();
+  await expect(page.getByText("$50.46")).toBeVisible();
+});
+
+test("@carte/views OrderingCheckout toggles summary and redirects", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/checkout", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ checkoutUrl: "https://checkout.stripe.com/c/pay_fixture" }),
+    });
+  });
+
+  await page.goto(fixtureUrl);
+
+  const summary = page.getByTestId("ordering-checkout-summary");
+  const toggle = page.getByRole("button", { name: /order summary/i });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(summary).toBeHidden();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(summary).toBeVisible();
+  await expect(summary.getByText("Extra almond crunch")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: /order summary/i })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+
+  await page.getByLabel("Checkout name").fill("Alex Guest");
+  await page.getByLabel("Checkout email").fill("alex@example.com");
+  await page.getByLabel("Pickup notes").fill("Please include napkins");
+  await page.getByRole("button", { name: "Continue to secure payment" }).click();
+
+  await expect(page).toHaveURL("https://checkout.stripe.com/c/pay_fixture");
+});
+
 test("@carte/views DietaryFilter filters by core allergen taxonomy", async ({ page }) => {
   await page.goto(fixtureUrl);
 
