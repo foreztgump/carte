@@ -14,6 +14,7 @@ import { definePlugin } from "emdash";
 import type { RouteContext } from "emdash";
 
 import { checkoutRoute } from "./routes/checkout.js";
+import { webhookStripeRoute } from "./routes/webhook-stripe.js";
 
 const PLUGIN_ID = "carte-orders-backend";
 const PLUGIN_VERSION = "0.1.0";
@@ -166,7 +167,7 @@ const factory = () =>
     routes: {
       admin: { handler: stubRoute("admin") },
       checkout: { handler: checkoutRoute, public: true },
-      "webhook-stripe": { handler: stubRoute("webhook-stripe"), public: true },
+      "webhook-stripe": { handler: webhookStripeRoute, public: true },
       refund: { handler: stubRoute("refund") },
     },
     admin: {
