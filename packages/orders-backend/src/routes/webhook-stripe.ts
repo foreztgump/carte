@@ -184,12 +184,23 @@ const timingSafeEqualHex = (left: string, right: string): boolean => {
 };
 
 const parseStripeEvent = (body: string): StripeEvent | null => {
-  const event = JSON.parse(body) as Partial<StripeEvent>;
-  if (!event.id || !event.type || !event.data?.object) {
+  // Guarded parse: malformed JSON must surface as a 400 (signature/body
+  // invalid) rather than a 500 — Stripe retries 5xx but treats 4xx as a
+  // permanent failure, preventing redelivery storms on bad payloads.
+  const event = safeParseJson(body);
+  if (!event || !event.id || !event.type || !event.data?.object) {
     return null;
   }
 
   return event as StripeEvent;
+};
+
+const safeParseJson = (body: string): Partial<StripeEvent> | null => {
+  try {
+    return JSON.parse(body) as Partial<StripeEvent>;
+  } catch {
+    return null;
+  }
 };
 
 const kvStore = (ctx: RouteContext): KvIdempotencyStore => ctx.kv as KvIdempotencyStore;
