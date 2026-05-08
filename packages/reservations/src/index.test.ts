@@ -157,4 +157,32 @@ describe("@carte/reservations submit rate limit", () => {
     expect(counters.set).toBe(1);
     expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
   });
+
+  it("throttles capacityKey-bearing submits at the per-IP rate limit", async () => {
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
+    const base = ipContext("203.0.113.30", counters);
+    const handler = submitHandler();
+    let remainingSeats = 1_000;
+    const decrement = async () => {
+      if (remainingSeats <= 0) return -1;
+      remainingSeats -= 1;
+      return remainingSeats;
+    };
+    // Re-use the rate-limit kv store via the same context, but layer in
+    // capacityKey + atomicDecrement so each request takes the capacity path.
+    const baseKv = (base as unknown as { kv: Record<string, unknown> }).kv;
+    const ctx = {
+      ...base,
+      input: { capacityKey: "capacity:2026-05-08T19" },
+      kv: { ...baseKv, atomicDecrement: decrement },
+    } as unknown as RouteContext;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) responses.push(await handler(ctx));
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
+  });
 });
