@@ -2,7 +2,6 @@ import type { ReservationCollection, ReservationRecord, ReservationRouteContext 
 import { RESERVATION_COLLECTION } from "./types.js";
 import type { AtomicCapacityStore } from "../capacity.js";
 
-const DEFAULT_TOKEN_SECRET = "carte-reservations-default-token-secret";
 const RATE_LIMIT_PREFIX = "rate-limit:submit";
 const RATE_LIMIT_MAX_REQUESTS = 30;
 const WINDOW_SECONDS = 60;
@@ -10,7 +9,10 @@ const UNKNOWN_IP = "unknown";
 
 export async function getTokenSecret(ctx: ReservationRouteContext): Promise<string> {
   const configured = await ctx.kv.get<string>("settings:tokenSecret");
-  return configured ?? DEFAULT_TOKEN_SECRET;
+  if (typeof configured !== "string" || configured.length === 0) {
+    throw new Error("Reservations plugin requires tokenSecret to be configured in plugin settings");
+  }
+  return configured;
 }
 
 export function getReservations(ctx: ReservationRouteContext): ReservationCollection {
