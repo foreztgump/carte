@@ -10,6 +10,12 @@ interface EmailMessage {
   text: string;
 }
 
+interface EmailDedupRecord {
+  sent: boolean;
+  source: string;
+  sentAt: string;
+}
+
 export async function sendReservationEmailOnce(
   ctx: ReservationRouteContext,
   params: {
@@ -20,7 +26,8 @@ export async function sendReservationEmailOnce(
 ): Promise<void> {
   if (ctx.email === undefined) return;
   const key = `email:${params.reservationId}:${params.kind}`;
-  if ((await ctx.kv.get<boolean>(key)) === true) return;
+  const existing = await ctx.kv.get<EmailDedupRecord>(key);
+  if (existing !== null && existing !== undefined && existing.sent === true) return;
   await ctx.email.send(toMessage(params.reservation, params.kind));
   await ctx.kv.set(key, { sent: true, source: EMAIL_SOURCE, sentAt: new Date().toISOString() });
 }
