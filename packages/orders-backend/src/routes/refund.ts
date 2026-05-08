@@ -1,9 +1,15 @@
 import type { RouteContext } from "emdash";
 
-// Subrequest audit: 1 Stripe Refund fetch + 1 content update = 2/10.
-// Unauthorized callers return before external side effects, using 0/10.
+// Subrequest audit: 1 Stripe Refund fetch on the request path + 1 content
+// update inside ctx.waitUntil = 2/10. Unauthorized callers return before
+// external side effects, using 0/10. The content store update runs after
+// the Stripe refund succeeds and is wrapped in waitUntil so it cannot
+// undo or block the refund response. If the content update fails, an
+// audit record is logged so an operator can reconcile the order state
+// manually (Stripe is the source of truth for refund settlement).
 const STRIPE_REFUNDS_URL = "https://api.stripe.com/v1/refunds";
 const ADMIN_SCOPE = "admin";
+const AUDIT_PREFIX = "[carte-orders-backend][refund-reconcile]";
 
 interface RuntimeSettings {
   settings?: {
@@ -30,6 +36,14 @@ interface ContentStore {
   update(collection: string, id: string, value: unknown): Promise<void>;
 }
 
+interface RefundMetadata {
+  id: string;
+  paymentIntentId: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+}
+
 export interface RefundRouteResponse {
   ok: true;
   refundId: string;
@@ -42,12 +56,41 @@ export const refundRoute = async (ctx: RouteContext): Promise<RefundRouteRespons
   const refund = await createStripeRefund(ctx, input);
   const metadata = refundMetadata(refund);
 
-  await contentStore(ctx).update("carte_orders", input.orderId, {
-    status: "refunded",
-    refund: metadata,
-  });
+  waitUntil(ctx, reconcileOrderState(ctx, input.orderId, metadata));
 
   return { ok: true, refundId: metadata.id, status: metadata.status };
+};
+
+const reconcileOrderState = async (
+  ctx: RouteContext,
+  orderId: string,
+  metadata: RefundMetadata,
+): Promise<void> => {
+  try {
+    await contentStore(ctx).update("carte_orders", orderId, {
+      status: "refunded",
+      refund: metadata,
+    });
+  } catch (error) {
+    // Stripe is the source of truth for refund settlement; surface a
+    // structured audit record so an operator can reconcile the order
+    // record by hand instead of letting the failure escape silently.
+    console.error(`${AUDIT_PREFIX} content update failed`, {
+      orderId,
+      refundId: metadata.id,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+const waitUntil = (ctx: RouteContext, task: Promise<void>): void => {
+  const waitUntilFn = (ctx as RouteContext & { waitUntil?: (task: Promise<void>) => void })
+    .waitUntil;
+  if (!waitUntilFn) {
+    throw new Error("Refund route requires ctx.waitUntil for post-response reconciliation.");
+  }
+
+  waitUntilFn(task);
 };
 
 const requireAdminScope = (ctx: RouteContext): void => {
@@ -145,7 +188,7 @@ const parseStripeRefund = async (response: Response): Promise<StripeRefundRespon
   return (await response.json()) as StripeRefundResponse;
 };
 
-const refundMetadata = (refund: StripeRefundResponse) => ({
+const refundMetadata = (refund: StripeRefundResponse): RefundMetadata => ({
   id: stringValue(refund.id),
   paymentIntentId: stringValue(refund.payment_intent),
   amount: numberValue(refund.amount),
