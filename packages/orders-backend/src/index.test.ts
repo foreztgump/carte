@@ -138,4 +138,126 @@ describe("@carte/orders-backend manifest", () => {
     expect(subrequests).toHaveLength(2);
     expect(subrequests.length).toBeLessThanOrEqual(4);
   });
+
+  it("rejects Stripe webhooks with an invalid signature before state reads", async () => {
+    const manifest = factory();
+    const stateReads: string[] = [];
+    const ctx = {
+      input: {
+        body: JSON.stringify(stripeCheckoutCompletedEvent()),
+        headers: { "stripe-signature": "t=1700000000,v1=bad" },
+      },
+      kv: {
+        async get(key: string) {
+          stateReads.push(key);
+          return undefined;
+        },
+      },
+      settings: { stripeWebhookSecret: "whsec_test_orders" },
+      waitUntil() {
+        throw new Error("waitUntil must not run for invalid signatures.");
+      },
+    } as unknown as RouteContext;
+
+    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
+      ok: false,
+      status: 400,
+    });
+    expect(stateReads).toEqual([]);
+  });
+
+  it("creates one order for replayed Stripe webhook deliveries", async () => {
+    const manifest = factory();
+    const event = stripeCheckoutCompletedEvent();
+    const body = JSON.stringify(event);
+    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
+    const processedKeys = new Set<string>();
+    const subrequests: string[] = [];
+    const orders: unknown[] = [];
+    const emails: unknown[] = [];
+    const waitUntilTasks: Promise<unknown>[] = [];
+    const ctx = {
+      input: { body, headers: { "stripe-signature": signature } },
+      kv: {
+        async get(key: string) {
+          subrequests.push("kv.get");
+          return processedKeys.has(key) ? "processed" : undefined;
+        },
+        async set(key: string, value: string, options: { expirationTtl: number }) {
+          subrequests.push("kv.set");
+          expect(key).toBe("idempotency:evt_checkout_completed");
+          expect(value).toBe("processed");
+          expect(options).toEqual({ expirationTtl: 604800 });
+          processedKeys.add(key);
+        },
+      },
+      content: {
+        async create(collection: string, order: unknown) {
+          subrequests.push("content.create");
+          expect(collection).toBe("carte_orders");
+          orders.push(order);
+        },
+      },
+      email: {
+        async send(message: unknown) {
+          subrequests.push("email.send");
+          emails.push(message);
+        },
+      },
+      settings: { stripeWebhookSecret: "whsec_test_orders" },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as unknown as RouteContext;
+
+    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
+      ok: true,
+      status: 200,
+      idempotent: false,
+    });
+    await Promise.all(waitUntilTasks);
+    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
+      ok: true,
+      status: 200,
+      idempotent: true,
+    });
+
+    expect(waitUntilTasks).toHaveLength(1);
+    expect(orders).toHaveLength(1);
+    expect(emails).toHaveLength(1);
+    expect(subrequests.length).toBeLessThanOrEqual(7);
+  });
 });
+
+const stripeCheckoutCompletedEvent = () => ({
+  id: "evt_checkout_completed",
+  type: "checkout.session.completed",
+  data: {
+    object: {
+      id: "cs_test_123",
+      customer_email: "guest@example.com",
+      amount_total: 2590,
+      currency: "usd",
+      metadata: { cartId: "cart_123", orderType: "pickup" },
+    },
+  },
+});
+
+const stripeSignatureHeader = async (body: string, secret: string): Promise<string> => {
+  const timestamp = 1_700_000_000;
+  const signedPayload = `${timestamp}.${body}`;
+  const signature = await hmacSha256Hex(secret, signedPayload);
+  return `t=${timestamp},v1=${signature}`;
+};
+
+const hmacSha256Hex = async (secret: string, payload: string): Promise<string> => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+};
