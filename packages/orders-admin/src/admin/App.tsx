@@ -297,23 +297,31 @@ const StatusActions = ({
 
 const RefundPanel = ({ backendBasePath, onOrderChange, order }: OrderActionProps): ReactElement => {
   const [error, setError] = useState("");
+  const [inFlight, setInFlight] = useState(false);
   const issueRefund = async (): Promise<void> => {
+    if (inFlight) {
+      return;
+    }
+    setInFlight(true);
     try {
       const response = await postJson<RefundRequest, RefundResponse>(
         `${backendBasePath}${ordersBackendRoutes.refund}`,
         { orderId: order.id },
+        { "Idempotency-Key": `refund:${order.id}` },
       );
       setError("");
       onOrderChange((orders) => updateRefundedOrder(orders, response));
     } catch {
       setError("Could not issue refund. Try again.");
+    } finally {
+      setInFlight(false);
     }
   };
 
   return (
     <section aria-label="Refund controls">
       <button
-        disabled={order.status === "refunded"}
+        disabled={order.status === "refunded" || inFlight}
         type="button"
         onClick={() => void issueRefund()}
       >
@@ -419,10 +427,14 @@ const useDetailFocus = (orderId: string): RefObject<HTMLElement | null> => {
   return detailRef;
 };
 
-const postJson = async <Request, Response>(url: string, body: Request): Promise<Response> => {
+const postJson = async <Request, Response>(
+  url: string,
+  body: Request,
+  extraHeaders: Record<string, string> = {},
+): Promise<Response> => {
   const response = await fetch(url, {
     body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
     method: "POST",
   });
   if (!response.ok) {
