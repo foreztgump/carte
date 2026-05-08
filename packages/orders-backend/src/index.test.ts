@@ -275,6 +275,7 @@ describe("@carte/orders-backend manifest", () => {
     const manifest = factory();
     const stripeRequests: RequestInit[] = [];
     const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+    const waitUntilTasks: Promise<unknown>[] = [];
     const ctx = {
       input: {
         orderId: "order_123",
@@ -304,6 +305,9 @@ describe("@carte/orders-backend manifest", () => {
         },
       },
       settings: { stripeSecretKey: "sk_test_orders" },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
     } as unknown as RouteContext;
 
     await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
@@ -311,6 +315,7 @@ describe("@carte/orders-backend manifest", () => {
       refundId: "re_123",
       status: "succeeded",
     });
+    await Promise.all(waitUntilTasks);
 
     expect(stripeRequests).toHaveLength(1);
     expect(stripeRequests[0]?.headers).toMatchObject({
@@ -332,6 +337,68 @@ describe("@carte/orders-backend manifest", () => {
         },
       },
     ]);
+  });
+
+  it("logs an audit record when post-refund content store update fails", async () => {
+    const manifest = factory();
+    const waitUntilTasks: Promise<unknown>[] = [];
+    const errorLog: unknown[][] = [];
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      errorLog.push(args);
+    };
+    const ctx = {
+      input: { orderId: "order_456", paymentIntentId: "pi_456" },
+      auth: { scopes: ["admin"] },
+      http: {
+        async fetch() {
+          return new Response(
+            JSON.stringify({
+              id: "re_456",
+              payment_intent: "pi_456",
+              amount: 0,
+              status: "succeeded",
+              created: 1_700_000_000,
+            }),
+          );
+        },
+      },
+      content: {
+        async update() {
+          throw new Error("Content store unavailable.");
+        },
+      },
+      settings: { stripeSecretKey: "sk_test_orders" },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as unknown as RouteContext;
+
+    try {
+      await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
+        ok: true,
+        refundId: "re_456",
+        status: "succeeded",
+      });
+      await Promise.all(waitUntilTasks);
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    const auditEntry = errorLog.find((entry) =>
+      entry.some(
+        (value) =>
+          typeof value === "string" && value.includes("[carte-orders-backend][refund-reconcile]"),
+      ),
+    );
+    expect(auditEntry).toBeDefined();
+    const payload = auditEntry?.find((value) => typeof value === "object" && value !== null) as
+      | { orderId?: string; refundId?: string; reason?: string }
+      | undefined;
+    expect(payload).toMatchObject({
+      orderId: "order_456",
+      refundId: "re_456",
+    });
   });
 
   it("defers the Stripe webhook 'processed' KV write into ctx.waitUntil", async () => {
