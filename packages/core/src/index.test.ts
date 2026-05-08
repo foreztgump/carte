@@ -108,6 +108,38 @@ describe("@carte/core GDPR export route", () => {
       orders: [order],
     });
   });
+
+  it("does not leak raw email PII into Content-Disposition and resists filename injection", async () => {
+    const manifest = factory();
+    // The email regex permits `"` and `;` in the local part. Use a value
+    // that, if interpolated naively, would inject an extra header parameter.
+    const maliciousLocal = `evil";x-inject="bad`;
+    const malicious = `${maliciousLocal}@example.com`;
+    const list: ContentList = async () => ({ items: [], hasMore: false });
+
+    const response = (await manifest.routes["gdpr/export"]!.handler(
+      routeContext(
+        new Request(`https://carte.test/gdpr/export?email=${encodeURIComponent(malicious)}`, {
+          headers: { "x-emdash-admin-scope": "true" },
+        }),
+        list,
+      ),
+    )) as Response;
+
+    expect(response.status).toBe(200);
+    const disposition = response.headers.get("content-disposition") ?? "";
+    // No raw email PII in headers.
+    expect(disposition.toLowerCase()).not.toContain(maliciousLocal.toLowerCase());
+    expect(disposition.toLowerCase()).not.toContain("example.com");
+    // No injected parameter.
+    expect(disposition.toLowerCase()).not.toContain("x-inject");
+    // Filename is the safe pattern: gdpr-export-<short-hash>-<timestamp>.json
+    expect(disposition).toMatch(
+      /filename="gdpr-export-[a-f0-9]{8,}-\d{4}-\d{2}-\d{2}T[\d:.\-Z]+\.json"/u,
+    );
+    // RFC 6266 filename* form is also present (UTF-8 percent-encoded).
+    expect(disposition).toMatch(/filename\*=UTF-8''gdpr-export-[a-f0-9]{8,}-/u);
+  });
 });
 
 describe("@carte/core GDPR erasure route", () => {
