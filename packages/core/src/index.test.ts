@@ -154,6 +154,8 @@ describe("@carte/core GDPR erasure route", () => {
           updated.push({ collection, id, data });
           return contentItem(id, data);
         },
+        create: async (_collection: string, data: Record<string, unknown>) =>
+          contentItem("audit", data),
       },
     } as unknown as RouteContext;
 

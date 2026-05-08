@@ -18,6 +18,9 @@ const EXPORT_PAGE_SIZE = 100;
 const MAX_EXPORT_ITEMS = 1_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const ADMIN_SCOPE_HEADER = "x-emdash-admin-scope";
+const AUDIT_COLLECTION = "carte_audit_log";
+const AUDIT_ACTOR = "system:gdpr-erasure";
+const AUDIT_ACTION = "gdpr.erasure";
 
 const GDPR_EXPORT_COLLECTIONS = [
   {
@@ -35,11 +38,14 @@ const PII_FIELDS = ["name", "email", "phone", "notes"] as const;
 
 type ExportedContentItem = Awaited<ReturnType<ContentAccess["list"]>>["items"][number];
 type ContentUpdate = NonNullable<ContentAccess["update"]>;
+type ContentCreate = NonNullable<ContentAccess["create"]>;
+type EraseCapableContent = ContentAccess & { update: ContentUpdate; create: ContentCreate };
 type EraseCollectionArgs = {
   collection: (typeof GDPR_EXPORT_COLLECTIONS)[number];
-  content: ContentAccess & { update: ContentUpdate };
+  content: EraseCapableContent;
   normalizedEmail: string;
   placeholder: string;
+  timestamp: string;
 };
 
 const stubRoute =
@@ -72,19 +78,30 @@ const hasAdminScope = (request: Request): boolean => {
   return scope === "true" || scope === "admin" || scope === "1";
 };
 
-const hasContentUpdate = (
-  content: ContentAccess,
-): content is ContentAccess & { update: ContentUpdate } => typeof content.update === "function";
+const hasEraseCapabilities = (content: ContentAccess): content is EraseCapableContent =>
+  typeof content.update === "function" && typeof content.create === "function";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const deterministicPlaceholder = async (normalizedEmail: string): Promise<string> => {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalizedEmail));
-  const hash = [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-  return `erased:${hash}`;
+const sha256Hex = async (value: string): Promise<string> => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const deterministicPlaceholder = async (normalizedEmail: string): Promise<string> =>
+  `erased:${await sha256Hex(normalizedEmail)}`;
+
+const stringField = (container: unknown, field: string): string => {
+  if (!isRecord(container)) return "";
+  const value = container[field];
+  return typeof value === "string" ? value : "";
+};
+
+const piiHash = async (data: Record<string, unknown>, containerKey: string): Promise<string> => {
+  const container = data[containerKey];
+  const joined = PII_FIELDS.map((field) => stringField(container, field)).join("|");
+  return sha256Hex(joined);
 };
 
 const nestedValue = (source: Record<string, unknown>, path: readonly string[]): unknown => {
@@ -138,27 +155,37 @@ const dataWithErasedPii = (
   return { ...data, [containerKey]: erasedContainer };
 };
 
-const eraseCollection = async ({
-  collection,
-  content,
-  normalizedEmail,
-  placeholder,
-}: EraseCollectionArgs): Promise<number> => {
+const eraseAndAuditItem = async (
+  item: ExportedContentItem,
+  args: EraseCollectionArgs,
+): Promise<void> => {
+  const { collection, content, placeholder, timestamp } = args;
+  const erasedData = dataWithErasedPii(item.data, collection.piiContainer, placeholder);
+  const [beforeHash, afterHash] = await Promise.all([
+    piiHash(item.data, collection.piiContainer),
+    piiHash(erasedData, collection.piiContainer),
+  ]);
+  await content.update(collection.collection, item.id, erasedData);
+  await content.create(AUDIT_COLLECTION, {
+    actor: AUDIT_ACTOR,
+    action: AUDIT_ACTION,
+    targetCollection: collection.collection,
+    targetId: item.id,
+    beforeHash,
+    afterHash,
+    timestamp,
+  });
+};
+
+const eraseCollection = async (args: EraseCollectionArgs): Promise<number> => {
+  const { collection, content, normalizedEmail } = args;
   const matches = await matchingItems(
     content,
     collection.collection,
     collection.emailPath,
     normalizedEmail,
   );
-  await Promise.all(
-    matches.map((item) =>
-      content.update(
-        collection.collection,
-        item.id,
-        dataWithErasedPii(item.data, collection.piiContainer, placeholder),
-      ),
-    ),
-  );
+  await Promise.all(matches.map((item) => eraseAndAuditItem(item, args)));
   return matches.length;
 };
 
@@ -195,18 +222,19 @@ const gdprEraseRoute = async (ctx: RouteContext): Promise<Response> => {
   if (email === null) return jsonResponse({ error: "Valid email query parameter required" }, 400);
   if (ctx.content === undefined) return jsonResponse({ error: "Content access unavailable" }, 500);
   const content = ctx.content;
-  if (!hasContentUpdate(content))
+  if (!hasEraseCapabilities(content))
     return jsonResponse({ error: "Content write access unavailable" }, 500);
   try {
     const placeholder = await deterministicPlaceholder(email);
+    const timestamp = new Date().toISOString();
     const [reservations, orders] = await Promise.all(
       GDPR_EXPORT_COLLECTIONS.map((collection) =>
-        eraseCollection({ collection, content, normalizedEmail: email, placeholder }),
+        eraseCollection({ collection, content, normalizedEmail: email, placeholder, timestamp }),
       ),
     );
     return jsonResponse({
       email,
-      erasedAt: new Date().toISOString(),
+      erasedAt: timestamp,
       erased: { reservations, orders },
     });
   } catch (error) {
