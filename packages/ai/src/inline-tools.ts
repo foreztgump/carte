@@ -1,6 +1,6 @@
 import { CORE_ALLERGEN_TAGS } from "@carte/core/taxonomy/allergens";
 
-import { prepareLlmTurn } from "./pii-boundary.js";
+import { prepareLlmTurn, redactPii } from "./pii-boundary.js";
 import type { ContentApi, DiffPreview, MutationResult, ToolRegistry } from "./tool-call.js";
 
 export interface MenuItemAiInput {
@@ -59,13 +59,25 @@ function mutationTool(
 }
 
 function descriptionDiff(input: MenuItemAiInput, llm?: InlineAiLlm): DiffPreview {
-  const description = llm?.describe?.(input) ?? defaultDescription(input);
+  const safeInput = withPiiBoundary(input);
+  const description = llm?.describe?.(safeInput) ?? defaultDescription(safeInput);
   return fieldDiff("description", input.description ?? "", description);
 }
 
 function altTextDiff(input: MenuItemAiInput, llm?: InlineAiLlm): DiffPreview {
-  const altText = llm?.generateAltText?.(input) ?? defaultAltText(input);
+  const safeInput = withPiiBoundary(input);
+  const altText = llm?.generateAltText?.(safeInput) ?? defaultAltText(safeInput);
   return fieldDiff("altText", input.altText ?? "", altText);
+}
+
+function withPiiBoundary(input: MenuItemAiInput): MenuItemAiInput {
+  if (input.piiOptIn === true) {
+    return input;
+  }
+  if (input.toolContext === undefined) {
+    return input;
+  }
+  return { ...input, toolContext: redactPii(input.toolContext) };
 }
 
 function allergensDiff(input: MenuItemAiInput): DiffPreview {
