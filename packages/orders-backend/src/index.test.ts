@@ -39,6 +39,12 @@ const ipContext = (ip: string, counters: { get: number; set: number }): RouteCon
   } as unknown as RouteContext;
 };
 
+const checkoutHandler = () => {
+  const handler = factory().routes.checkout?.handler;
+  if (handler === undefined) throw new Error("checkout route missing");
+  return handler;
+};
+
 describe("@carte/orders-backend manifest", () => {
   it("declares the canonical id and version", () => {
     const manifest = factory();
@@ -71,7 +77,7 @@ describe("@carte/orders-backend checkout rate limit", () => {
   it("throttles burst traffic from one IP inside a 60 second window", async () => {
     const counters = { get: 0, set: 0 };
     const ctx = ipContext("203.0.113.20", counters);
-    const handler = factory().routes.checkout.handler;
+    const handler = checkoutHandler();
 
     const responses = [];
     for (let index = 0; index < 100; index += 1) responses.push(await handler(ctx));
@@ -80,8 +86,9 @@ describe("@carte/orders-backend checkout rate limit", () => {
       (response) => response instanceof Response && response.status === 429,
     );
     expect(throttled.length).toBeGreaterThan(0);
-    expect(responses[60]).toBeInstanceOf(Response);
-    expect((responses[60] as Response).status).toBe(429);
+    const firstThrottled = responses[60];
+    expect(firstThrottled).toBeInstanceOf(Response);
+    expect((firstThrottled as Response).status).toBe(429);
     expect(counters.get).toBe(100);
     expect(counters.set).toBe(60);
   });
@@ -89,7 +96,7 @@ describe("@carte/orders-backend checkout rate limit", () => {
   it("allows legitimate one request per second traffic", async () => {
     const counters = { get: 0, set: 0 };
     const ctx = ipContext("203.0.113.21", counters);
-    const handler = factory().routes.checkout.handler;
+    const handler = checkoutHandler();
 
     const responses = [];
     for (let index = 0; index < 100; index += 1) {

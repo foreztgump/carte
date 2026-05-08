@@ -11,6 +11,8 @@
 
 import { definePlugin } from "emdash";
 
+import { enforceRateLimit, rateLimitResponse } from "./rate-limit.js";
+
 import type { RouteContext } from "emdash";
 
 const PLUGIN_ID = "carte-orders-backend";
@@ -23,6 +25,14 @@ const stubRoute =
     return { ok: true, plugin: PLUGIN_ID, route };
   };
 
+const rateLimitedRoute =
+  (route: string) =>
+  async (ctx: RouteContext): Promise<Response | { ok: true; plugin: string; route: string }> => {
+    const limit = await enforceRateLimit(ctx, route);
+    if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+    return { ok: true, plugin: PLUGIN_ID, route };
+  };
+
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -32,7 +42,7 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: stubRoute("admin") },
-      checkout: { handler: stubRoute("checkout"), public: true },
+      checkout: { handler: rateLimitedRoute("checkout"), public: true },
       "webhook-stripe": { handler: stubRoute("webhook-stripe"), public: true },
       refund: { handler: stubRoute("refund") },
     },
