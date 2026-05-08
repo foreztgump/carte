@@ -69,7 +69,7 @@ describe("@carte/orders-admin React shell", () => {
 
 describe("@carte/orders-admin skip link a11y", () => {
   const skipLinkTarget = (): string | null =>
-    screen.getByRole("link", { name: "Skip to orders queue" }).getAttribute("href");
+    screen.getByRole("link", { name: /^Skip to / }).getAttribute("href");
 
   it("points the skip link to the orders panel anchor on the orders route", () => {
     render(createElement(OrdersAdminApp, { currentPath: "/carte-orders" }));

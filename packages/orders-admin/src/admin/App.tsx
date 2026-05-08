@@ -55,10 +55,12 @@ export const OrdersAdminApp = ({
   initialOrders = EMPTY_ORDERS,
 }: OrdersAdminAppProps): ReactElement => {
   const route = getInitialOrdersAdminRoute(currentPath);
+  const skipTarget = route === MODIFIER_ROUTE ? "#modifiers-panel-title" : "#orders-panel-title";
+  const skipLabel = route === MODIFIER_ROUTE ? "Skip to modifier groups" : "Skip to orders queue";
 
   return (
     <main aria-labelledby="carte-orders-title">
-      <a href="#orders-panel-title">Skip to orders queue</a>
+      <a href={skipTarget}>{skipLabel}</a>
       <header>
         <p>Carte</p>
         <h1 id="carte-orders-title">Carte Orders</h1>
