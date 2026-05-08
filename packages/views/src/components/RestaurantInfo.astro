@@ -1,0 +1,43 @@
+---
+import { infoClassesFor } from "../styles.js";
+import type { RestaurantInfoProps } from "../types.js";
+
+const props = Astro.props as RestaurantInfoProps;
+const { info, variant = "default" } = props;
+const infoClass = infoClassesFor(variant);
+---
+
+<aside class={infoClass} data-carte-variant={variant}>
+  <h2 class={variant === "headless" ? undefined : "text-lg font-semibold text-stone-950"}>
+    Restaurant information
+  </h2>
+  <address class={variant === "headless" ? undefined : "mt-3 not-italic leading-7"}>
+    {info.addressLines.map((line) => <span class="block">{line}</span>)}
+  </address>
+  <dl class={variant === "headless" ? undefined : "mt-4 space-y-2 text-sm"}>
+    {
+      info.phone ? (
+        <div>
+          <dt class={variant === "headless" ? undefined : "font-medium text-stone-950"}>Phone</dt>
+          <dd>
+            <a class={variant === "headless" ? undefined : "text-amber-700"} href={`tel:${info.phone}`}>
+              {info.phone}
+            </a>
+          </dd>
+        </div>
+      ) : null
+    }
+    {
+      info.email ? (
+        <div>
+          <dt class={variant === "headless" ? undefined : "font-medium text-stone-950"}>Email</dt>
+          <dd>
+            <a class={variant === "headless" ? undefined : "text-amber-700"} href={`mailto:${info.email}`}>
+              {info.email}
+            </a>
+          </dd>
+        </div>
+      ) : null
+    }
+  </dl>
+</aside>

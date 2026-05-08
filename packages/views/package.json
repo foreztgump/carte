@@ -7,7 +7,13 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./components/CarteShell.astro": "./src/components/CarteShell.astro"
+    "./components/CarteShell.astro": "./src/components/CarteShell.astro",
+    "./components/DietaryFilter.astro": "./src/components/DietaryFilter.astro",
+    "./components/MenuDisplay.astro": "./src/components/MenuDisplay.astro",
+    "./components/MenuItem.astro": "./src/components/MenuItem.astro",
+    "./components/MenuSection.astro": "./src/components/MenuSection.astro",
+    "./components/RestaurantHero.astro": "./src/components/RestaurantHero.astro",
+    "./components/RestaurantInfo.astro": "./src/components/RestaurantInfo.astro"
   },
   "scripts": {
     "astro:check": "astro check",
@@ -18,6 +24,9 @@
   },
   "peerDependencies": {
     "astro": ">=5.10.0 <7"
+  },
+  "dependencies": {
+    "@carte/core": "workspace:*"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",

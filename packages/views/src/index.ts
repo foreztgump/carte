@@ -2,10 +2,38 @@
 
 import type { CarteComponentExport } from "./types.js";
 
-export type { CarteComponentExport, CarteShellProps, CarteViewVariant } from "./types.js";
+export type {
+  CarteComponentExport,
+  CarteMenu,
+  CarteMenuItem,
+  CarteMenuSection,
+  CarteRestaurantInfo,
+  CarteRestaurantSummary,
+  CarteShellProps,
+  CarteViewVariant,
+  DietaryFilterProps,
+  MenuDisplayProps,
+  MenuItemProps,
+  MenuSectionProps,
+  RestaurantHeroProps,
+  RestaurantInfoProps,
+} from "./types.js";
+
+const componentExport = (componentName: string): CarteComponentExport => ({
+  componentName,
+  importPath: `@carte/views/components/${componentName}.astro`,
+  variants: ["default", "headless"],
+});
 
 export const CarteShell = {
   componentName: "CarteShell",
   importPath: "@carte/views/components/CarteShell.astro",
   variants: ["default", "headless"],
 } as const satisfies CarteComponentExport;
+
+export const DietaryFilter = componentExport("DietaryFilter");
+export const MenuDisplay = componentExport("MenuDisplay");
+export const MenuItem = componentExport("MenuItem");
+export const MenuSection = componentExport("MenuSection");
+export const RestaurantHero = componentExport("RestaurantHero");
+export const RestaurantInfo = componentExport("RestaurantInfo");

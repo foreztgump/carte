@@ -1,0 +1,27 @@
+---
+import MenuItem from "./MenuItem.astro";
+import { sectionClassesFor } from "../styles.js";
+import type { MenuSectionProps } from "../types.js";
+
+const props = Astro.props as MenuSectionProps;
+const { section, variant = "default" } = props;
+const sectionClass = sectionClassesFor(variant);
+---
+
+<section class={sectionClass} data-carte-menu-section={section.id} data-carte-variant={variant}>
+  <header>
+    <h2 class={variant === "headless" ? undefined : "text-2xl font-bold tracking-tight text-stone-950"}>
+      {section.name}
+    </h2>
+    {
+      section.description ? (
+        <p class={variant === "headless" ? undefined : "mt-2 max-w-2xl text-sm leading-6 text-stone-600"}>
+          {section.description}
+        </p>
+      ) : null
+    }
+  </header>
+  <div class={variant === "headless" ? undefined : "grid gap-4"}>
+    {section.items.map((item) => <MenuItem item={item} variant={variant} />)}
+  </div>
+</section>

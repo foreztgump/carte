@@ -2,9 +2,10 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { get } from "node:http";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const fixtureRoot = resolve(__dirname, "fixture");
+const fixtureRoot = resolve(dirname(fileURLToPath(import.meta.url)), "fixture");
 const fixturePort = 4327;
 const fixtureUrl = `http://127.0.0.1:${fixturePort}`;
 const serverStartupTimeoutMs = 30_000;
@@ -80,4 +81,13 @@ test("@carte/views menu fixture has no serious or critical axe violations", asyn
   );
 
   expect(blockingViolations).toEqual([]);
+});
+
+test("@carte/views menu fixture emits schema.org JSON-LD", async ({ page }) => {
+  await page.goto(fixtureUrl);
+
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+
+  expect(jsonLd.some((payload) => payload.includes('"@type":"Restaurant"'))).toBe(true);
+  expect(jsonLd.some((payload) => payload.includes('"@type":"Menu"'))).toBe(true);
 });
