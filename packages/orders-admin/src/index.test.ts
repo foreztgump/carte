@@ -324,6 +324,26 @@ describe("@carte/orders-admin modifier editor", () => {
     );
   });
 
+  it("does not update local state when the save POST fails", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
+
+    fireEvent.change(screen.getByLabelText("Modifier group name"), {
+      target: { value: "Pizza extras" },
+    });
+    fireEvent.change(screen.getByLabelText("Option name"), {
+      target: { value: "Buffalo mozzarella" },
+    });
+    fireEvent.change(screen.getByLabelText("Option fee in cents"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create modifier group" }));
+
+    await screen.findByText("Could not save modifier groups. Try again.");
+    expect(screen.queryByText("Pizza extras")).toBeNull();
+    expect(screen.getByText("No modifier groups configured yet.")).toBeTruthy();
+  });
+
   it("rejects nested modifier groups with a validation error", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
