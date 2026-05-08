@@ -166,6 +166,59 @@ describe("@carte/orders-admin order workflows", () => {
     );
   });
 
+  it("sends an Idempotency-Key header derived from orderId on refund POST", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        orderId: "order-101",
+        status: "refunded",
+        refundId: "rf_idem",
+        refundedAt: "2026-05-08T20:00:00.000Z",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+    fireEvent.click(screen.getByRole("button", { name: "View order-101" }));
+    fireEvent.click(screen.getByRole("button", { name: "Issue refund" }));
+
+    await screen.findByText("Refund rf_idem issued at May 8, 2026, 8:00 PM");
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBe("refund:order-101");
+  });
+
+  it("disables the refund button while the request is in flight", async () => {
+    let resolveFetch: ((value: unknown) => void) | undefined;
+    const pending = new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValue(pending);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+    fireEvent.click(screen.getByRole("button", { name: "View order-101" }));
+    const refundButton = screen.getByRole("button", { name: "Issue refund" }) as HTMLButtonElement;
+    fireEvent.click(refundButton);
+
+    await waitFor(() => expect(refundButton.disabled).toBe(true));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(refundButton);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolveFetch?.({
+      ok: true,
+      json: async () => ({
+        orderId: "order-101",
+        status: "refunded",
+        refundId: "rf_inflight",
+        refundedAt: "2026-05-08T20:00:00.000Z",
+      }),
+    });
+    await screen.findByText("Refund rf_inflight issued at May 8, 2026, 8:00 PM");
+  });
+
   it("surfaces status-driven transitions and disables invalid transitions", async () => {
     const fetchMock = vi.fn().mockImplementation(async (_url, init) => ({
       ok: true,
