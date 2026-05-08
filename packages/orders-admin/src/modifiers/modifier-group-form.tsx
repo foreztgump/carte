@@ -28,11 +28,10 @@ export const ModifierGroupForm = ({
   const [error, setError] = useState("");
 
   const saveGroups = (nextGroups: ModifierGroupContract[]): void => {
-    setGroups(nextGroups);
     setError("");
-    persistGroups(backendBasePath, nextGroups).catch(() =>
-      setError("Could not save modifier groups. Try again."),
-    );
+    persistGroups(backendBasePath, nextGroups)
+      .then(() => setGroups(nextGroups))
+      .catch(() => setError("Could not save modifier groups. Try again."));
   };
 
   const createGroup = (): void => {

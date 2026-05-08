@@ -283,7 +283,7 @@ describe("@carte/orders-admin order workflows", () => {
 });
 
 describe("@carte/orders-admin modifier editor", () => {
-  it("creates, edits, and deletes single-tier modifier groups with per-option fees", () => {
+  it("creates, edits, and deletes single-tier modifier groups with per-option fees", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ groups: [], updatedAt: "2026-05-08T22:00:00.000Z" }),
@@ -301,7 +301,7 @@ describe("@carte/orders-admin modifier editor", () => {
     fireEvent.change(screen.getByLabelText("Option fee in cents"), { target: { value: "250" } });
     fireEvent.click(screen.getByRole("button", { name: "Create modifier group" }));
 
-    expect(screen.getByText("Pizza extras")).toBeTruthy();
+    await screen.findByText("Pizza extras");
     expect(screen.getByText("Buffalo mozzarella · $2.50")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Edit Pizza extras name"), {
@@ -312,11 +312,11 @@ describe("@carte/orders-admin modifier editor", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Pizza extras" }));
 
-    expect(screen.getByText("Premium pizza extras")).toBeTruthy();
+    await screen.findByText("Premium pizza extras");
     expect(screen.getByText("Buffalo mozzarella · $3.00")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete Premium pizza extras" }));
-    expect(screen.queryByText("Premium pizza extras")).toBeNull();
+    await waitFor(() => expect(screen.queryByText("Premium pizza extras")).toBeNull());
     expect(screen.getByText("No modifier groups configured yet.")).toBeTruthy();
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/_emdash/api/plugins/carte-orders-backend/modifier-update",
