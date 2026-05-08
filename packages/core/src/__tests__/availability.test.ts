@@ -22,12 +22,27 @@ const item = (data: Record<string, unknown>): ContentItem =>
 const makeContext = (
   items: ContentItem[],
   input: Record<string, unknown> = {},
+  settings: Record<string, unknown> = {},
 ): RouteContext & { content: { update: ReturnType<typeof vi.fn> } } => {
   const update = vi.fn(async (_collection: string, _id: string, data: Record<string, unknown>) =>
     item(data),
   );
 
+  const kv = {
+    get: vi.fn(async (key: string) => {
+      if (key.startsWith("settings:")) {
+        const settingKey = key.slice("settings:".length);
+        return settings[settingKey] ?? null;
+      }
+      return null;
+    }),
+    set: vi.fn(),
+    delete: vi.fn(),
+    list: vi.fn(),
+  };
+
   return {
+    kv,
     content: {
       get: vi.fn(),
       list: vi.fn(async () => ({ items, hasMore: false })),
@@ -77,6 +92,34 @@ describe("@carte/core menu item availability", () => {
 
     expect(result.items[0]?.data.available).toBe(true);
     expect(ctx.content.update).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("uses configured Tokyo timezone for 86 restore time", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-07T08:00:00.000Z"));
+    const ctx = makeContext([], { itemId: "item-1" }, { timezone: "Asia/Tokyo" });
+
+    await routes["menu-items/86"].handler(ctx);
+
+    expect(ctx.content.update).toHaveBeenCalledWith(MENU_COLLECTION, "item-1", {
+      available: false,
+      unavailableUntil: "2026-05-07T21:00:00.000Z",
+    });
+    vi.useRealTimers();
+  });
+
+  it("uses configured New York timezone for 86 restore time", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-07T08:00:00.000Z"));
+    const ctx = makeContext([], { itemId: "item-1" }, { timezone: "America/New_York" });
+
+    await routes["menu-items/86"].handler(ctx);
+
+    expect(ctx.content.update).toHaveBeenCalledWith(MENU_COLLECTION, "item-1", {
+      available: false,
+      unavailableUntil: "2026-05-07T10:00:00.000Z",
+    });
     vi.useRealTimers();
   });
 
