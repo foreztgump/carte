@@ -108,3 +108,88 @@ describe("@carte/core GDPR export route", () => {
     });
   });
 });
+
+describe("@carte/core GDPR erasure route", () => {
+  it("strips guest PII while preserving revenue records", async () => {
+    const manifest = factory();
+    const guestEmail = "Guest@Example.com";
+    const reservation = contentItem("reservation-1", {
+      guest: {
+        email: guestEmail,
+        name: "Ada Lovelace",
+        phone: "+15550101010",
+        notes: "Window table",
+      },
+      currency: "USD",
+      depositTotal: 1500,
+      partySize: 4,
+    });
+    const order = contentItem("order-1", {
+      customer: {
+        email: guestEmail,
+        name: "Ada Lovelace",
+        phone: "+15550101010",
+        notes: "Leave at host stand",
+      },
+      currency: "USD",
+      lineItems: [{ itemName: "Tasting Menu", unitPrice: 4200 }],
+      total: 4200,
+    });
+    const updated: Array<{ collection: string; id: string; data: Record<string, unknown> }> = [];
+    const list: ContentList = async (collection: string) => ({
+      items: collection === "carte_reservations" ? [reservation] : [order],
+      hasMore: false,
+    });
+    const context = {
+      ...routeContext(
+        new Request("https://carte.test/gdpr/erase?email=guest@example.com", {
+          method: "POST",
+          headers: { "x-emdash-admin-scope": "true" },
+        }),
+        list,
+      ),
+      content: {
+        list,
+        update: async (collection: string, id: string, data: Record<string, unknown>) => {
+          updated.push({ collection, id, data });
+          return contentItem(id, data);
+        },
+      },
+    } as unknown as RouteContext;
+
+    const response = (await manifest.routes["gdpr/erase"]!.handler(context)) as Response;
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      email: "guest@example.com",
+      erased: { reservations: 1, orders: 1 },
+    });
+    expect(updated).toHaveLength(2);
+    const [erasedReservation, erasedOrder] = updated.map((entry) => entry.data);
+    expect(erasedReservation).toMatchObject({
+      guest: {
+        email: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        name: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        phone: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        notes: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+      },
+      currency: "USD",
+      depositTotal: 1500,
+      partySize: 4,
+    });
+    expect(erasedOrder).toMatchObject({
+      customer: {
+        email: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        name: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        phone: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+        notes: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
+      },
+      currency: "USD",
+      lineItems: [{ itemName: "Tasting Menu", unitPrice: 4200 }],
+      total: 4200,
+    });
+    expect((erasedReservation.guest as Record<string, unknown>).email).toBe(
+      (erasedOrder.customer as Record<string, unknown>).email,
+    );
+  });
+});
