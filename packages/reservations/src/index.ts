@@ -42,10 +42,13 @@ const stubRoute =
 const rateLimitedRoute =
   (route: string) =>
   async (ctx: RouteContext): Promise<Response | { ok: true; plugin: string; route: string }> => {
-    const capacityKey = isCapacitySubmit(ctx);
-    if (capacityKey !== null) return capacitySubmitRoute(ctx, capacityKey);
+    // Apply per-IP rate limiting BEFORE any capacity-key short-circuit.
+    // Otherwise an attacker can flood /submit by attaching any capacityKey
+    // value and bypass the limiter entirely.
     const limit = await enforceRateLimit(ctx, route);
     if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+    const capacityKey = isCapacitySubmit(ctx);
+    if (capacityKey !== null) return capacitySubmitRoute(ctx, capacityKey);
     return { ok: true, plugin: PLUGIN_ID, route };
   };
 

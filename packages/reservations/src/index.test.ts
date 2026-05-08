@@ -52,13 +52,27 @@ const submitHandler = () => {
   return handler;
 };
 
-const capacityContext = (key: string, decrement: () => Promise<number>): RouteContext =>
-  ({
+const capacityContext = (
+  key: string,
+  decrement: () => Promise<number>,
+  ip = "203.0.113.200",
+): RouteContext => {
+  const store = new Map<string, unknown>();
+  return {
     input: { capacityKey: key },
     request: new Request("https://example.test/submit", { method: "POST" }),
-    requestMeta: { ip: "203.0.113.200", userAgent: null, referer: null, geo: null },
-    kv: { atomicDecrement: decrement },
-  }) as unknown as RouteContext;
+    requestMeta: { ip, userAgent: null, referer: null, geo: null },
+    kv: {
+      async get<T>(rateKey: string): Promise<T | null> {
+        return (store.get(rateKey) as T | undefined) ?? null;
+      },
+      async set(rateKey: string, value: unknown): Promise<void> {
+        store.set(rateKey, value);
+      },
+      atomicDecrement: decrement,
+    },
+  } as unknown as RouteContext;
+};
 
 describe("@carte/reservations manifest", () => {
   it("declares the canonical id and version", () => {
@@ -89,8 +103,8 @@ describe("@carte/reservations capacity pen smoke", () => {
     };
 
     const responses = await Promise.all(
-      Array.from({ length: 1_000 }, () =>
-        handler(capacityContext("capacity:2026-05-08T19", decrement)),
+      Array.from({ length: 1_000 }, (_, index) =>
+        handler(capacityContext("capacity:2026-05-08T19", decrement, `203.0.113.${index}`)),
       ),
     );
 
