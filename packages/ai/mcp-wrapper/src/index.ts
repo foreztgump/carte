@@ -47,7 +47,7 @@ export async function handleMcpRequest(request: Request, env: Env): Promise<Resp
     if (!isAuthorized(request, env)) {
       return new Response(null, { status: 401 });
     }
-    return routeJsonRpc(await parseJsonRpc(request), env);
+    return routeJsonRpc(await parseJsonRpc(request), env, request);
   } catch (error) {
     return jsonRpcError({ code: -32603, message: messageFrom(error), status: 500 });
   }
@@ -84,7 +84,11 @@ function constantTimeEquals(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
-async function routeJsonRpc(message: JsonRpcRequest, env: Env): Promise<Response> {
+async function routeJsonRpc(
+  message: JsonRpcRequest,
+  env: Env,
+  request: Request,
+): Promise<Response> {
   if (message.method === "initialize") {
     return jsonRpcResult(message.id, initializeResult());
   }
@@ -92,7 +96,7 @@ async function routeJsonRpc(message: JsonRpcRequest, env: Env): Promise<Response
     return jsonRpcResult(message.id, { tools: toolDescriptors() });
   }
   if (message.method === "tools/call") {
-    return proxyToolCall(message, env);
+    return proxyToolCall(message, env, request);
   }
   if (message.method === "notifications/initialized") {
     return new Response(null, { status: 202 });
@@ -105,13 +109,21 @@ async function routeJsonRpc(message: JsonRpcRequest, env: Env): Promise<Response
   });
 }
 
-async function proxyToolCall(message: JsonRpcRequest, env: Env): Promise<Response> {
+async function proxyToolCall(
+  message: JsonRpcRequest,
+  env: Env,
+  request: Request,
+): Promise<Response> {
+  const workspaceId = request.headers.get("X-Workspace-Id");
+  if (workspaceId === null || workspaceId.trim() === "") {
+    return new Response("X-Workspace-Id header is required.", { status: 400 });
+  }
   const params = toolCallParams(message.params);
   const response = await fetcherFrom(env)(`${pluginBase(env)}/${TOOL_CALL_ROUTE}`, {
     body: JSON.stringify({
       arguments: params.arguments ?? {},
       toolName: requiredName(params),
-      workspaceId: "default",
+      workspaceId,
     }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
