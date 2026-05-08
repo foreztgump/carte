@@ -35,12 +35,27 @@ export function defer(ctx: ReservationRouteContext, task: Promise<unknown>): voi
   ctx.waitUntil(task);
 }
 
+interface RateLimitCounter {
+  count: number;
+  expiresAt: number;
+}
+
+// EmDash 0.9 KVAccess.set has no expirationTtl option, so the window expiry is
+// embedded in the stored value. Records past their expiresAt are treated as
+// reset on the next read and overwritten in place. The read-then-write here is
+// best-effort under concurrent submits from the same IP — see HR6 follow-up.
 export async function enforceSubmitRateLimit(ctx: ReservationRouteContext): Promise<boolean> {
   const key = `${RATE_LIMIT_PREFIX}:${getClientIp(ctx)}:${getWindowId()}`;
-  const current = (await ctx.kv.get<number>(key)) ?? 0;
+  const now = Date.now();
+  const stored = await ctx.kv.get<RateLimitCounter>(key);
+  const active = stored !== null && stored !== undefined && stored.expiresAt > now ? stored : null;
+  const current = active?.count ?? 0;
   if (current >= RATE_LIMIT_MAX_REQUESTS) return false;
-  await ctx.kv.set(key, current + 1);
-  await ctx.kv.set(`${key}:ttl`, WINDOW_SECONDS);
+  const next: RateLimitCounter = {
+    count: current + 1,
+    expiresAt: active?.expiresAt ?? now + WINDOW_SECONDS * 1000,
+  };
+  await ctx.kv.set(key, next);
   return true;
 }
 
