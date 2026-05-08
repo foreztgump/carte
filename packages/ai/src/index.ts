@@ -14,6 +14,7 @@ import { definePlugin } from "emdash";
 import type { RouteContext } from "emdash";
 import { checkLicense } from "./license.js";
 import type { LicenseKv, LicenseRecord } from "./license.js";
+import { chatStreamRoute, historyRoute } from "./routes/chat.js";
 
 const PLUGIN_ID = "carte-ai";
 const PLUGIN_VERSION = "0.1.0";
@@ -48,9 +49,9 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: stubRoute("admin") },
-      "chat-stream": { handler: stubRoute("chat-stream") },
+      "chat-stream": { handler: chatStreamRoute },
       "tool-call": { handler: stubRoute("tool-call") },
-      history: { handler: stubRoute("history") },
+      history: { handler: historyRoute },
       "license-check": { handler: licenseCheckRoute },
     },
     admin: {
