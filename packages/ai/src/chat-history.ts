@@ -13,19 +13,24 @@ export interface ChatKv {
   set?: (key: string, value: unknown) => Promise<void>;
 }
 
-const chatKey = (userId: string) => `chat:${userId}`;
+const chatKey = (workspaceId: string, userId: string) => `chat:${workspaceId}:${userId}`;
 
-export async function readChatHistory(kv: ChatKv, userId: string): Promise<ChatMessage[]> {
-  return (await kv.get<ChatMessage[]>(chatKey(userId))) ?? [];
+export async function readChatHistory(
+  kv: ChatKv,
+  workspaceId: string,
+  userId: string,
+): Promise<ChatMessage[]> {
+  return (await kv.get<ChatMessage[]>(chatKey(workspaceId, userId))) ?? [];
 }
 
 export async function appendChatMessages(
   kv: ChatKv,
+  workspaceId: string,
   userId: string,
   newMessages: ChatMessage[],
 ): Promise<ChatMessage[]> {
-  const messages = [...(await readChatHistory(kv, userId)), ...newMessages];
-  await writeKv(kv, chatKey(userId), messages, CHAT_RETENTION_SECONDS);
+  const messages = [...(await readChatHistory(kv, workspaceId, userId)), ...newMessages];
+  await writeKv(kv, chatKey(workspaceId, userId), messages, CHAT_RETENTION_SECONDS);
   return messages;
 }
 

@@ -12,6 +12,7 @@ export type LlmStreamer = (input: {
 interface ChatRouteContext {
   input: unknown;
   kv: ChatKv;
+  request?: Request;
 }
 
 interface ChatInput {
@@ -31,11 +32,15 @@ export async function chatStreamRoute(
   ctx: ChatRouteContext,
   streamLlm: LlmStreamer = defaultLlmStream,
 ): Promise<Response> {
-  const input = parseChatInput(ctx.input);
+  const workspaceId = workspaceIdFrom(ctx.request);
+  if (workspaceId === null) {
+    return new Response("X-Workspace-Id header is required.", { status: 400 });
+  }
+  const input = parseChatInput(ctx.input, workspaceId);
   const chunks = await streamLlm({ ...input, prompt: promptFor(input) });
   const assistantMessage = chunks.join("");
 
-  await appendChatMessages(ctx.kv, input.userId, [
+  await appendChatMessages(ctx.kv, workspaceId, input.userId, [
     { role: "user", content: input.message },
     { role: "assistant", content: assistantMessage },
   ]);
@@ -44,8 +49,12 @@ export async function chatStreamRoute(
 }
 
 export async function historyRoute(ctx: ChatRouteContext): Promise<{ messages: ChatMessage[] }> {
+  const workspaceId = workspaceIdFrom(ctx.request);
+  if (workspaceId === null) {
+    throw new Error("X-Workspace-Id header is required for chat history.");
+  }
   const input = parseHistoryInput(ctx.input);
-  return { messages: await readChatHistory(ctx.kv, input.userId) };
+  return { messages: await readChatHistory(ctx.kv, workspaceId, input.userId) };
 }
 
 function promptFor(input: ChatInput): string {
@@ -60,19 +69,27 @@ function defaultLlmStream(input: { message: string }): string[] {
   return [`Carte AI received: ${input.message}`];
 }
 
-function parseChatInput(input: unknown): ChatInput {
+function parseChatInput(input: unknown, workspaceId: string): ChatInput {
   const record = requireRecord(input);
   return {
     message: requireString(record, "message"),
     piiOptIn: record.piiOptIn === true,
     toolContext: record.toolContext,
     userId: requireString(record, "userId"),
-    workspaceId: requireString(record, "workspaceId"),
+    workspaceId,
   };
 }
 
 function parseHistoryInput(input: unknown): { userId: string } {
   return { userId: requireString(requireRecord(input), "userId") };
+}
+
+function workspaceIdFrom(request: Request | undefined): string | null {
+  const header = request?.headers.get("X-Workspace-Id") ?? null;
+  if (header === null || header.trim() === "") {
+    return null;
+  }
+  return header;
 }
 
 function requireRecord(input: unknown): Record<string, unknown> {
