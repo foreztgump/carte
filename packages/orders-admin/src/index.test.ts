@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
 
 import factory from "./index.js";
 import { OrdersAdminApp, getInitialOrdersAdminRoute } from "./admin/App.js";
@@ -66,5 +67,138 @@ describe("@carte/orders-admin contracts", () => {
     expect(ordersBackendRoutes.refund).toBe("/refund");
     expect(ordersBackendRoutes.modifierUpdate).toBe("/modifier-update");
     expect(ordersBackendRoutes.orderStateChange).toBe("/order-state-change");
+  });
+});
+
+const fixtureOrders = [
+  {
+    id: "order-101",
+    customerName: "Ada Lovelace",
+    placedAt: "2026-05-07T18:30:00.000Z",
+    status: "pending" as const,
+    totalCents: 2450,
+    lineItems: [
+      {
+        id: "line-1",
+        itemName: "Margherita Pizza",
+        unitPriceCents: 1800,
+        quantity: 1,
+        modifiers: [
+          { id: "mod-1", name: "Buffalo mozzarella", feeCents: 250 },
+          { id: "mod-2", name: "Chili oil", feeCents: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "order-102",
+    customerName: "Grace Hopper",
+    placedAt: "2026-05-08T19:00:00.000Z",
+    status: "ready" as const,
+    totalCents: 1600,
+    lineItems: [
+      {
+        id: "line-2",
+        itemName: "Caesar Salad",
+        unitPriceCents: 1600,
+        quantity: 1,
+        modifiers: [{ id: "mod-3", name: "No anchovies", feeCents: 0 }],
+      },
+    ],
+  },
+];
+
+describe("@carte/orders-admin order workflows", () => {
+  it("renders fixture orders with status and date filters", () => {
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+
+    expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+    expect(screen.getByText("Grace Hopper")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "ready" } });
+    expect(screen.queryByText("Ada Lovelace")).toBeNull();
+    expect(screen.getByText("Grace Hopper")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-05-09" } });
+    expect(screen.queryByText("Grace Hopper")).toBeNull();
+    expect(screen.getByText("No orders match the current filters.")).toBeTruthy();
+  });
+
+  it("shows order detail using snapshotted line item and modifier names", () => {
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+
+    fireEvent.click(screen.getByRole("button", { name: "View order-101" }));
+
+    expect(screen.getByRole("heading", { name: "Order order-101" })).toBeTruthy();
+    expect(screen.getByText("Margherita Pizza")).toBeTruthy();
+    expect(screen.getByText("Buffalo mozzarella")).toBeTruthy();
+    expect(screen.getByText("Chili oil")).toBeTruthy();
+  });
+
+  it("posts refunds to the typed backend route and updates the UI", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        orderId: "order-101",
+        status: "refunded",
+        refundId: "rf_123",
+        refundedAt: "2026-05-08T20:00:00.000Z",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+    fireEvent.click(screen.getByRole("button", { name: "View order-101" }));
+    fireEvent.click(screen.getByRole("button", { name: "Issue refund" }));
+
+    await screen.findByText("Refund rf_123 issued at May 8, 2026, 8:00 PM");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/_emdash/api/plugins/carte-orders-backend/refund",
+      expect.objectContaining({
+        body: JSON.stringify({ orderId: "order-101" }),
+        method: "POST",
+      }),
+    );
+  });
+
+  it("surfaces status-driven transitions and disables invalid transitions", async () => {
+    const fetchMock = vi.fn().mockImplementation(async (_url, init) => ({
+      ok: true,
+      json: async () => ({
+        orderId: JSON.parse(String(init.body)).orderId,
+        status: JSON.parse(String(init.body)).nextStatus,
+        updatedAt: "2026-05-08T21:00:00.000Z",
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+    fireEvent.click(screen.getByRole("button", { name: "View order-101" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Mark preparing" }));
+    await screen.findByText("Status: preparing");
+    fireEvent.click(screen.getByRole("button", { name: "Mark ready" }));
+    await screen.findByText("Status: ready");
+    fireEvent.click(screen.getByRole("button", { name: "Mark completed" }));
+    await screen.findByText("Status: completed");
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(screen.getByRole("button", { name: "Mark completed" })).toBeDisabled();
+  });
+
+  it("edits email-first notification templates with rendered previews", () => {
+    render(createElement(OrdersAdminApp, { initialOrders: fixtureOrders }));
+
+    fireEvent.change(screen.getByLabelText("Ready email subject"), {
+      target: { value: "Order {{orderId}} is ready" },
+    });
+    fireEvent.change(screen.getByLabelText("Ready email body"), {
+      target: { value: "Hi {{customerName}}, collect {{orderId}}." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save email template" }));
+
+    expect(screen.getByText("Template saved for email notifications.")).toBeTruthy();
+    expect(screen.getByText("Order order-101 is ready")).toBeTruthy();
+    expect(screen.getByText("Hi Ada Lovelace, collect order-101.")).toBeTruthy();
   });
 });
