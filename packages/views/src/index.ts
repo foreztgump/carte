@@ -2,6 +2,9 @@
 
 import type { CarteComponentExport } from "./types.js";
 
+export { isAllowedCheckoutRedirect, safeCheckoutRedirect } from "./safe-redirect.js";
+export { safeJsonForScript } from "./safe-json.js";
+
 export type {
   CarteComponentExport,
   CarteMenu,
