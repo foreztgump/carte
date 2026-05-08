@@ -3,9 +3,15 @@ import type { RouteContext } from "emdash";
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 60;
 const RETRY_AFTER_SECONDS = 60;
+const KV_EXPIRATION_TTL_SECONDS = 120;
 
 type RateLimitState = {
   hits: number[];
+};
+
+type RateLimitKv = {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, options?: { expirationTtl: number }): Promise<void>;
 };
 
 type RateLimitResult =
@@ -37,11 +43,12 @@ export const enforceRateLimit = async (
 ): Promise<RateLimitResult> => {
   const now = Date.now();
   const key = rateLimitKey(route, clientIp(ctx));
-  const hits = storedHits(await ctx.kv.get<RateLimitState>(key), now - WINDOW_MS);
+  const kv = ctx.kv as RateLimitKv;
+  const hits = storedHits(await kv.get<RateLimitState>(key), now - WINDOW_MS);
   if (hits.length >= MAX_REQUESTS_PER_WINDOW) {
     return { allowed: false, retryAfterSeconds: RETRY_AFTER_SECONDS };
   }
-  await ctx.kv.set(key, { hits: [...hits, now] });
+  await kv.set(key, { hits: [...hits, now] }, { expirationTtl: KV_EXPIRATION_TTL_SECONDS });
   return { allowed: true };
 };
 
