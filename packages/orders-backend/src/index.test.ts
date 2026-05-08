@@ -112,7 +112,9 @@ describe("@carte/orders-backend manifest", () => {
       kv: {
         async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
           subrequests.push("kv.set");
-          kvWrites.push({ key, options });
+          if (options) {
+            kvWrites.push({ key, options });
+          }
         },
       },
       http: {
@@ -126,7 +128,10 @@ describe("@carte/orders-backend manifest", () => {
       settings: { stripeSecretKey: "sk_test_orders", currency: "usd" },
     } as unknown as RouteContext;
 
-    const result = await manifest.routes.checkout.handler(ctx);
+    const checkoutRoute = manifest.routes.checkout;
+    expect(checkoutRoute).toBeDefined();
+
+    const result = await checkoutRoute?.handler(ctx);
 
     expect(result).toEqual({ checkoutUrl: "https://checkout.stripe.com/c/pay_123" });
     expect(kvWrites).toEqual([{ key: "cart-hold:cart_123", options: { expirationTtl: 600 } }]);
