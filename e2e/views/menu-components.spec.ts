@@ -63,6 +63,54 @@ test("@carte/views menu components render fixture data", async ({ page }) => {
   await expect(page.getByText("123 Market Street")).toBeVisible();
 });
 
+test("@carte/views HoursWidget renders today's hours and week schedule", async ({ page }) => {
+  await page.goto(fixtureUrl);
+
+  await expect(page.getByRole("heading", { name: "Hours", level: 2 })).toBeVisible();
+  await expect(page.getByText("Open today: 5:00 PM–11:00 PM")).toBeVisible();
+  await expect(page.getByText("Thursday")).toBeVisible();
+  await expect(page.getByText("Sunday")).toBeVisible();
+  await expect(page.getByText("Closed")).toBeVisible();
+  await expect(page.locator("[data-carte-day-state='past']")).toHaveCount(3);
+  await expect(page.locator("[data-carte-day-state='future']")).toHaveCount(3);
+});
+
+test("@carte/views ReservationForm submits and surfaces success UI", async ({ page }) => {
+  await page.route("**/_emdash/api/plugins/carte-reservations/submit", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Reservation request received." }),
+    });
+  });
+
+  await page.goto(fixtureUrl);
+  await page.getByLabel("Name").fill("Alex Guest");
+  await page.getByLabel("Email").fill("alex@example.com");
+  await page.getByLabel("Phone").fill("+15550104141");
+  await page.getByLabel("Notes").fill("Patio if available");
+  await page.getByRole("button", { name: "Request reservation" }).click();
+
+  await expect(page.getByRole("status")).toContainText("Reservation request received.");
+});
+
+test("@carte/views ReservationForm surfaces error UI", async ({ page }) => {
+  await page.route("**/_emdash/api/plugins/carte-reservations/submit", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 422,
+      body: JSON.stringify({ message: "Selected time is no longer available." }),
+    });
+  });
+
+  await page.goto(fixtureUrl);
+  await page.getByLabel("Name").fill("Alex Guest");
+  await page.getByLabel("Email").fill("alex@example.com");
+  await page.getByRole("button", { name: "Request reservation" }).click();
+
+  await expect(page.getByRole("alert")).toContainText("Selected time is no longer available.");
+});
+
 test("@carte/views DietaryFilter filters by core allergen taxonomy", async ({ page }) => {
   await page.goto(fixtureUrl);
 

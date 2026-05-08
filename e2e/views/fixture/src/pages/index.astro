@@ -1,6 +1,8 @@
 ---
 import DietaryFilter from "@carte/views/components/DietaryFilter.astro";
+import HoursWidget from "@carte/views/components/HoursWidget.astro";
 import MenuDisplay from "@carte/views/components/MenuDisplay.astro";
+import ReservationForm from "@carte/views/components/ReservationForm.astro";
 import RestaurantHero from "@carte/views/components/RestaurantHero.astro";
 import RestaurantInfo from "@carte/views/components/RestaurantInfo.astro";
 
@@ -52,6 +54,16 @@ const menu = {
     },
   ],
 };
+
+const hours = [
+  { day: "monday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "tuesday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "wednesday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "thursday", opensAt: "17:00", closesAt: "23:00" },
+  { day: "friday", opensAt: "17:00", closesAt: "23:00" },
+  { day: "saturday", opensAt: "16:00", closesAt: "23:00" },
+  { day: "sunday", closed: true },
+];
 ---
 
 <html lang="en">
@@ -64,8 +76,15 @@ const menu = {
     <main>
       <RestaurantHero restaurant={restaurant} />
       <RestaurantInfo info={info} />
+      <HoursWidget hours={hours} today="thursday" />
       <DietaryFilter allergens={["tree_nuts"]} targetMenuId={menu.id} />
       <MenuDisplay menu={menu} />
+      <ReservationForm
+        action="/_emdash/api/plugins/carte-reservations/submit"
+        defaultDate="2026-05-14"
+        defaultTime="19:00"
+        partySizeOptions={[2, 4, 6]}
+      />
     </main>
   </body>
 </html>

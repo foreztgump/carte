@@ -10,9 +10,11 @@ const componentRoot = join(sourceRoot, "components");
 const componentNames = [
   "CarteShell",
   "DietaryFilter",
+  "HoursWidget",
   "MenuDisplay",
   "MenuItem",
   "MenuSection",
+  "ReservationForm",
   "RestaurantHero",
   "RestaurantInfo",
 ];
