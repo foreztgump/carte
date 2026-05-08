@@ -237,11 +237,16 @@ const gdprExportRoute = async (ctx: RouteContext): Promise<Response> => {
         matchingItems(content, collection, emailPath, email),
       ),
     );
-    return jsonResponse(
-      { email, exportedAt: new Date().toISOString(), reservations, orders },
-      200,
-      { "content-disposition": `attachment; filename="carte-gdpr-export-${email}.json"` },
-    );
+    const exportedAt = new Date().toISOString();
+    // RFC 6266 filename + filename*. Use a hash of the email so PII is
+    // never written into a Content-Disposition header (browser history,
+    // proxy logs) and quoted-string parameter injection is impossible.
+    const emailDigest = (await sha256Hex(email)).slice(0, 16);
+    const safeName = `gdpr-export-${emailDigest}-${exportedAt}.json`;
+    const disposition = `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(safeName)}`;
+    return jsonResponse({ email, exportedAt, reservations, orders }, 200, {
+      "content-disposition": disposition,
+    });
   } catch (error) {
     ctx.log.error("GDPR export failed", { error });
     return jsonResponse({ error: "GDPR export failed" }, 500);

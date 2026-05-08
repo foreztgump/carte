@@ -101,7 +101,7 @@ describe("@carte/core GDPR export route", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/json");
-    expect(response.headers.get("content-disposition")).toContain("carte-gdpr-export");
+    expect(response.headers.get("content-disposition")).toContain("gdpr-export-");
     await expect(response.json()).resolves.toMatchObject({
       email: requestedEmail,
       reservations: [reservation],
