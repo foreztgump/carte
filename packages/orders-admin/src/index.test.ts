@@ -67,6 +67,25 @@ describe("@carte/orders-admin React shell", () => {
   });
 });
 
+describe("@carte/orders-admin skip link a11y", () => {
+  const skipLinkTarget = (): string | null =>
+    screen.getByRole("link", { name: "Skip to orders queue" }).getAttribute("href");
+
+  it("points the skip link to the orders panel anchor on the orders route", () => {
+    render(createElement(OrdersAdminApp, { currentPath: "/carte-orders" }));
+    const target = skipLinkTarget();
+    expect(target).toBe("#orders-panel-title");
+    expect(document.getElementById("orders-panel-title")).not.toBeNull();
+  });
+
+  it("points the skip link to the modifiers panel anchor on the modifiers route", () => {
+    render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
+    const target = skipLinkTarget();
+    expect(target).toBe("#modifiers-panel-title");
+    expect(document.getElementById("modifiers-panel-title")).not.toBeNull();
+  });
+});
+
 describe("@carte/orders-admin contracts", () => {
   it("uses @carte/core contracts for orders-backend REST routes", () => {
     expect(ordersBackendRoutes.refund).toBe("/refund");
