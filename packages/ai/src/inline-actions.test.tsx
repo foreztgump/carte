@@ -144,6 +144,85 @@ describe("InlineAiActions", () => {
     expect(prompt).not.toContain("VIP anniversary dinner");
     expect(prompt).toContain("[redacted]");
   });
+
+  it("redacts PII from describe inputs unless the user opted in for that turn", async () => {
+    const describe = vi.fn((input: { toolContext?: unknown }) => {
+      const context = JSON.stringify(input.toolContext);
+      return `Generated: ${context}`;
+    });
+    const tools = createInlineAiTools({ llm: { describe } });
+
+    await toolCallRoute(
+      ctx(new MemoryKv(), {
+        arguments: {
+          ...menuItem,
+          piiOptIn: false,
+          toolContext: {
+            guestName: "Ada Lovelace",
+            email: "ada@example.com",
+            notes: "VIP anniversary dinner",
+          },
+        },
+        toolName: "updateMenuItemDescription",
+      }),
+      tools,
+      { tokenFactory: () => "confirm-description" },
+    );
+
+    await waitFor(() => expect(describe).toHaveBeenCalled());
+    const sanitizedInput = describe.mock.calls[0]?.[0];
+    const serialized = JSON.stringify(sanitizedInput);
+    expect(serialized).not.toContain("Ada Lovelace");
+    expect(serialized).not.toContain("ada@example.com");
+    expect(serialized).not.toContain("VIP anniversary dinner");
+    expect(serialized).toContain("[redacted]");
+  });
+
+  it("passes PII through to describe when the user opted in for that turn", async () => {
+    const describe = vi.fn((input: { toolContext?: unknown }) => `ok-${typeof input}`);
+    const tools = createInlineAiTools({ llm: { describe } });
+
+    await toolCallRoute(
+      ctx(new MemoryKv(), {
+        arguments: {
+          ...menuItem,
+          piiOptIn: true,
+          toolContext: { guestName: "Ada Lovelace" },
+        },
+        toolName: "updateMenuItemDescription",
+      }),
+      tools,
+      { tokenFactory: () => "confirm-description-optin" },
+    );
+
+    await waitFor(() => expect(describe).toHaveBeenCalled());
+    const sanitizedInput = describe.mock.calls[0]?.[0];
+    expect(JSON.stringify(sanitizedInput)).toContain("Ada Lovelace");
+  });
+
+  it("redacts PII from generateAltText inputs unless the user opted in for that turn", async () => {
+    const generateAltText = vi.fn((input: { toolContext?: unknown }) => `alt-${typeof input}`);
+    const tools = createInlineAiTools({ llm: { generateAltText } });
+
+    await toolCallRoute(
+      ctx(new MemoryKv(), {
+        arguments: {
+          ...menuItem,
+          toolContext: { email: "ada@example.com", phone: "+15555555555" },
+        },
+        toolName: "generateMenuItemAltText",
+      }),
+      tools,
+      { tokenFactory: () => "confirm-alt" },
+    );
+
+    await waitFor(() => expect(generateAltText).toHaveBeenCalled());
+    const sanitizedInput = generateAltText.mock.calls[0]?.[0];
+    const serialized = JSON.stringify(sanitizedInput);
+    expect(serialized).not.toContain("ada@example.com");
+    expect(serialized).not.toContain("+15555555555");
+    expect(serialized).toContain("[redacted]");
+  });
 });
 
 function ctx(
