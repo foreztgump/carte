@@ -24,9 +24,68 @@ describe("@carte/orders-backend manifest", () => {
     for (const cap of manifest.capabilities) {
       expect(CANONICAL_CAPABILITIES.has(cap)).toBe(true);
     }
-    expect(manifest.capabilities).toContain("network:request");
-    expect(manifest.allowedHosts).toEqual(
-      expect.arrayContaining(["api.stripe.com", "checkout.stripe.com"]),
-    );
+    expect(manifest.capabilities).toEqual([
+      "content:read",
+      "content:write",
+      "email:send",
+      "network:request",
+    ]);
+    expect(manifest.allowedHosts).toEqual(["api.stripe.com", "checkout.stripe.com"]);
+    expect(manifest.capabilities).not.toContain("network:request:unrestricted");
+  });
+
+  it("declares Stripe and order settings with secret fields protected", () => {
+    const manifest = factory();
+
+    expect(manifest.admin.settingsSchema).toMatchObject({
+      stripePublicKey: { type: "string" },
+      stripeSecretKey: { type: "secret", secret: true },
+      stripeWebhookSecret: { type: "secret", secret: true },
+      currency: { type: "select", default: "usd" },
+      cartHoldTtlSeconds: { type: "number", default: 600 },
+      orderTypes: { type: "select", default: "pickup,delivery" },
+      pickupLeadMinutes: { type: "number" },
+      deliveryLeadMinutes: { type: "number" },
+      taxMode: { type: "select" },
+      manualVatPercent: { type: "number" },
+    });
+  });
+
+  it("declares the orders collection for line item snapshot writes", () => {
+    const manifest = factory();
+
+    expect(manifest.storage).toEqual({
+      carte_orders: {
+        indexes: ["status", "orderType", "email", "createdAt", "stripeCheckoutSessionId"],
+        uniqueIndexes: ["orderNumber", "stripeCheckoutSessionId"],
+      },
+    });
+  });
+
+  it("snapshots user-visible line item and modifier values at write time", async () => {
+    const { createOrderLineItemSnapshot } = await import("./index.js");
+    const menuLineItem = {
+      menuItemId: "item_123",
+      itemName: "Margherita Pizza",
+      unitPrice: 1295,
+      quantity: 2,
+      modifiers: [{ modifierId: "mod_1", modifierName: "Extra basil", priceDelta: 100 }],
+    };
+
+    const snapshot = createOrderLineItemSnapshot(menuLineItem);
+    menuLineItem.itemName = "Seasonal Pizza";
+    menuLineItem.modifiers[0] = {
+      modifierId: "mod_1",
+      modifierName: "No longer basil",
+      priceDelta: 0,
+    };
+
+    expect(snapshot).toEqual({
+      menuItemId: "item_123",
+      itemName: "Margherita Pizza",
+      unitPrice: 1295,
+      quantity: 2,
+      modifiers: [{ modifierId: "mod_1", modifierName: "Extra basil", priceDelta: 100 }],
+    });
   });
 });
