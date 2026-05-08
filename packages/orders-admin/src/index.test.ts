@@ -40,8 +40,8 @@ describe("@carte/orders-admin manifest", () => {
       { path: "/carte-orders", label: "Orders", icon: "shopping-bag" },
       { path: "/carte-orders/modifiers", label: "Modifiers", icon: "sliders" },
     ]);
-    expect("allowedHosts" in manifest).toBe(false);
-    expect("storage" in manifest).toBe(false);
+    expect(manifest.allowedHosts).toEqual([]);
+    expect(manifest.storage).toEqual({});
   });
 });
 
