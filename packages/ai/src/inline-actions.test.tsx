@@ -239,8 +239,11 @@ function ctx(
       arguments: input.arguments,
       confirmToken: input.confirmToken,
       toolName: input.toolName,
-      workspaceId: "workspace-1",
     },
     kv,
+    request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
+      headers: { "X-Workspace-Id": "workspace-1" },
+      method: "POST",
+    }),
   };
 }

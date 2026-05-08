@@ -227,6 +227,49 @@ describe("toolCallRoute", () => {
     expect(() => validateMutationTools(tools)).not.toThrow();
   });
 
+  it("rejects requests without an X-Workspace-Id header instead of falling back to 'default'", async () => {
+    const kv = new MemoryKv();
+    const noHeaderCtx = {
+      input: { actorId: "user-1", toolName: "listMenuItems" },
+      kv,
+      request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
+        method: "POST",
+      }),
+    };
+
+    await expect(
+      toolCallRoute(noHeaderCtx, { listMenuItems: readTool }, { tokenFactory: () => "unused" }),
+    ).rejects.toThrow(/X-Workspace-Id/);
+    expect(kv.entries.has("tool-confirm:default:unused")).toBe(false);
+  });
+
+  it("ignores body-supplied workspaceId and uses only the X-Workspace-Id header", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await toolCallRoute(
+      {
+        input: {
+          actorId: "user-1",
+          arguments: { price: 14 },
+          toolName: "updateMenuItemPrice",
+          workspaceId: "workspace-attacker",
+        },
+        kv,
+        request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
+          headers: { "X-Workspace-Id": "workspace-victim" },
+          method: "POST",
+        }),
+      },
+      tools,
+      { tokenFactory: () => "confirm-1" },
+    );
+
+    expect(kv.entries.has("tool-confirm:workspace-victim:confirm-1")).toBe(true);
+    expect(kv.entries.has("tool-confirm:workspace-attacker:confirm-1")).toBe(false);
+  });
+
   it("uses workspace-and-tool scoped auto-approve keys, never global keys", async () => {
     const kv = new MemoryKv();
     const state = { price: 12 };
@@ -249,7 +292,9 @@ function ctx(input: {
   kv?: ToolCallKv;
   toolName?: string;
   undoToken?: string;
+  workspaceId?: string;
 }) {
+  const workspaceId = input.workspaceId ?? "workspace-1";
   return {
     input: {
       arguments: input.arguments,
@@ -257,8 +302,11 @@ function ctx(input: {
       confirmToken: input.confirmToken,
       toolName: input.toolName,
       undoToken: input.undoToken,
-      workspaceId: "workspace-1",
     },
     kv: input.kv ?? new MemoryKv(),
+    request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
+      headers: { "X-Workspace-Id": workspaceId },
+      method: "POST",
+    }),
   };
 }

@@ -12,6 +12,7 @@ export interface ToolCallContext {
   input: unknown;
   kv: ToolCallKv;
   content?: ContentApi;
+  request?: Request;
 }
 
 export interface ContentApi {
@@ -70,14 +71,14 @@ interface PendingConfirmation {
 }
 
 const DEFAULT_ACTOR_ID = "unknown";
-const DEFAULT_WORKSPACE_ID = "default";
 
 export async function toolCallRoute(
   ctx: ToolCallContext,
   tools: ToolRegistry = defaultTools(),
   options: ToolCallOptions = {},
 ): Promise<Record<string, unknown>> {
-  const input = parseToolCallInput(ctx.input);
+  const workspaceId = requireWorkspaceId(ctx.request);
+  const input = parseToolCallInput(ctx.input, workspaceId);
   if (input.undoToken !== undefined) {
     return undoMutation(ctx, tools, input);
   }
@@ -273,7 +274,7 @@ async function isAutoApproved(
   return (await kv.get<boolean>(autoApproveKey(workspaceId, toolName))) === true;
 }
 
-function parseToolCallInput(input: unknown): ToolCallInput {
+function parseToolCallInput(input: unknown, workspaceId: string): ToolCallInput {
   const record = recordFrom(input);
   return {
     actorId: stringFrom(record.actorId, DEFAULT_ACTOR_ID),
@@ -281,8 +282,16 @@ function parseToolCallInput(input: unknown): ToolCallInput {
     confirmToken: optionalString(record.confirmToken),
     toolName: optionalString(record.toolName),
     undoToken: optionalString(record.undoToken),
-    workspaceId: stringFrom(record.workspaceId, DEFAULT_WORKSPACE_ID),
+    workspaceId,
   };
+}
+
+function requireWorkspaceId(request: Request | undefined): string {
+  const header = request?.headers.get("X-Workspace-Id") ?? null;
+  if (header !== null && header.trim() !== "") {
+    return header;
+  }
+  throw new Error("X-Workspace-Id header is required for tool-call.");
 }
 
 function normalizeMutationResult(result: unknown): MutationResult {
