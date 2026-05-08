@@ -14,7 +14,13 @@ const CANONICAL_CAPABILITIES = new Set([
   "users:read",
 ]);
 
-const ipContext = (ip: string, counters: { get: number; set: number }): RouteContext => {
+type RateLimitCounters = {
+  get: number;
+  set: number;
+  setOptions: Array<Record<string, unknown> | undefined>;
+};
+
+const ipContext = (ip: string, counters: RateLimitCounters): RouteContext => {
   const store = new Map<string, unknown>();
   return {
     input: {},
@@ -25,8 +31,9 @@ const ipContext = (ip: string, counters: { get: number; set: number }): RouteCon
         counters.get += 1;
         return (store.get(key) as T | undefined) ?? null;
       },
-      async set(key: string, value: unknown): Promise<void> {
+      async set(key: string, value: unknown, options?: Record<string, unknown>): Promise<void> {
         counters.set += 1;
+        counters.setOptions.push(options);
         store.set(key, value);
       },
       async delete(): Promise<boolean> {
@@ -116,7 +123,7 @@ describe("@carte/orders-backend checkout rate limit", () => {
   });
 
   it("throttles burst traffic from one IP inside a 60 second window", async () => {
-    const counters = { get: 0, set: 0 };
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
     const ctx = ipContext("203.0.113.20", counters);
     const handler = checkoutHandler();
 
@@ -135,7 +142,7 @@ describe("@carte/orders-backend checkout rate limit", () => {
   });
 
   it("allows legitimate one request per second traffic", async () => {
-    const counters = { get: 0, set: 0 };
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
     const ctx = ipContext("203.0.113.21", counters);
     const handler = checkoutHandler();
 
@@ -148,5 +155,16 @@ describe("@carte/orders-backend checkout rate limit", () => {
     expect(responses.every((response) => !(response instanceof Response))).toBe(true);
     expect(counters.get).toBe(100);
     expect(counters.set).toBe(100);
+  });
+
+  it("writes rate-limit counters with a TTL covering the 60s window", async () => {
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
+    const ctx = ipContext("203.0.113.22", counters);
+    const handler = checkoutHandler();
+
+    await handler(ctx);
+
+    expect(counters.set).toBe(1);
+    expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
   });
 });
