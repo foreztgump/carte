@@ -227,6 +227,95 @@ describe("@carte/orders-backend manifest", () => {
     expect(emails).toHaveLength(1);
     expect(subrequests.length).toBeLessThanOrEqual(7);
   });
+
+  it("refunds paid orders with deterministic Stripe idempotency and metadata", async () => {
+    const manifest = factory();
+    const stripeRequests: RequestInit[] = [];
+    const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+    const ctx = {
+      input: {
+        orderId: "order_123",
+        paymentIntentId: "pi_123",
+        amount: 1295,
+        reason: "requested_by_customer",
+      },
+      auth: { scopes: ["admin"] },
+      http: {
+        async fetch(url: string, init: RequestInit) {
+          expect(url).toBe("https://api.stripe.com/v1/refunds");
+          stripeRequests.push(init);
+          return new Response(
+            JSON.stringify({
+              id: "re_123",
+              payment_intent: "pi_123",
+              amount: 1295,
+              status: "succeeded",
+              created: 1_700_000_000,
+            }),
+          );
+        },
+      },
+      content: {
+        async update(collection: string, id: string, value: unknown) {
+          updates.push({ collection, id, value });
+        },
+      },
+      settings: { stripeSecretKey: "sk_test_orders" },
+    } as unknown as RouteContext;
+
+    await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
+      ok: true,
+      refundId: "re_123",
+      status: "succeeded",
+    });
+
+    expect(stripeRequests).toHaveLength(1);
+    expect(stripeRequests[0]?.headers).toMatchObject({
+      "Idempotency-Key": "refund-order_123",
+    });
+    expect(updates).toEqual([
+      {
+        collection: "carte_orders",
+        id: "order_123",
+        value: {
+          status: "refunded",
+          refund: {
+            id: "re_123",
+            paymentIntentId: "pi_123",
+            amount: 1295,
+            status: "succeeded",
+            createdAt: "2023-11-14T22:13:20.000Z",
+          },
+        },
+      },
+    ]);
+  });
+
+  it("rejects refund callers without admin scope before external side effects", async () => {
+    const manifest = factory();
+    const sideEffects: string[] = [];
+    const ctx = {
+      input: { orderId: "order_123", paymentIntentId: "pi_123" },
+      auth: { scopes: ["content:read"] },
+      http: {
+        async fetch() {
+          sideEffects.push("http.fetch");
+          return new Response("{}");
+        },
+      },
+      content: {
+        async update() {
+          sideEffects.push("content.update");
+        },
+      },
+      settings: { stripeSecretKey: "sk_test_orders" },
+    } as unknown as RouteContext;
+
+    await expect(manifest.routes.refund?.handler(ctx)).rejects.toThrow(
+      "Refund route requires admin scope.",
+    );
+    expect(sideEffects).toEqual([]);
+  });
 });
 
 const stripeCheckoutCompletedEvent = () => ({
