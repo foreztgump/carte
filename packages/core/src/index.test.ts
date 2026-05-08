@@ -193,4 +193,79 @@ describe("@carte/core GDPR erasure route", () => {
       (erasedOrder.customer as Record<string, unknown>).email,
     );
   });
+
+  it("emits one HR9 audit entry per erased record without storing raw PII", async () => {
+    const manifest = factory();
+    const guestEmail = "Guest@Example.com";
+    const reservation = contentItem("reservation-1", {
+      guest: {
+        email: guestEmail,
+        name: "Ada Lovelace",
+        phone: "+15550101010",
+        notes: "Window table",
+      },
+      currency: "USD",
+      depositTotal: 1500,
+      partySize: 4,
+    });
+    const order = contentItem("order-1", {
+      customer: {
+        email: guestEmail,
+        name: "Ada Lovelace",
+        phone: "+15550101010",
+        notes: "Leave at host stand",
+      },
+      currency: "USD",
+      lineItems: [{ itemName: "Tasting Menu", unitPrice: 4200 }],
+      total: 4200,
+    });
+    const audits: Array<{ collection: string; data: Record<string, unknown> }> = [];
+    const list: ContentList = async (collection: string) => ({
+      items: collection === "carte_reservations" ? [reservation] : [order],
+      hasMore: false,
+    });
+    const context = {
+      ...routeContext(
+        new Request("https://carte.test/gdpr/erase?email=guest@example.com", {
+          method: "POST",
+          headers: { "x-emdash-admin-scope": "true" },
+        }),
+        list,
+      ),
+      content: {
+        list,
+        update: async (_collection: string, id: string, data: Record<string, unknown>) =>
+          contentItem(id, data),
+        create: async (collection: string, data: Record<string, unknown>) => {
+          audits.push({ collection, data });
+          return contentItem(`audit-${audits.length}`, data);
+        },
+      },
+    } as unknown as RouteContext;
+
+    const response = (await manifest.routes["gdpr/erase"]!.handler(context)) as Response;
+
+    expect(response.status).toBe(200);
+    expect(audits).toHaveLength(2);
+    for (const audit of audits) {
+      expect(audit.collection).toBe("carte_audit_log");
+      expect(audit.data).toMatchObject({
+        actor: expect.any(String),
+        action: "gdpr.erasure",
+        targetCollection: expect.stringMatching(/^carte_(reservations|orders)$/u),
+        targetId: expect.any(String),
+        beforeHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        afterHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/u),
+      });
+      const serialized = JSON.stringify(audit.data);
+      expect(serialized).not.toContain("Ada Lovelace");
+      expect(serialized).not.toContain("Guest@Example.com");
+      expect(serialized).not.toContain("+15550101010");
+      expect(serialized).not.toContain("Window table");
+      expect(serialized).not.toContain("Leave at host stand");
+    }
+    const targets = audits.map((audit) => audit.data.targetCollection);
+    expect(new Set(targets)).toEqual(new Set(["carte_reservations", "carte_orders"]));
+  });
 });
