@@ -11,8 +11,7 @@
 
 import { definePlugin } from "emdash";
 
-import type { RouteContext } from "emdash";
-
+import { adminRoute } from "./routes/admin.js";
 import { checkoutRoute } from "./routes/checkout.js";
 import { refundRoute } from "./routes/refund.js";
 import { webhookStripeRoute } from "./routes/webhook-stripe.js";
@@ -145,13 +144,6 @@ export const createOrderLineItemSnapshot = (
   })),
 });
 
-const stubRoute =
-  (route: string) =>
-  async (ctx: RouteContext): Promise<{ ok: true; plugin: string; route: string }> => {
-    void ctx;
-    return { ok: true, plugin: PLUGIN_ID, route };
-  };
-
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -166,7 +158,7 @@ const factory = () =>
     },
     hooks: {},
     routes: {
-      admin: { handler: stubRoute("admin") },
+      admin: { handler: adminRoute },
       checkout: { handler: checkoutRoute, public: true },
       "webhook-stripe": { handler: webhookStripeRoute, public: true },
       refund: { handler: refundRoute },
