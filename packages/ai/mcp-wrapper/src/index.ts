@@ -44,10 +44,44 @@ export async function handleMcpRequest(request: Request, env: Env): Promise<Resp
         status: 405,
       });
     }
+    if (!isAuthorized(request, env)) {
+      return new Response(null, { status: 401 });
+    }
     return routeJsonRpc(await parseJsonRpc(request), env);
   } catch (error) {
     return jsonRpcError({ code: -32603, message: messageFrom(error), status: 500 });
   }
+}
+
+function isAuthorized(request: Request, env: Env): boolean {
+  const expected = env.MCP_SHARED_SECRET;
+  if (typeof expected !== "string" || expected.length === 0) {
+    return false;
+  }
+  const presented = bearerToken(request.headers.get("Authorization"));
+  if (presented === undefined) {
+    return false;
+  }
+  return constantTimeEquals(presented, expected);
+}
+
+function bearerToken(header: string | null): string | undefined {
+  if (header === null) {
+    return undefined;
+  }
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1];
+}
+
+function constantTimeEquals(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let mismatch = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    mismatch |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return mismatch === 0;
 }
 
 async function routeJsonRpc(message: JsonRpcRequest, env: Env): Promise<Response> {
