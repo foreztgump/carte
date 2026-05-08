@@ -212,6 +212,12 @@ describe("@carte/orders-admin order workflows", () => {
 
 describe("@carte/orders-admin modifier editor", () => {
   it("creates, edits, and deletes single-tier modifier groups with per-option fees", () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ groups: [], updatedAt: "2026-05-08T22:00:00.000Z" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
     render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
 
     fireEvent.change(screen.getByLabelText("Modifier group name"), {
@@ -240,9 +246,16 @@ describe("@carte/orders-admin modifier editor", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete Premium pizza extras" }));
     expect(screen.queryByText("Premium pizza extras")).toBeNull();
     expect(screen.getByText("No modifier groups configured yet.")).toBeTruthy();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/_emdash/api/plugins/carte-orders-backend/modifier-update",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("rejects nested modifier groups with a validation error", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
     render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
 
     fireEvent.change(screen.getByLabelText("Modifier group name"), {
@@ -260,5 +273,6 @@ describe("@carte/orders-admin modifier editor", () => {
       "Nested modifier groups are not supported in Carte v0.1.",
     );
     expect(screen.queryByText("Sauce choices")).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

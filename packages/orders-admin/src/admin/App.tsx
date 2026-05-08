@@ -8,6 +8,7 @@ import type {
   RefundResponse,
 } from "@carte/core/contracts";
 import { ordersBackendRoutes } from "@carte/core/contracts";
+import { ModifierGroupForm } from "../modifiers/modifier-group-form.js";
 
 import type { ActiveOrderStatus, AdminOrder, EmailTemplate, OrderFilters } from "./order-types.js";
 import {
@@ -71,7 +72,7 @@ export const OrdersAdminApp = ({
         </nav>
       </header>
       {route === MODIFIER_ROUTE ? (
-        <ModifierGroupsPanel />
+        <ModifierGroupsPanel backendBasePath={backendBasePath} />
       ) : (
         <OrdersPanel backendBasePath={backendBasePath} initialOrders={initialOrders} />
       )}
@@ -109,10 +110,11 @@ const OrdersPanel = ({ backendBasePath, initialOrders }: OrdersPanelProps): Reac
   );
 };
 
-const ModifierGroupsPanel = (): ReactElement => (
+const ModifierGroupsPanel = ({ backendBasePath }: { backendBasePath: string }): ReactElement => (
   <section aria-labelledby="modifiers-panel-title">
     <h2 id="modifiers-panel-title">Modifier groups</h2>
     <p>Configure single-tier modifier groups with per-option fee metadata.</p>
+    <ModifierGroupForm backendBasePath={backendBasePath} />
     <ContractProbe modifierUpdate={pendingModifierUpdate} />
   </section>
 );
