@@ -172,6 +172,38 @@ describe("@carte/reservations submit rate limit", () => {
     expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
   });
 
+  it("does not let spoofed x-forwarded-for bypass submit rate limit when ip is null", async () => {
+    const baseStore = new Map<string, unknown>();
+    const sharedKv = {
+      async get<T>(key: string): Promise<T | null> {
+        return (baseStore.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown): Promise<void> {
+        baseStore.set(key, value);
+      },
+    };
+    const handler = submitHandler();
+    const buildCtx = (xff: string): RouteContext =>
+      ({
+        input: {},
+        request: new Request("https://example.test/submit", {
+          headers: { "x-forwarded-for": xff },
+        }),
+        requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
+        kv: sharedKv,
+      }) as unknown as RouteContext;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) {
+      responses.push(await handler(buildCtx(`10.0.0.${index}`)));
+    }
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
+  });
+
   it("throttles capacityKey-bearing submits at the per-IP rate limit", async () => {
     const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
     const base = ipContext("203.0.113.30", counters);
