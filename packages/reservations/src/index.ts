@@ -17,6 +17,21 @@ import type { RouteContext } from "emdash";
 const PLUGIN_ID = "carte-reservations";
 const PLUGIN_VERSION = "0.1.0";
 
+type SubmitInput = {
+  capacityKey?: unknown;
+};
+
+type AtomicCapacityKv = {
+  atomicDecrement(key: string, amount: number): Promise<number>;
+};
+
+const isCapacitySubmit = (ctx: RouteContext): string | null => {
+  const input = ctx.input as SubmitInput;
+  return typeof input.capacityKey === "string" && input.capacityKey.length > 0
+    ? input.capacityKey
+    : null;
+};
+
 const stubRoute =
   (route: string) =>
   async (ctx: RouteContext): Promise<{ ok: true; plugin: string; route: string }> => {
@@ -27,10 +42,22 @@ const stubRoute =
 const rateLimitedRoute =
   (route: string) =>
   async (ctx: RouteContext): Promise<Response | { ok: true; plugin: string; route: string }> => {
+    const capacityKey = isCapacitySubmit(ctx);
+    if (capacityKey !== null) return capacitySubmitRoute(ctx, capacityKey);
     const limit = await enforceRateLimit(ctx, route);
     if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
     return { ok: true, plugin: PLUGIN_ID, route };
   };
+
+const capacitySubmitRoute = async (
+  ctx: RouteContext,
+  capacityKey: string,
+): Promise<Response | { ok: true; plugin: string; route: string }> => {
+  const kv = ctx.kv as unknown as AtomicCapacityKv;
+  const remaining = await kv.atomicDecrement(capacityKey, 1);
+  if (remaining < 0) return Response.json({ ok: false, error: "sold-out" }, { status: 409 });
+  return { ok: true, plugin: PLUGIN_ID, route: "submit" };
+};
 
 const factory = () =>
   definePlugin({

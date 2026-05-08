@@ -17,6 +17,29 @@ import type { RouteContext } from "emdash";
 
 const PLUGIN_ID = "carte-orders-backend";
 const PLUGIN_VERSION = "0.1.0";
+const STRIPE_IDEMPOTENCY_TTL_SECONDS = 604_800;
+
+type StripeWebhookInput = {
+  event?: { id?: unknown };
+  id?: unknown;
+};
+
+type IdempotencyKv = {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, options?: { expirationTtl: number }): Promise<void>;
+};
+
+type WaitUntilContext = {
+  waitUntil?(promise: Promise<unknown>): void;
+};
+
+const jsonResponse = (body: unknown, status = 200): Response => Response.json(body, { status });
+
+const stripeEventId = (ctx: RouteContext): string | null => {
+  const input = ctx.input as StripeWebhookInput;
+  const eventId = input.event?.id ?? input.id;
+  return typeof eventId === "string" && eventId.length > 0 ? eventId : null;
+};
 
 const stubRoute =
   (route: string) =>
@@ -33,6 +56,18 @@ const rateLimitedRoute =
     return { ok: true, plugin: PLUGIN_ID, route };
   };
 
+const stripeWebhookRoute = async (ctx: RouteContext): Promise<Response> => {
+  const eventId = stripeEventId(ctx);
+  if (eventId === null) return jsonResponse({ ok: false, error: "missing-event-id" }, 400);
+  const key = `idempotency:${eventId}`;
+  const kv = ctx.kv as IdempotencyKv;
+  const existing = await kv.get<string>(key);
+  if (existing !== null) return jsonResponse({ ok: true, replay: true });
+  await kv.set(key, "processed", { expirationTtl: STRIPE_IDEMPOTENCY_TTL_SECONDS });
+  (ctx as unknown as WaitUntilContext).waitUntil?.(Promise.resolve());
+  return jsonResponse({ ok: true, replay: false });
+};
+
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -43,7 +78,7 @@ const factory = () =>
     routes: {
       admin: { handler: stubRoute("admin") },
       checkout: { handler: rateLimitedRoute("checkout"), public: true },
-      "webhook-stripe": { handler: stubRoute("webhook-stripe"), public: true },
+      "webhook-stripe": { handler: stripeWebhookRoute, public: true },
       refund: { handler: stubRoute("refund") },
     },
   });
