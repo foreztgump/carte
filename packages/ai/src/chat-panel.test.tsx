@@ -68,21 +68,52 @@ describe("chat routes", () => {
   it("serves SSE and persists user plus assistant history for 30 days", async () => {
     const kv = createKv();
     const response = await chatStreamRoute(
-      routeContext(kv, { message: "Generate specials", userId, workspaceId }),
+      workspaceRouteContext(kv, { message: "Generate specials", userId }, workspaceId),
       async () => ["Try the mushroom risotto."],
     );
 
     expect(response.headers.get("Content-Type")).toBe("text/event-stream");
     expect(await readBody(response)).toContain("data: Try the mushroom risotto.");
-    expect(kv.expirations.get(`chat:${userId}`)).toBe(2_592_000);
+    expect(kv.expirations.get(`chat:${workspaceId}:${userId}`)).toBe(2_592_000);
 
-    const history = await historyRoute(routeContext(kv, { userId }));
+    const history = await historyRoute(workspaceRouteContext(kv, { userId }, workspaceId));
     expect(history).toEqual({
       messages: [
         { role: "user", content: "Generate specials" },
         { role: "assistant", content: "Try the mushroom risotto." },
       ],
     });
+  });
+
+  it("rejects chat requests without an X-Workspace-Id header as 400", async () => {
+    const kv = createKv();
+    const response = await chatStreamRoute(
+      routeContext(kv, { message: "hi", userId }),
+      async () => ["hello"],
+    );
+
+    expect(response.status).toBe(400);
+    expect(kv.entries.size).toBe(0);
+  });
+
+  it("isolates chat history across workspaces sharing the same userId", async () => {
+    const kv = createKv();
+
+    await chatStreamRoute(
+      workspaceRouteContext(kv, { message: "menu A", userId }, "ws-A"),
+      async () => ["reply A"],
+    );
+    await chatStreamRoute(
+      workspaceRouteContext(kv, { message: "menu B", userId }, "ws-B"),
+      async () => ["reply B"],
+    );
+
+    const historyA = await historyRoute(workspaceRouteContext(kv, { userId }, "ws-A"));
+    const historyB = await historyRoute(workspaceRouteContext(kv, { userId }, "ws-B"));
+
+    expect(historyA.messages.map((m) => m.content)).toEqual(["menu A", "reply A"]);
+    expect(historyB.messages.map((m) => m.content)).toEqual(["menu B", "reply B"]);
+    expect(kv.entries.has(`chat:${userId}`)).toBe(false);
   });
 });
 
@@ -121,7 +152,30 @@ describe("PII boundary", () => {
 });
 
 function routeContext(kv: ChatKv, input: Record<string, unknown>) {
-  return { input, kv };
+  return {
+    input,
+    kv,
+    request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/chat-stream", {
+      body: JSON.stringify(input),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    }),
+  };
+}
+
+function workspaceRouteContext(kv: ChatKv, input: Record<string, unknown>, workspaceId: string) {
+  return {
+    input,
+    kv,
+    request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/chat-stream", {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Workspace-Id": workspaceId,
+      },
+      method: "POST",
+    }),
+  };
 }
 
 function sseResponse(chunks: string[]): Response {
