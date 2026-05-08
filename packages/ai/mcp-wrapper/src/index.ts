@@ -1,0 +1,170 @@
+export const DEFAULT_PLUGIN_ROUTE_BASE = "http://localhost:8787/_emdash/api/plugins/carte-ai";
+
+const JSON_RPC_VERSION = "2.0";
+const MCP_PROTOCOL_VERSION = "2025-06-18";
+const TOOL_CALL_ROUTE = "tool-call";
+
+export interface Env {
+  EM_DASH_PLUGIN_BASE_URL?: string;
+  MCP_SHARED_SECRET?: string;
+  fetcher?: typeof fetch;
+}
+
+interface JsonRpcRequest {
+  id?: number | string | null;
+  method?: string;
+  params?: unknown;
+}
+
+interface ToolCallParams {
+  arguments?: unknown;
+  name?: string | undefined;
+}
+
+interface JsonRpcErrorInput {
+  code: number;
+  id?: JsonRpcRequest["id"];
+  message: string;
+  status: number;
+}
+
+export default {
+  fetch: handleMcpRequest,
+} satisfies ExportedHandler<Env>;
+
+export async function handleMcpRequest(request: Request, env: Env): Promise<Response> {
+  try {
+    if (request.method === "GET") {
+      return json({ ok: true, service: "carte-ai-mcp-wrapper" });
+    }
+    if (request.method !== "POST") {
+      return jsonRpcError({
+        code: -32600,
+        message: "Only POST JSON-RPC requests are supported.",
+        status: 405,
+      });
+    }
+    return routeJsonRpc(await parseJsonRpc(request), env);
+  } catch (error) {
+    return jsonRpcError({ code: -32603, message: messageFrom(error), status: 500 });
+  }
+}
+
+async function routeJsonRpc(message: JsonRpcRequest, env: Env): Promise<Response> {
+  if (message.method === "initialize") {
+    return jsonRpcResult(message.id, initializeResult());
+  }
+  if (message.method === "tools/list") {
+    return jsonRpcResult(message.id, { tools: toolDescriptors() });
+  }
+  if (message.method === "tools/call") {
+    return proxyToolCall(message, env);
+  }
+  if (message.method === "notifications/initialized") {
+    return new Response(null, { status: 202 });
+  }
+  return jsonRpcError({
+    code: -32601,
+    id: message.id,
+    message: "Unsupported MCP method.",
+    status: 404,
+  });
+}
+
+async function proxyToolCall(message: JsonRpcRequest, env: Env): Promise<Response> {
+  const params = toolCallParams(message.params);
+  const response = await fetcherFrom(env)(`${pluginBase(env)}/${TOOL_CALL_ROUTE}`, {
+    body: JSON.stringify({
+      arguments: params.arguments ?? {},
+      toolName: requiredName(params),
+      workspaceId: "default",
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  return jsonRpcResult(message.id, { content: [{ text: await response.text(), type: "text" }] });
+}
+
+function initializeResult(): Record<string, unknown> {
+  return {
+    capabilities: { tools: {} },
+    protocolVersion: MCP_PROTOCOL_VERSION,
+    serverInfo: { name: "carte-ai-mcp-wrapper", version: "0.1.0" },
+  };
+}
+
+function toolDescriptors(): Array<Record<string, unknown>> {
+  return [
+    {
+      name: "listMenuItems",
+      description: "Read Carte menu items through the @carte/ai plugin route.",
+      inputSchema: objectSchema({}),
+    },
+    {
+      name: "updateMenuItemPrice",
+      description: "Request a write-on-confirm menu price change with a diff preview.",
+      inputSchema: objectSchema({ id: { type: "string" }, price: { type: "number" } }),
+    },
+  ];
+}
+
+async function parseJsonRpc(request: Request): Promise<JsonRpcRequest> {
+  const parsed = await request.json();
+  if (isRecord(parsed)) {
+    return parsed as JsonRpcRequest;
+  }
+  throw new Error("JSON-RPC body must be an object.");
+}
+
+function toolCallParams(params: unknown): ToolCallParams {
+  if (!isRecord(params)) {
+    throw new Error("tools/call params must be an object.");
+  }
+  return { arguments: params.arguments, name: stringOrUndefined(params.name) };
+}
+
+function objectSchema(properties: Record<string, unknown>): Record<string, unknown> {
+  return { type: "object", properties, additionalProperties: true };
+}
+
+function jsonRpcResult(id: JsonRpcRequest["id"], result: unknown): Response {
+  return json({ id: id ?? null, jsonrpc: JSON_RPC_VERSION, result });
+}
+
+function jsonRpcError(input: JsonRpcErrorInput): Response {
+  return json(
+    { error: { code: input.code, message: input.message }, id: input.id ?? null, jsonrpc: "2.0" },
+    input.status,
+  );
+}
+
+function json(body: unknown, status = 200): Response {
+  return Response.json(body, { status });
+}
+
+function requiredName(params: ToolCallParams): string {
+  if (params.name !== undefined) {
+    return params.name;
+  }
+  throw new Error("tools/call params require name.");
+}
+
+function pluginBase(env: Env): string {
+  return env.EM_DASH_PLUGIN_BASE_URL ?? DEFAULT_PLUGIN_ROUTE_BASE;
+}
+
+function fetcherFrom(env: Env): typeof fetch {
+  return env.fetcher ?? fetch;
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+function messageFrom(error: unknown): string {
+  return error instanceof Error ? error.message : "Unhandled MCP wrapper error.";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}

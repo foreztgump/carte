@@ -11,6 +11,7 @@ export default [
       "**/.wrangler/**",
       "**/coverage/**",
       "**/*.tsbuildinfo",
+      "**/worker-configuration.d.ts",
       "research/**",
     ],
   },
