@@ -7,6 +7,9 @@ import type { ReservationRecord, ReservationRouteContext, RouteResult } from "./
 export async function cancelReservationByToken(ctx: ReservationRouteContext): Promise<RouteResult> {
   const reservation = await loadTokenReservation(ctx);
   if (reservation === null) return { ok: false, status: 400, error: "Invalid cancellation token" };
+  if (reservation.data.status === "cancelled") {
+    return { ok: true, status: 200, reservationId: reservation.id };
+  }
   const cancelled = { ...reservation.data, status: "cancelled" as const, cancelledAt: nowIso() };
   await getReservations(ctx).put(reservation.id, cancelled);
   defer(ctx, restoreCapacityAndEmail(ctx, reservation.id, cancelled));
