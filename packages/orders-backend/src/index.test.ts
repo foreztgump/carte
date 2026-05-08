@@ -14,6 +14,29 @@ const CANONICAL_CAPABILITIES = new Set([
   "users:read",
 ]);
 
+const expectNoForbiddenBlockKitFields = (value: unknown): void => {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  const record = value as Record<string, unknown>;
+  expect(record).not.toHaveProperty("stats");
+  expect(record.type).not.toBe("redirect");
+  if (record.type === "button") {
+    expect(record).toHaveProperty("label");
+    expect(record).not.toHaveProperty("text");
+  }
+  if (record.type === "section") {
+    expect(record.text).toEqual(expect.not.stringMatching(/(\*\*|\[[^\]]+\])/));
+  }
+  for (const child of Object.values(record)) {
+    if (Array.isArray(child)) {
+      child.forEach(expectNoForbiddenBlockKitFields);
+    } else {
+      expectNoForbiddenBlockKitFields(child);
+    }
+  }
+};
+
 describe("@carte/orders-backend manifest", () => {
   it("declares the canonical id and version", () => {
     const manifest = factory();
@@ -62,6 +85,24 @@ describe("@carte/orders-backend manifest", () => {
         uniqueIndexes: ["orderNumber", "stripeCheckoutSessionId"],
       },
     });
+  });
+
+  it("returns canonical Block Kit JSON for the read-only orders admin page", async () => {
+    const manifest = factory();
+    const adminRoute = manifest.routes.admin;
+    expect(adminRoute).toBeDefined();
+
+    const page = await adminRoute?.handler({} as RouteContext);
+
+    expect(page).toMatchObject({
+      type: "page",
+      title: "Carte Orders",
+      blocks: expect.arrayContaining([
+        expect.objectContaining({ type: "section", label: "Orders summary" }),
+        expect.objectContaining({ type: "stats", label: "Order pipeline" }),
+      ]),
+    });
+    expectNoForbiddenBlockKitFields(page);
   });
 
   it("snapshots user-visible line item and modifier values at write time", async () => {
