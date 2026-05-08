@@ -332,6 +332,50 @@ describe("@carte/orders-backend manifest", () => {
     ]);
   });
 
+  it("defers the Stripe webhook 'processed' KV write into ctx.waitUntil", async () => {
+    const manifest = factory();
+    const event = stripeCheckoutCompletedEvent();
+    const body = JSON.stringify(event);
+    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
+    const kvWrites: Array<{ key: string; value: string; phase: "before" | "after" }> = [];
+    const waitUntilTasks: Promise<unknown>[] = [];
+    let waitUntilStarted = false;
+
+    const ctx = {
+      input: { body, headers: { "stripe-signature": signature } },
+      kv: {
+        async get() {
+          return undefined;
+        },
+        async set(key: string, value: string) {
+          kvWrites.push({ key, value, phase: waitUntilStarted ? "after" : "before" });
+        },
+      },
+      content: {
+        async create() {
+          /* no-op */
+        },
+      },
+      email: {
+        async send() {
+          /* no-op */
+        },
+      },
+      settings: { stripeWebhookSecret: "whsec_test_orders" },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as unknown as RouteContext;
+
+    await manifest.routes["webhook-stripe"]?.handler(ctx);
+    waitUntilStarted = true;
+    await Promise.all(waitUntilTasks);
+
+    const processedWrite = kvWrites.find((write) => write.value === "processed");
+    expect(processedWrite).toBeDefined();
+    expect(processedWrite?.phase).toBe("after");
+  });
+
   it("rejects refund callers without admin scope before external side effects", async () => {
     const manifest = factory();
     const sideEffects: string[] = [];
