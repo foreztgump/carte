@@ -45,6 +45,29 @@ const checkoutHandler = () => {
   return handler;
 };
 
+const webhookHandler = () => {
+  const handler = factory().routes["webhook-stripe"]?.handler;
+  if (handler === undefined) throw new Error("webhook route missing");
+  return handler;
+};
+
+const webhookContext = (eventId: string, writes: string[]): RouteContext =>
+  ({
+    input: { event: { id: eventId, type: "checkout.session.completed" } },
+    request: new Request("https://example.test/webhook-stripe", { method: "POST" }),
+    kv: {
+      async get<T>(key: string): Promise<T | null> {
+        return writes.includes(key) ? ("processed" as T) : null;
+      },
+      async set(key: string): Promise<void> {
+        writes.push(key);
+      },
+    },
+    waitUntil(promise: Promise<unknown>): void {
+      void promise;
+    },
+  }) as unknown as RouteContext;
+
 describe("@carte/orders-backend manifest", () => {
   it("declares the canonical id and version", () => {
     const manifest = factory();
@@ -61,6 +84,24 @@ describe("@carte/orders-backend manifest", () => {
     expect(manifest.allowedHosts).toEqual(
       expect.arrayContaining(["api.stripe.com", "checkout.stripe.com"]),
     );
+  });
+});
+
+describe("@carte/orders-backend webhook pen smoke", () => {
+  it("treats replayed Stripe events as 200 no-op responses", async () => {
+    const eventId = "evt_replay_probe_001";
+    const writes: string[] = [];
+    const handler = webhookHandler();
+
+    const first = await handler(webhookContext(eventId, writes));
+    const replay = await handler(webhookContext(eventId, writes));
+
+    expect(first).toBeInstanceOf(Response);
+    expect((first as Response).status).toBe(200);
+    expect(replay).toBeInstanceOf(Response);
+    expect((replay as Response).status).toBe(200);
+    expect(await (replay as Response).json()).toMatchObject({ ok: true, replay: true });
+    expect(writes).toEqual([`idempotency:${eventId}`]);
   });
 });
 

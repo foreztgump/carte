@@ -45,6 +45,14 @@ const submitHandler = () => {
   return handler;
 };
 
+const capacityContext = (key: string, decrement: () => Promise<number>): RouteContext =>
+  ({
+    input: { capacityKey: key },
+    request: new Request("https://example.test/submit", { method: "POST" }),
+    requestMeta: { ip: "203.0.113.200", userAgent: null, referer: null, geo: null },
+    kv: { atomicDecrement: decrement },
+  }) as unknown as RouteContext;
+
 describe("@carte/reservations manifest", () => {
   it("declares the canonical id and version", () => {
     const manifest = factory();
@@ -60,6 +68,30 @@ describe("@carte/reservations manifest", () => {
     expect(manifest.capabilities).toContain("content:read");
     expect(manifest.capabilities).toContain("content:write");
     expect(manifest.capabilities).toContain("email:send");
+  });
+});
+
+describe("@carte/reservations capacity pen smoke", () => {
+  it("does not oversell under 1000 concurrent submits for capacity 200", async () => {
+    let remainingSeats = 200;
+    const handler = submitHandler();
+    const decrement = async () => {
+      if (remainingSeats <= 0) return -1;
+      remainingSeats -= 1;
+      return remainingSeats;
+    };
+
+    const responses = await Promise.all(
+      Array.from({ length: 1_000 }, () =>
+        handler(capacityContext("capacity:2026-05-08T19", decrement)),
+      ),
+    );
+
+    const successful = responses.filter(
+      (response) => !(response instanceof Response) || response.status < 400,
+    );
+    expect(successful).toHaveLength(200);
+    expect(remainingSeats).toBe(0);
   });
 });
 
