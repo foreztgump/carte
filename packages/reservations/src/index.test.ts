@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import factory from "./index.js";
+
+import type { RouteContext } from "emdash";
 
 const CANONICAL_CAPABILITIES = new Set([
   "content:read",
@@ -11,6 +13,31 @@ const CANONICAL_CAPABILITIES = new Set([
   "email:send",
   "users:read",
 ]);
+
+const ipContext = (ip: string, counters: { get: number; set: number }): RouteContext => {
+  const store = new Map<string, unknown>();
+  return {
+    input: {},
+    request: new Request("https://example.test/submit"),
+    requestMeta: { ip, userAgent: null, referer: null, geo: null },
+    kv: {
+      async get<T>(key: string): Promise<T | null> {
+        counters.get += 1;
+        return (store.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown): Promise<void> {
+        counters.set += 1;
+        store.set(key, value);
+      },
+      async delete(): Promise<boolean> {
+        return false;
+      },
+      async list(): Promise<Array<{ key: string; value: unknown }>> {
+        return [];
+      },
+    },
+  } as unknown as RouteContext;
+};
 
 describe("@carte/reservations manifest", () => {
   it("declares the canonical id and version", () => {
@@ -27,5 +54,50 @@ describe("@carte/reservations manifest", () => {
     expect(manifest.capabilities).toContain("content:read");
     expect(manifest.capabilities).toContain("content:write");
     expect(manifest.capabilities).toContain("email:send");
+  });
+});
+
+describe("@carte/reservations submit rate limit", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("throttles burst traffic from one IP inside a 60 second window", async () => {
+    const counters = { get: 0, set: 0 };
+    const ctx = ipContext("203.0.113.10", counters);
+    const handler = factory().routes.submit.handler;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) responses.push(await handler(ctx));
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
+    expect(responses[60]).toBeInstanceOf(Response);
+    expect((responses[60] as Response).status).toBe(429);
+    expect(counters.get).toBe(100);
+    expect(counters.set).toBe(60);
+  });
+
+  it("allows legitimate one request per second traffic", async () => {
+    const counters = { get: 0, set: 0 };
+    const ctx = ipContext("203.0.113.11", counters);
+    const handler = factory().routes.submit.handler;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) {
+      vi.setSystemTime(new Date(Date.UTC(2026, 4, 8, 12, 0, index)));
+      responses.push(await handler(ctx));
+    }
+
+    expect(responses.every((response) => !(response instanceof Response))).toBe(true);
+    expect(counters.get).toBe(100);
+    expect(counters.set).toBe(100);
   });
 });
