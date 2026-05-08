@@ -64,11 +64,22 @@ export const webhookStripeRoute = async (ctx: RouteContext): Promise<StripeWebho
     return { ok: true, status: 200, idempotent: true };
   }
 
+  // HR2: KV writes that mark the event "processed" must run inside
+  // ctx.waitUntil so they don't block the response and are committed
+  // after the work completes.
+  waitUntil(ctx, completeStripeEvent(ctx, verifiedEvent, idempotencyKey));
+  return { ok: true, status: 200, idempotent: false };
+};
+
+const completeStripeEvent = async (
+  ctx: RouteContext,
+  event: StripeEvent,
+  idempotencyKey: string,
+): Promise<void> => {
+  await processStripeEvent(ctx, event);
   await kvStore(ctx).set(idempotencyKey, IDEMPOTENCY_VALUE, {
     expirationTtl: IDEMPOTENCY_TTL_SECONDS,
   });
-  waitUntil(ctx, processStripeEvent(ctx, verifiedEvent));
-  return { ok: true, status: 200, idempotent: false };
 };
 
 const verifyStripeSignature = async (ctx: RouteContext): Promise<StripeEvent | null> => {
