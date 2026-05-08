@@ -222,14 +222,16 @@ describe("@carte/orders-backend manifest", () => {
       kv: {
         async get(key: string) {
           subrequests.push("kv.get");
-          return processedKeys.has(key) ? "processed" : undefined;
+          return processedKeys.has(key) ? "completed" : undefined;
         },
         async set(key: string, value: string, options: { expirationTtl: number }) {
           subrequests.push("kv.set");
           expect(key).toBe("idempotency:evt_checkout_completed");
-          expect(value).toBe("processed");
+          expect(["in-progress", "completed"]).toContain(value);
           expect(options).toEqual({ expirationTtl: 604800 });
-          processedKeys.add(key);
+          if (value === "completed") {
+            processedKeys.add(key);
+          }
         },
       },
       content: {
@@ -374,6 +376,89 @@ describe("@carte/orders-backend manifest", () => {
     const processedWrite = kvWrites.find((write) => write.value === "processed");
     expect(processedWrite).toBeDefined();
     expect(processedWrite?.phase).toBe("after");
+  });
+
+  it("uses two-phase idempotency: writes in-progress synchronously, completed after waitUntil", async () => {
+    const manifest = factory();
+    const event = stripeCheckoutCompletedEvent();
+    const body = JSON.stringify(event);
+    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
+    const kvWrites: Array<{ key: string; value: string; phase: "before" | "after" }> = [];
+    const waitUntilTasks: Promise<unknown>[] = [];
+    let waitUntilStarted = false;
+    const ctx = {
+      input: { body, headers: { "stripe-signature": signature } },
+      kv: {
+        async get() {
+          return undefined;
+        },
+        async set(key: string, value: string) {
+          kvWrites.push({ key, value, phase: waitUntilStarted ? "after" : "before" });
+        },
+      },
+      content: { async create() {} },
+      email: { async send() {} },
+      settings: { stripeWebhookSecret: "whsec_test_orders" },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as unknown as RouteContext;
+
+    await manifest.routes["webhook-stripe"]?.handler(ctx);
+    waitUntilStarted = true;
+    await Promise.all(waitUntilTasks);
+
+    const inProgress = kvWrites.find((w) => w.value === "in-progress");
+    const completed = kvWrites.find((w) => w.value === "completed");
+    expect(inProgress).toBeDefined();
+    expect(inProgress?.phase).toBe("before");
+    expect(completed).toBeDefined();
+    expect(completed?.phase).toBe("after");
+  });
+
+  it("treats only 'completed' idempotency markers as no-ops on replay", async () => {
+    const manifest = factory();
+    const event = stripeCheckoutCompletedEvent();
+    const body = JSON.stringify(event);
+    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
+    const orders: unknown[] = [];
+    const baseCtx = (existingMarker: string | undefined, waitUntilTasks: Promise<unknown>[]) =>
+      ({
+        input: { body, headers: { "stripe-signature": signature } },
+        kv: {
+          async get() {
+            return existingMarker;
+          },
+          async set() {},
+        },
+        content: {
+          async create(_c: string, order: unknown) {
+            orders.push(order);
+          },
+        },
+        email: { async send() {} },
+        settings: { stripeWebhookSecret: "whsec_test_orders" },
+        waitUntil(t: Promise<unknown>) {
+          waitUntilTasks.push(t);
+        },
+      }) as unknown as RouteContext;
+
+    // 'completed' marker → no-op replay
+    const completedTasks: Promise<unknown>[] = [];
+    const completedResp = await manifest.routes["webhook-stripe"]?.handler(
+      baseCtx("completed", completedTasks),
+    );
+    await Promise.all(completedTasks);
+    expect(completedResp).toEqual({ ok: true, status: 200, idempotent: true });
+
+    // 'in-progress' marker → re-process (not idempotent)
+    const inProgressTasks: Promise<unknown>[] = [];
+    const inProgressResp = await manifest.routes["webhook-stripe"]?.handler(
+      baseCtx("in-progress", inProgressTasks),
+    );
+    await Promise.all(inProgressTasks);
+    expect(inProgressResp).toEqual({ ok: true, status: 200, idempotent: false });
+    expect(orders).toHaveLength(1);
   });
 
   it("rejects refund callers without admin scope before external side effects", async () => {
