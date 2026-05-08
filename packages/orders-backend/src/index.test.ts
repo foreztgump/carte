@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { RouteContext } from "emdash";
+
 import factory from "./index.js";
 
 const CANONICAL_CAPABILITIES = new Set([
@@ -87,5 +89,48 @@ describe("@carte/orders-backend manifest", () => {
       quantity: 2,
       modifiers: [{ modifierId: "mod_1", modifierName: "Extra basil", priceDelta: 100 }],
     });
+  });
+
+  it("creates Stripe Checkout sessions and stores cart holds for 600 seconds", async () => {
+    const manifest = factory();
+    const subrequests: string[] = [];
+    const kvWrites: Array<{ key: string; options?: { expirationTtl: number } }> = [];
+    const ctx = {
+      input: {
+        cartId: "cart_123",
+        customerEmail: "guest@example.com",
+        successUrl: "https://restaurant.example/orders/success",
+        cancelUrl: "https://restaurant.example/orders/cancel",
+        lineItems: [
+          {
+            name: "Margherita Pizza",
+            unitAmount: 1295,
+            quantity: 2,
+          },
+        ],
+      },
+      kv: {
+        async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
+          subrequests.push("kv.set");
+          kvWrites.push({ key, options });
+        },
+      },
+      http: {
+        async fetch(url: string, init: RequestInit) {
+          subrequests.push("http.fetch");
+          expect(url).toBe("https://api.stripe.com/v1/checkout/sessions");
+          expect(init.method).toBe("POST");
+          return new Response(JSON.stringify({ url: "https://checkout.stripe.com/c/pay_123" }));
+        },
+      },
+      settings: { stripeSecretKey: "sk_test_orders", currency: "usd" },
+    } as unknown as RouteContext;
+
+    const result = await manifest.routes.checkout.handler(ctx);
+
+    expect(result).toEqual({ checkoutUrl: "https://checkout.stripe.com/c/pay_123" });
+    expect(kvWrites).toEqual([{ key: "cart-hold:cart_123", options: { expirationTtl: 600 } }]);
+    expect(subrequests).toHaveLength(2);
+    expect(subrequests.length).toBeLessThanOrEqual(4);
   });
 });
