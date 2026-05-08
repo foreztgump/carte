@@ -5,7 +5,7 @@ import type { ToolCallKv, ToolDefinition, ToolExecutorContext } from "./tool-cal
 
 interface StoredValue {
   value: unknown;
-  expirationTtl?: number;
+  expirationTtl?: number | undefined;
 }
 
 class MemoryKv implements ToolCallKv {
@@ -93,7 +93,6 @@ describe("toolCallRoute", () => {
     await toolCallRoute(
       ctx({
         arguments: { price: 14 },
-        confirmToken: undefined,
         kv,
         toolName: "updateMenuItemPrice",
       }),
