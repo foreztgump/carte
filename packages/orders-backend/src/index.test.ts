@@ -373,9 +373,9 @@ describe("@carte/orders-backend manifest", () => {
     waitUntilStarted = true;
     await Promise.all(waitUntilTasks);
 
-    const processedWrite = kvWrites.find((write) => write.value === "processed");
-    expect(processedWrite).toBeDefined();
-    expect(processedWrite?.phase).toBe("after");
+    const completedWrite = kvWrites.find((write) => write.value === "completed");
+    expect(completedWrite).toBeDefined();
+    expect(completedWrite?.phase).toBe("after");
   });
 
   it("uses two-phase idempotency: writes in-progress synchronously, completed after waitUntil", async () => {

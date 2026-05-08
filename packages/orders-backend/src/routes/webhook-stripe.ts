@@ -1,11 +1,20 @@
 import type { RouteContext } from "emdash";
 
+// Two-phase idempotency: a synchronous `in-progress` marker is written
+// before the response returns; the marker is upgraded to `completed`
+// inside ctx.waitUntil only after the order/email work succeeds. On
+// re-delivery, `completed` short-circuits while `in-progress` (left by a
+// previously crashed waitUntil) is treated as retry-eligible so the order
+// is never lost when the post-response work fails transiently.
+//
 // Subrequest audit: invalid signatures use 0/10 state subrequests. First
-// delivery uses KV get + KV set + content create + receipt email = 4/10.
-// Re-delivery uses only KV get = 1/10. This leaves quota headroom under the
-// webhook cap of 7/10 for the sandboxed route.
+// delivery uses KV get + KV set(in-progress) + content create + receipt
+// email + KV set(completed) = 5/10. Re-delivery on `completed` uses only
+// KV get = 1/10. Re-delivery on `in-progress` uses 5/10 (retry path).
+// All variants stay under the webhook cap of 7/10 for the sandboxed route.
 const IDEMPOTENCY_TTL_SECONDS = 604_800;
-const IDEMPOTENCY_VALUE = "processed";
+const IDEMPOTENCY_IN_PROGRESS = "in-progress";
+const IDEMPOTENCY_COMPLETED = "completed";
 const STRIPE_SIGNATURE_HEADER = "stripe-signature";
 const HMAC_ALGORITHM = { name: "HMAC", hash: "SHA-256" };
 
@@ -60,15 +69,25 @@ export const webhookStripeRoute = async (ctx: RouteContext): Promise<StripeWebho
   }
 
   const idempotencyKey = `idempotency:${verifiedEvent.id}`;
-  if (await kvStore(ctx).get(idempotencyKey)) {
+  const existingMarker = await kvStore(ctx).get(idempotencyKey);
+  if (existingMarker === IDEMPOTENCY_COMPLETED) {
     return { ok: true, status: 200, idempotent: true };
   }
 
-  // HR2: KV writes that mark the event "processed" must run inside
-  // ctx.waitUntil so they don't block the response and are committed
-  // after the work completes.
+  // Phase 1: claim the work synchronously so concurrent re-deliveries see
+  // an in-progress marker. Phase 2 runs inside waitUntil and upgrades the
+  // marker to "completed" only after the work succeeds (HR2).
+  await writeIdempotencyMarker(ctx, idempotencyKey, IDEMPOTENCY_IN_PROGRESS);
   waitUntil(ctx, completeStripeEvent(ctx, verifiedEvent, idempotencyKey));
   return { ok: true, status: 200, idempotent: false };
+};
+
+const writeIdempotencyMarker = async (
+  ctx: RouteContext,
+  key: string,
+  value: typeof IDEMPOTENCY_IN_PROGRESS | typeof IDEMPOTENCY_COMPLETED,
+): Promise<void> => {
+  await kvStore(ctx).set(key, value, { expirationTtl: IDEMPOTENCY_TTL_SECONDS });
 };
 
 const completeStripeEvent = async (
@@ -77,9 +96,7 @@ const completeStripeEvent = async (
   idempotencyKey: string,
 ): Promise<void> => {
   await processStripeEvent(ctx, event);
-  await kvStore(ctx).set(idempotencyKey, IDEMPOTENCY_VALUE, {
-    expirationTtl: IDEMPOTENCY_TTL_SECONDS,
-  });
+  await writeIdempotencyMarker(ctx, idempotencyKey, IDEMPOTENCY_COMPLETED);
 };
 
 const verifyStripeSignature = async (ctx: RouteContext): Promise<StripeEvent | null> => {
