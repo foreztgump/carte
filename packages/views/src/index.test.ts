@@ -61,6 +61,7 @@ describe("@carte/views Astro shell package", () => {
     const componentSource = readFileSync(componentPath, "utf8");
 
     expect(componentSource).not.toContain("fetch(");
+    expect(componentSource).not.toMatch(/\[\s*["']fetch["']\s*\]/);
     expect(componentSource).not.toContain("getEmDashCollection");
   });
 
@@ -87,11 +88,12 @@ describe("@carte/views Astro shell package", () => {
     expect(typesSource).toContain("ReservationRecordStatusProps");
   });
 
-  it("keeps checkout submission on the typed orders-backend checkout route", () => {
+  it("keeps checkout submission as a prop-driven form POST without inline fetch", () => {
     const componentSource = readFileSync(join(componentRoot, "OrderingCheckout.astro"), "utf8");
 
     expect(componentSource).toContain("data-carte-checkout-form");
-    expect(componentSource).toContain("checkoutUrl");
-    expect(componentSource).toContain('globalThis["fetch"]');
+    expect(componentSource).toContain('method="post"');
+    expect(componentSource).not.toContain("fetch(");
+    expect(componentSource).not.toMatch(/\[\s*["']fetch["']\s*\]/);
   });
 });
