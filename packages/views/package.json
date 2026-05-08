@@ -15,7 +15,9 @@
     "./components/MenuSection.astro": "./src/components/MenuSection.astro",
     "./components/OrderingCart.astro": "./src/components/OrderingCart.astro",
     "./components/OrderingCheckout.astro": "./src/components/OrderingCheckout.astro",
+    "./components/OrderRecordStatus.astro": "./src/components/OrderRecordStatus.astro",
     "./components/ReservationForm.astro": "./src/components/ReservationForm.astro",
+    "./components/ReservationRecordStatus.astro": "./src/components/ReservationRecordStatus.astro",
     "./components/RestaurantHero.astro": "./src/components/RestaurantHero.astro",
     "./components/RestaurantInfo.astro": "./src/components/RestaurantInfo.astro"
   },

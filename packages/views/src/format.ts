@@ -28,3 +28,16 @@ export const formatTime = (time: string): string => TIME_FORMATTER.format(timeDa
 
 export const formatHoursRange = (opensAt?: string, closesAt?: string): string =>
   opensAt && closesAt ? `${formatTime(opensAt)}–${formatTime(closesAt)}` : "Closed";
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+const isoDateFor = (date: string): Date => {
+  const [year = "2026", month = "1", day = "1"] = date.split("-");
+  return new Date(Number(year), Number(month) - 1, Number(day));
+};
+
+export const formatDate = (date: string): string => DATE_FORMATTER.format(isoDateFor(date));

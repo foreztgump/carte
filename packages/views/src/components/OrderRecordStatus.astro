@@ -1,0 +1,70 @@
+---
+import { formatCurrency, formatTime } from "../format.js";
+import { recordStatusClassesFor } from "../styles.js";
+import type { OrderRecordStatusProps } from "../types.js";
+
+const props = Astro.props as OrderRecordStatusProps;
+const { order, heading = "Order received", variant = "default" } = props;
+const recordClass = recordStatusClassesFor(variant);
+const rowClass = variant === "headless" ? undefined : "flex items-start justify-between gap-4";
+const mutedClass = variant === "headless" ? undefined : "text-sm text-stone-600";
+const statusLabel = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+const pickupWindow = `${formatTime(order.fulfillment.startsAt)}–${formatTime(order.fulfillment.endsAt)}`;
+---
+
+<section aria-labelledby={`${order.id}-record-heading`} class={recordClass} data-carte-order-record-status data-carte-variant={variant}>
+  <div class={variant === "headless" ? undefined : "flex flex-wrap items-start justify-between gap-4"}>
+    <div>
+      <p
+        class={variant === "headless" ? undefined : "text-sm font-medium text-amber-700"}
+        data-carte-order-record-label
+      >
+        Order {order.id}
+      </p>
+      <h1 class={variant === "headless" ? undefined : "mt-1 text-2xl font-semibold text-stone-950"} id={`${order.id}-record-heading`}>
+        {heading}
+      </h1>
+    </div>
+    <p class={variant === "headless" ? undefined : "rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900"}>
+      {statusLabel}
+    </p>
+  </div>
+
+  <dl class={variant === "headless" ? undefined : "mt-6 grid gap-4 sm:grid-cols-2"}>
+    <div>
+      <dt class={mutedClass}>{order.fulfillment.label}</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>{pickupWindow}</dd>
+    </div>
+    <div>
+      <dt class={mutedClass}>Total</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>
+        {formatCurrency(order.totals.total, order.currency)}
+      </dd>
+    </div>
+  </dl>
+
+  <ul class={variant === "headless" ? undefined : "mt-6 divide-y divide-stone-200 border-t border-stone-200"}>
+    {
+      order.lineItems.map((item) => (
+        <li class={variant === "headless" ? undefined : "py-4"} data-carte-order-record-line-item>
+          <div class={rowClass}>
+            <div>
+              <p class={variant === "headless" ? undefined : "font-medium text-stone-950"}>
+                {item.quantity} × {item.name}
+              </p>
+              {item.modifiers.map((modifier) => (
+                <p class={mutedClass}>{modifier.name}</p>
+              ))}
+            </div>
+            <p class={variant === "headless" ? undefined : "font-medium text-stone-950"}>
+              {formatCurrency(
+                item.quantity * (item.unitPrice + item.modifiers.reduce((sum, modifier) => sum + modifier.price, 0)),
+                order.currency,
+              )}
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</section>

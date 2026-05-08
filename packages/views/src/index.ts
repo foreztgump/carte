@@ -9,8 +9,12 @@ export type {
   CarteMenuSection,
   CarteOrderLineItem,
   CarteOrderModifier,
+  CarteOrderRecord,
+  CarteOrderRecordStatus,
   CarteOrderingCart,
   CarteOrderTotals,
+  CarteReservationRecord,
+  CarteReservationRecordStatus,
   CarteRestaurantInfo,
   CarteRestaurantSummary,
   CarteShellProps,
@@ -24,7 +28,9 @@ export type {
   MenuSectionProps,
   OrderingCartProps,
   OrderingCheckoutProps,
+  OrderRecordStatusProps,
   ReservationFormProps,
+  ReservationRecordStatusProps,
   RestaurantHeroProps,
   RestaurantInfoProps,
 } from "./types.js";
@@ -48,6 +54,8 @@ export const MenuItem = componentExport("MenuItem");
 export const MenuSection = componentExport("MenuSection");
 export const OrderingCart = componentExport("OrderingCart");
 export const OrderingCheckout = componentExport("OrderingCheckout");
+export const OrderRecordStatus = componentExport("OrderRecordStatus");
 export const ReservationForm = componentExport("ReservationForm");
+export const ReservationRecordStatus = componentExport("ReservationRecordStatus");
 export const RestaurantHero = componentExport("RestaurantHero");
 export const RestaurantInfo = componentExport("RestaurantInfo");

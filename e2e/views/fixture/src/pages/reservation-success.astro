@@ -1,0 +1,32 @@
+---
+import ReservationRecordStatus from "@carte/views/components/ReservationRecordStatus.astro";
+
+const reservationToken = Astro.url.searchParams.get("reservationToken") ?? "unknown-reservation";
+const reservation = {
+  token: reservationToken,
+  status: "pending",
+  guestName: "Alex Guest",
+  partySize: 4,
+  date: "2026-05-14",
+  time: "19:00",
+  notes: "We will email when the restaurant confirms this request.",
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Carte Reservation Success Fixture</title>
+  </head>
+  <body>
+    <main>
+      <ReservationRecordStatus reservation={reservation} />
+    </main>
+    <script is:inline>
+      const reservationToken = new URL(globalThis.location.href).searchParams.get("reservationToken");
+      const label = document.querySelector("[data-carte-reservation-record-label]");
+      if (reservationToken && label) label.textContent = `Reservation ${reservationToken}`;
+    </script>
+  </body>
+</html>

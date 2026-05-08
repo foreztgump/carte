@@ -117,6 +117,61 @@ export interface OrderingCheckoutProps {
   variant?: CarteViewVariant;
 }
 
+export type CarteOrderRecordStatus =
+  | "pending"
+  | "paid"
+  | "preparing"
+  | "ready"
+  | "completed"
+  | "cancelled"
+  | "refunded";
+
+export interface CarteOrderFulfillmentWindow {
+  label: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface CarteOrderRecord {
+  id: string;
+  status: CarteOrderRecordStatus;
+  currency: string;
+  fulfillment: CarteOrderFulfillmentWindow;
+  lineItems: CarteOrderLineItem[];
+  totals: CarteOrderTotals;
+  guestName?: string;
+  placedAt?: string;
+}
+
+export interface OrderRecordStatusProps {
+  order: CarteOrderRecord;
+  heading?: string;
+  variant?: CarteViewVariant;
+}
+
+export type CarteReservationRecordStatus =
+  | "pending"
+  | "confirmed"
+  | "seated"
+  | "completed"
+  | "cancelled";
+
+export interface CarteReservationRecord {
+  token: string;
+  status: CarteReservationRecordStatus;
+  guestName: string;
+  partySize: number;
+  date: string;
+  time: string;
+  notes?: string;
+}
+
+export interface ReservationRecordStatusProps {
+  reservation: CarteReservationRecord;
+  heading?: string;
+  variant?: CarteViewVariant;
+}
+
 export interface CarteMenuItem {
   id: string;
   name: string;

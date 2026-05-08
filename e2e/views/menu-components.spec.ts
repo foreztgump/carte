@@ -168,7 +168,7 @@ test("@carte/views order success page renders explicit order record", async ({ p
   await page.goto(`${fixtureUrl}/order-success?orderId=order_fixture_1001`);
 
   await expect(page.getByRole("heading", { name: "Order received", level: 1 })).toBeVisible();
-  await expect(page.getByText("Order order_fixture_1001")).toBeVisible();
+  await expect(page.getByText(/Order\s+order_fixture_1001/)).toBeVisible();
   await expect(page.getByText("Preparing")).toBeVisible();
   await expect(page.getByText("Pickup window")).toBeVisible();
   await expect(page.getByText("6:30 PM–6:45 PM")).toBeVisible();
@@ -184,7 +184,7 @@ test("@carte/views reservation success page renders explicit reservation record"
   await expect(
     page.getByRole("heading", { name: "Reservation requested", level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText("Reservation rsv_fixture_token")).toBeVisible();
+  await expect(page.getByText(/Reservation\s+rsv_fixture_token/)).toBeVisible();
   await expect(page.getByText("Pending")).toBeVisible();
   await expect(page.getByText("Alex Guest")).toBeVisible();
   await expect(page.getByText("May 14, 2026")).toBeVisible();
