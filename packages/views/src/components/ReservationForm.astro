@@ -25,8 +25,18 @@ const labelClass = variant === "headless" ? undefined : "text-sm font-medium tex
   >
     Request a reservation
   </h2>
-  <form class={variant === "headless" ? undefined : "mt-4 grid gap-4"} data-carte-reservation-form>
-    <input name="action" type="hidden" value={action} />
+  <!--
+    Reservation submission pattern (SG7-compliant):
+    Component is prop-driven and never fetches. Submission is a standard
+    form POST to the host-supplied `action` endpoint. The host page is
+    responsible for handling the response (success/redirect/error copy).
+  -->
+  <form
+    action={action}
+    class={variant === "headless" ? undefined : "mt-4 grid gap-4"}
+    data-carte-reservation-form
+    method="post"
+  >
     <label class={labelClass}>
       Name
       <input autocomplete="name" class={fieldClass} name="name" required type="text" />
@@ -69,40 +79,3 @@ const labelClass = variant === "headless" ? undefined : "text-sm font-medium tex
     <p data-carte-reservation-error hidden role="alert"></p>
   </form>
 </section>
-
-<script is:inline>
-  const forms = document.querySelectorAll("[data-carte-reservation-form]");
-  const messageFrom = async (response) => {
-    const payload = await response.json().catch(() => ({}));
-    return payload.message ?? "Reservation request submitted.";
-  };
-  const submitReservation = async (form) => {
-    const endpoint = new FormData(form).get("action")?.toString() ?? "";
-    const requestBody = Object.fromEntries(new FormData(form));
-    const submitRequest = globalThis["fetch"];
-    return submitRequest(endpoint, {
-      body: JSON.stringify(requestBody),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-  };
-  forms.forEach((form) => {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const status = form.querySelector("[data-carte-reservation-status]");
-      const error = form.querySelector("[data-carte-reservation-error]");
-      if (error) error.hidden = true;
-      try {
-        const response = await submitReservation(form);
-        const message = await messageFrom(response);
-        if (!response.ok) throw new Error(message);
-        if (status) status.textContent = message;
-      } catch (cause) {
-        if (error) {
-          error.hidden = false;
-          error.textContent = cause instanceof Error ? cause.message : "Reservation request failed.";
-        }
-      }
-    });
-  });
-</script>

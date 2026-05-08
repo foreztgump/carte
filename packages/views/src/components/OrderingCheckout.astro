@@ -46,10 +46,19 @@ const payload = safeJsonForScript({ cart });
     </div>
   </div>
 
+  <!--
+    Checkout submission pattern (SG7-compliant):
+    Component is prop-driven and never fetches. Submission is a standard
+    form POST to the host-supplied `action` endpoint. The host page is
+    responsible for handling the response (typically a 303 redirect to
+    the validated Stripe Checkout URL — see OrderingCheckout consumer
+    docs for the open-redirect allowlist requirement).
+  -->
   <form
+    action={action}
     class={variant === "headless" ? undefined : "mt-5 grid gap-4"}
     data-carte-checkout-form
-    data-checkout-action={action}
+    method="post"
   >
     <label class={labelClass}>
       Checkout name
@@ -63,7 +72,7 @@ const payload = safeJsonForScript({ cart });
       Pickup notes
       <textarea class={fieldClass} name="notes" rows="3"></textarea>
     </label>
-    <script data-carte-checkout-payload is:inline type="application/json" set:html={payload} />
+    <input name="cart" type="hidden" value={payload} />
     <button
       class={variant === "headless" ? undefined : "rounded-full bg-amber-700 px-5 py-3 text-sm font-semibold text-white"}
       type="submit"
@@ -78,7 +87,6 @@ const payload = safeJsonForScript({ cart });
 <script is:inline>
   const storageKey = "carte:ordering-checkout:summary-expanded";
   const toggles = document.querySelectorAll("[data-carte-summary-toggle]");
-  const checkoutForms = document.querySelectorAll("[data-carte-checkout-form]");
   const setSummaryState = (toggle, expanded) => {
     const targetId = toggle.getAttribute("aria-controls");
     const target = targetId ? document.getElementById(targetId) : null;
@@ -91,41 +99,6 @@ const payload = safeJsonForScript({ cart });
     setSummaryState(toggle, persisted);
     toggle.addEventListener("click", () => {
       setSummaryState(toggle, toggle.getAttribute("aria-expanded") !== "true");
-    });
-  });
-  const checkoutPayloadFor = (form) => {
-    const payload = form.querySelector("[data-carte-checkout-payload]")?.textContent ?? "{}";
-    const contact = Object.fromEntries(new FormData(form));
-    return { ...JSON.parse(payload), contact };
-  };
-  const checkoutUrlFrom = async (response) => {
-    const payload = await response.json().catch(() => ({}));
-    return payload.checkoutUrl ?? payload.url ?? "";
-  };
-  checkoutForms.forEach((form) => {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const status = form.querySelector("[data-carte-checkout-status]");
-      const error = form.querySelector("[data-carte-checkout-error]");
-      if (error) error.hidden = true;
-      try {
-        const endpoint = form.getAttribute("data-checkout-action") ?? "";
-        const submitRequest = globalThis["fetch"];
-        const response = await submitRequest(endpoint, {
-          body: JSON.stringify(checkoutPayloadFor(form)),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        const checkoutUrl = await checkoutUrlFrom(response);
-        if (!response.ok || !checkoutUrl) throw new Error("Checkout could not be started.");
-        if (status) status.textContent = "Redirecting to secure checkout.";
-        globalThis.location.assign(checkoutUrl);
-      } catch (cause) {
-        if (error) {
-          error.hidden = false;
-          error.textContent = cause instanceof Error ? cause.message : "Checkout request failed.";
-        }
-      }
     });
   });
 </script>
