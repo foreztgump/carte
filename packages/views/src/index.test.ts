@@ -16,7 +16,9 @@ const componentNames = [
   "MenuSection",
   "OrderingCart",
   "OrderingCheckout",
+  "OrderRecordStatus",
   "ReservationForm",
+  "ReservationRecordStatus",
   "RestaurantHero",
   "RestaurantInfo",
 ];
@@ -74,6 +76,15 @@ describe("@carte/views Astro shell package", () => {
     expect(typesSource).toContain("OrderingCartProps");
     expect(typesSource).toContain("OrderingCheckoutProps");
     expect(typesSource).toContain("CarteOrderModifier");
+  });
+
+  it("exports explicit order and reservation record prop types", () => {
+    const typesSource = readFileSync(join(sourceRoot, "types.ts"), "utf8");
+
+    expect(typesSource).toContain("CarteOrderRecord");
+    expect(typesSource).toContain("OrderRecordStatusProps");
+    expect(typesSource).toContain("CarteReservationRecord");
+    expect(typesSource).toContain("ReservationRecordStatusProps");
   });
 
   it("keeps checkout submission on the typed orders-backend checkout route", () => {

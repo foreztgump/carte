@@ -164,6 +164,34 @@ test("@carte/views OrderingCheckout toggles summary and redirects", async ({ pag
   await expect(page).toHaveURL("https://checkout.stripe.com/c/pay_fixture");
 });
 
+test("@carte/views order success page renders explicit order record", async ({ page }) => {
+  await page.goto(`${fixtureUrl}/order-success?orderId=order_fixture_1001`);
+
+  await expect(page.getByRole("heading", { name: "Order received", level: 1 })).toBeVisible();
+  await expect(page.getByText("Order order_fixture_1001")).toBeVisible();
+  await expect(page.getByText("Preparing")).toBeVisible();
+  await expect(page.getByText("Pickup window")).toBeVisible();
+  await expect(page.getByText("6:30 PM–6:45 PM")).toBeVisible();
+  await expect(page.getByText("Charred Broccolini")).toBeVisible();
+  await expect(page.getByText("$50.46")).toBeVisible();
+});
+
+test("@carte/views reservation success page renders explicit reservation record", async ({
+  page,
+}) => {
+  await page.goto(`${fixtureUrl}/reservation-success?reservationToken=rsv_fixture_token`);
+
+  await expect(
+    page.getByRole("heading", { name: "Reservation requested", level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByText("Reservation rsv_fixture_token")).toBeVisible();
+  await expect(page.getByText("Pending")).toBeVisible();
+  await expect(page.getByText("Alex Guest")).toBeVisible();
+  await expect(page.getByText("May 14, 2026")).toBeVisible();
+  await expect(page.getByText("7:00 PM")).toBeVisible();
+  await expect(page.getByText("Party of 4")).toBeVisible();
+});
+
 test("@carte/views DietaryFilter filters by core allergen taxonomy", async ({ page }) => {
   await page.goto(fixtureUrl);
 
@@ -182,6 +210,22 @@ test("@carte/views menu fixture has no serious or critical axe violations", asyn
   );
 
   expect(blockingViolations).toEqual([]);
+});
+
+test("@carte/views success pages have no serious or critical axe violations", async ({ page }) => {
+  for (const path of [
+    "/order-success?orderId=order_fixture_1001",
+    "/reservation-success?reservationToken=rsv_fixture_token",
+  ]) {
+    await page.goto(`${fixtureUrl}${path}`);
+
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+    const blockingViolations = results.violations.filter((violation) =>
+      violation.impact ? blockingImpacts.has(violation.impact) : false,
+    );
+
+    expect(blockingViolations).toEqual([]);
+  }
 });
 
 test("@carte/views menu fixture emits schema.org JSON-LD", async ({ page }) => {
