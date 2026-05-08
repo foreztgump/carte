@@ -12,6 +12,12 @@
 - **WHEN** validated by `emdash plugin validate`
 - **THEN** validation passes and the `allowedHosts` array contains exactly the two Stripe hosts.
 
+#### Scenario: Stripe secrets marked secret in manifest
+
+- **GIVEN** the `@carte/orders-backend` manifest source
+- **WHEN** the `admin.settingsSchema` declarations are inspected
+- **THEN** `stripeSecretKey` and `stripeWebhookSecret` are declared with `secret: true`.
+
 ### Requirement: Stripe Checkout only (HR7)
 
 The system SHALL never receive, store, log, or transmit raw card numbers, CVC/CVV, expiry, or any card-derived secret. All card-data handling SHALL occur within Stripe Checkout.
