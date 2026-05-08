@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createElement } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
 import factory from "./index.js";
@@ -16,6 +16,11 @@ const CANONICAL_CAPABILITIES = new Set([
   "email:send",
   "users:read",
 ]);
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("@carte/orders-admin manifest", () => {
   it("declares the canonical id and version", () => {
@@ -183,7 +188,9 @@ describe("@carte/orders-admin order workflows", () => {
     await screen.findByText("Status: completed");
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(screen.getByRole("button", { name: "Mark completed" })).toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: "Mark completed" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it("edits email-first notification templates with rendered previews", () => {
