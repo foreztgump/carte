@@ -24,11 +24,15 @@ type RateLimitResult =
 const rateLimitKey = (route: string, ip: string): string =>
   `rate-limit:${route}:${encodeURIComponent(ip)}`;
 
+// Trust only Cloudflare-supplied identifiers in a Worker context.
+// `x-forwarded-for` is client-controlled and rotating it would let an
+// attacker evade per-IP throttling, so it is intentionally NOT consulted.
+// When neither source is available we fall back to a single "untrusted"
+// bucket so traffic still pays the rate-limit toll instead of bypassing it.
+const UNTRUSTED_IP_BUCKET = "untrusted";
+
 const clientIp = (ctx: RouteContext): string =>
-  ctx.requestMeta.ip ??
-  ctx.request.headers.get("cf-connecting-ip") ??
-  ctx.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-  "unknown";
+  ctx.requestMeta.ip ?? ctx.request.headers.get("cf-connecting-ip") ?? UNTRUSTED_IP_BUCKET;
 
 const storedHits = (state: RateLimitState | null, windowStart: number): number[] =>
   state?.hits.filter((hit) => Number.isSafeInteger(hit) && hit > windowStart) ?? [];
