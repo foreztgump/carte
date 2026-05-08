@@ -170,8 +170,19 @@ async function undoMutation(
   }
   await ctx.kv.delete?.(key);
   const tool = toolFor(tools, undoRecord.toolName);
-  const result = await tool.undo?.(undoRecord.input, { ctx, undoRecord });
+  if (tool.undo === undefined) {
+    throw new Error(`Tool ${undoRecord.toolName} has no undo implementation.`);
+  }
+  const result = await tool.undo(undoRecord.input, { ctx, undoRecord });
   return { ok: true, result, status: "undone" };
+}
+
+export function validateMutationTools(tools: ToolRegistry): void {
+  for (const [name, tool] of Object.entries(tools)) {
+    if (tool.kind === "mutation" && typeof tool.undo !== "function") {
+      throw new Error(`Mutation tool ${name} must implement undo().`);
+    }
+  }
 }
 
 async function consumeConfirmation(
