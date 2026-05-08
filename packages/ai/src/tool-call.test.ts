@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { toolCallRoute } from "./tool-call.js";
+import { toolCallRoute, validateMutationTools } from "./tool-call.js";
 import type { ToolCallKv, ToolDefinition, ToolExecutorContext } from "./tool-call.js";
 
 interface StoredValue {
@@ -149,6 +149,82 @@ describe("toolCallRoute", () => {
     expect(response).toEqual({ ok: true, result: { restored: { price: 12 } }, status: "undone" });
     expect(state.price).toBe(12);
     expect(kv.entries.get("tool-undo:workspace-1:undo-1")).toBeUndefined();
+  });
+
+  it("rejects undo when the registered tool has no undo implementation", async () => {
+    const kv = new MemoryKv();
+    const tools = {
+      updateMenuItemPrice: {
+        kind: "mutation",
+        async preview() {
+          return { before: null, after: null };
+        },
+        async execute() {
+          return { before: null, after: null };
+        },
+      } satisfies ToolDefinition,
+    };
+    await kv.put("tool-undo:workspace-1:undo-orphan", {
+      after: { price: 14 },
+      before: { price: 12 },
+      input: { price: 14 },
+      result: null,
+      toolName: "updateMenuItemPrice",
+    });
+
+    await expect(toolCallRoute(ctx({ kv, undoToken: "undo-orphan" }), tools)).rejects.toThrow(
+      /no undo implementation/i,
+    );
+  });
+
+  it("surfaces undo failures instead of returning ok when undo throws", async () => {
+    const kv = new MemoryKv();
+    const tools = {
+      updateMenuItemPrice: {
+        kind: "mutation",
+        async preview() {
+          return { before: null, after: null };
+        },
+        async execute() {
+          return { before: null, after: null };
+        },
+        async undo() {
+          throw new Error("downstream KV unavailable");
+        },
+      } satisfies ToolDefinition,
+    };
+    await kv.put("tool-undo:workspace-1:undo-fail", {
+      after: { price: 14 },
+      before: { price: 12 },
+      input: { price: 14 },
+      result: null,
+      toolName: "updateMenuItemPrice",
+    });
+
+    await expect(toolCallRoute(ctx({ kv, undoToken: "undo-fail" }), tools)).rejects.toThrow(
+      /downstream KV unavailable/,
+    );
+  });
+
+  it("validates at registration time that mutation tools provide an undo function", () => {
+    const tools = {
+      updateMenuItemPrice: {
+        kind: "mutation",
+        async preview() {
+          return { before: null, after: null };
+        },
+        async execute() {
+          return { before: null, after: null };
+        },
+      } satisfies ToolDefinition,
+    };
+
+    expect(() => validateMutationTools(tools)).toThrow(/undo/);
+  });
+
+  it("validates passes when every mutation tool defines undo", () => {
+    const tools = { updateMenuItemPrice: priceTool({ price: 12 }) };
+    expect(() => validateMutationTools(tools)).not.toThrow();
   });
 
   it("uses workspace-and-tool scoped auto-approve keys, never global keys", async () => {
