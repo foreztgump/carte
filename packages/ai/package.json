@@ -15,7 +15,16 @@
     "emdash": "^0.9.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "29.1.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
+  },
+  "dependencies": {
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
   }
 }
