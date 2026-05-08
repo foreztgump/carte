@@ -167,4 +167,40 @@ describe("@carte/orders-backend checkout rate limit", () => {
     expect(counters.set).toBe(1);
     expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
   });
+
+  it("does not let spoofed x-forwarded-for bypass rate limit when ip is null", async () => {
+    const baseStore = new Map<string, unknown>();
+    const sharedKv = {
+      async get<T>(key: string): Promise<T | null> {
+        return (baseStore.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown): Promise<void> {
+        baseStore.set(key, value);
+      },
+    };
+    const handler = checkoutHandler();
+    // requestMeta.ip is null and cf-connecting-ip is missing. The attacker
+    // rotates x-forwarded-for hoping to dodge per-IP throttling. The limiter
+    // must NOT key on x-forwarded-for — those requests fall into one
+    // untrusted bucket and get throttled together.
+    const buildCtx = (xff: string): RouteContext =>
+      ({
+        input: {},
+        request: new Request("https://example.test/checkout", {
+          headers: { "x-forwarded-for": xff },
+        }),
+        requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
+        kv: sharedKv,
+      }) as unknown as RouteContext;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) {
+      responses.push(await handler(buildCtx(`10.0.0.${index}`)));
+    }
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
+  });
 });
