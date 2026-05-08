@@ -5,13 +5,23 @@
   "description": "Carte views — Astro/React component peer-dep library for storefronts. NOT an EmDash plugin.",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components/CarteShell.astro": "./src/components/CarteShell.astro"
+  },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "astro:check": "astro check",
+    "typecheck": "tsc --noEmit && astro check",
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "peerDependencies": {
+    "astro": ">=5.10.0 <7"
+  },
   "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "astro": "6.3.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

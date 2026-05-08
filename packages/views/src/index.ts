@@ -1,24 +1,11 @@
-// @carte/views — peer-dep npm library, NOT an EmDash plugin.
-//
-// Ships Astro components and React building blocks for consumer
-// storefronts. The full v0.1 surface lands in a later mission. For
-// now, a placeholder MenuItem named export documents the shape and
-// lets the smoke test assert that the package has a public surface
-// without depending on a plugin manifest.
+// @carte/views — peer-dep Astro component library, NOT an EmDash plugin.
 
-export interface MenuItemProps {
-  id: string;
-  name: string;
-  priceMinorUnits: number;
-  currency: string;
-  shortDescription?: string;
-}
+import type { CarteComponentExport } from "./types.js";
 
-/**
- * Placeholder MenuItem shape. Returns null for now — the real Astro
- * + React implementation arrives with the @carte/views mission.
- */
-export const MenuItem = (props: MenuItemProps): null => {
-  void props;
-  return null;
-};
+export type { CarteComponentExport, CarteShellProps, CarteViewVariant } from "./types.js";
+
+export const CarteShell = {
+  componentName: "CarteShell",
+  importPath: "@carte/views/components/CarteShell.astro",
+  variants: ["default", "headless"],
+} as const satisfies CarteComponentExport;
