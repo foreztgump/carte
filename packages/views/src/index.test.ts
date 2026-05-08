@@ -7,7 +7,15 @@ import * as views from "./index.js";
 const packageRoot = join(__dirname, "..");
 const sourceRoot = join(__dirname);
 const componentRoot = join(sourceRoot, "components");
-const componentNames = ["CarteShell"];
+const componentNames = [
+  "CarteShell",
+  "DietaryFilter",
+  "MenuDisplay",
+  "MenuItem",
+  "MenuSection",
+  "RestaurantHero",
+  "RestaurantInfo",
+];
 
 const readPackageJson = (): {
   peerDependencies?: Record<string, string>;
@@ -48,5 +56,11 @@ describe("@carte/views Astro shell package", () => {
 
     expect(componentSource).not.toContain("fetch(");
     expect(componentSource).not.toContain("getEmDashCollection");
+  });
+
+  it("imports DietaryFilter taxonomy from @carte/core", () => {
+    const componentSource = readFileSync(join(componentRoot, "DietaryFilter.astro"), "utf8");
+
+    expect(componentSource).toContain("@carte/core/taxonomy");
   });
 });
