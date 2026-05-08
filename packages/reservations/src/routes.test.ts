@@ -87,6 +87,33 @@ describe("reservation public routes", () => {
       }),
     );
   });
+
+  it("cancel-by-token is idempotent and does not double-restore capacity", async () => {
+    const context = await createRouteContext();
+    await context.capacityStore.setCapacity(SLOT, 0);
+    const reservationId = await context.putReservation({
+      status: "confirmed",
+      holdId: "cancel-hold",
+    });
+    const token = await createReservationToken(
+      { reservationId, nonce: "cancel-nonce" },
+      TOKEN_SECRET,
+    );
+    context.input = { token };
+
+    const firstResult = await route("cancel-by-token").handler(context);
+    await firstWaitUntilPromise(context);
+    const secondResult = await route("cancel-by-token").handler(context);
+    const secondCall = context.waitUntil.mock.calls[1];
+    if (secondCall !== undefined) {
+      const [secondPromise] = secondCall;
+      if (secondPromise instanceof Promise) await secondPromise;
+    }
+
+    expect(firstResult).toMatchObject({ ok: true, status: 200, reservationId });
+    expect(secondResult).toMatchObject({ ok: true, status: 200, reservationId });
+    await expect(context.capacityStore.getCapacity(SLOT)).resolves.toBe(2);
+  });
 });
 
 describe("reservation admin route", () => {
