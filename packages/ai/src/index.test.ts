@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 import factory from "./index.js";
 
@@ -34,5 +36,13 @@ describe("@carte/ai manifest", () => {
         "license.carteplugin.dev",
       ]),
     );
+  });
+
+  it("is native and does not ship a main-package wrangler config", () => {
+    const manifest = factory();
+    const packageRoot = join(process.cwd(), "wrangler.toml");
+
+    expect(existsSync(packageRoot)).toBe(false);
+    expect(manifest.admin?.entry).toBe("admin/index.js");
   });
 });
