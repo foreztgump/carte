@@ -16,7 +16,11 @@ class MemoryKv implements ToolCallKv {
   }
 
   async put(key: string, value: unknown, options?: { expirationTtl?: number }): Promise<void> {
-    this.entries.set(key, { value, expirationTtl: options?.expirationTtl });
+    const stored =
+      options?.expirationTtl === undefined
+        ? { value }
+        : { value, expirationTtl: options.expirationTtl };
+    this.entries.set(key, stored);
   }
 
   async delete(key: string): Promise<void> {
