@@ -14,6 +14,10 @@ const SECTION_DEFAULT_CLASSES = "space-y-5";
 const ITEM_DEFAULT_CLASSES =
   "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition";
 const FILTER_DEFAULT_CLASSES = "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-stone-900";
+const ORDERING_CART_DEFAULT_CLASSES =
+  "rounded-2xl border border-stone-200 bg-white p-5 text-stone-900 shadow-sm";
+const ORDERING_CHECKOUT_DEFAULT_CLASSES =
+  "rounded-3xl border border-amber-200 bg-amber-50 p-5 text-stone-900 shadow-sm";
 
 export const isHeadless = (variant: CarteViewVariant): boolean => variant === "headless";
 
@@ -43,3 +47,9 @@ export const itemClassesFor = (variant: CarteViewVariant): string | undefined =>
 
 export const filterClassesFor = (variant: CarteViewVariant): string | undefined =>
   isHeadless(variant) ? undefined : FILTER_DEFAULT_CLASSES;
+
+export const orderingCartClassesFor = (variant: CarteViewVariant): string | undefined =>
+  isHeadless(variant) ? undefined : ORDERING_CART_DEFAULT_CLASSES;
+
+export const orderingCheckoutClassesFor = (variant: CarteViewVariant): string | undefined =>
+  isHeadless(variant) ? undefined : ORDERING_CHECKOUT_DEFAULT_CLASSES;

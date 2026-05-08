@@ -87,13 +87,15 @@ test("@carte/views ReservationForm submits and surfaces success UI", async ({ pa
   });
 
   await page.goto(fixtureUrl);
-  await page.getByLabel("Name").fill("Alex Guest");
-  await page.getByLabel("Email").fill("alex@example.com");
-  await page.getByLabel("Phone").fill("+15550104141");
-  await page.getByLabel("Notes").fill("Patio if available");
+  await page.getByLabel("Name", { exact: true }).fill("Alex Guest");
+  await page.getByLabel("Email", { exact: true }).fill("alex@example.com");
+  await page.getByLabel("Phone", { exact: true }).fill("+15550104141");
+  await page.getByLabel("Notes", { exact: true }).fill("Patio if available");
   await page.getByRole("button", { name: "Request reservation" }).click();
 
-  await expect(page.getByRole("status")).toContainText("Reservation request received.");
+  await expect(page.locator("[data-carte-reservation-status]")).toContainText(
+    "Reservation request received.",
+  );
 });
 
 test("@carte/views ReservationForm surfaces error UI", async ({ page }) => {
@@ -106,21 +108,24 @@ test("@carte/views ReservationForm surfaces error UI", async ({ page }) => {
   });
 
   await page.goto(fixtureUrl);
-  await page.getByLabel("Name").fill("Alex Guest");
-  await page.getByLabel("Email").fill("alex@example.com");
+  await page.getByLabel("Name", { exact: true }).fill("Alex Guest");
+  await page.getByLabel("Email", { exact: true }).fill("alex@example.com");
   await page.getByRole("button", { name: "Request reservation" }).click();
 
-  await expect(page.getByRole("alert")).toContainText("Selected time is no longer available.");
+  await expect(page.locator("[data-carte-reservation-error]")).toContainText(
+    "Selected time is no longer available.",
+  );
 });
 
 test("@carte/views OrderingCart renders modifiers and totals", async ({ page }) => {
   await page.goto(fixtureUrl);
 
-  await expect(page.getByRole("heading", { name: "Your order", level: 2 })).toBeVisible();
-  await expect(page.getByText("Charred Broccolini")).toBeVisible();
-  await expect(page.getByText("Extra almond crunch")).toBeVisible();
-  await expect(page.getByText("Subtotal")).toBeVisible();
-  await expect(page.getByText("$50.46")).toBeVisible();
+  const cart = page.locator("[data-carte-ordering-cart]").first();
+  await expect(cart.getByRole("heading", { name: "Your order", level: 2 })).toBeVisible();
+  await expect(cart.getByText("Charred Broccolini")).toBeVisible();
+  await expect(cart.getByText("Extra almond crunch")).toBeVisible();
+  await expect(cart.getByText("Subtotal")).toBeVisible();
+  await expect(cart.getByText("$50.46")).toBeVisible();
 });
 
 test("@carte/views OrderingCheckout toggles summary and redirects", async ({ page }) => {

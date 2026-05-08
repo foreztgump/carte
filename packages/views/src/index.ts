@@ -7,6 +7,10 @@ export type {
   CarteMenu,
   CarteMenuItem,
   CarteMenuSection,
+  CarteOrderLineItem,
+  CarteOrderModifier,
+  CarteOrderingCart,
+  CarteOrderTotals,
   CarteRestaurantInfo,
   CarteRestaurantSummary,
   CarteShellProps,
@@ -18,6 +22,8 @@ export type {
   MenuDisplayProps,
   MenuItemProps,
   MenuSectionProps,
+  OrderingCartProps,
+  OrderingCheckoutProps,
   ReservationFormProps,
   RestaurantHeroProps,
   RestaurantInfoProps,
@@ -40,6 +46,8 @@ export const HoursWidget = componentExport("HoursWidget");
 export const MenuDisplay = componentExport("MenuDisplay");
 export const MenuItem = componentExport("MenuItem");
 export const MenuSection = componentExport("MenuSection");
+export const OrderingCart = componentExport("OrderingCart");
+export const OrderingCheckout = componentExport("OrderingCheckout");
 export const ReservationForm = componentExport("ReservationForm");
 export const RestaurantHero = componentExport("RestaurantHero");
 export const RestaurantInfo = componentExport("RestaurantInfo");

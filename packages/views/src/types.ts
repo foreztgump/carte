@@ -74,6 +74,49 @@ export interface ReservationFormProps {
   variant?: CarteViewVariant;
 }
 
+export interface CarteOrderModifier {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface CarteOrderLineItem {
+  id: string;
+  menuItemId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  modifiers: CarteOrderModifier[];
+}
+
+export interface CarteOrderTotals {
+  subtotal: number;
+  tax?: number;
+  serviceFee?: number;
+  tip?: number;
+  total: number;
+}
+
+export interface CarteOrderingCart {
+  id: string;
+  currency: string;
+  lineItems: CarteOrderLineItem[];
+  totals: CarteOrderTotals;
+}
+
+export interface OrderingCartProps {
+  cart: CarteOrderingCart;
+  heading?: string;
+  variant?: CarteViewVariant;
+}
+
+export interface OrderingCheckoutProps {
+  action: string;
+  cart: CarteOrderingCart;
+  heading?: string;
+  variant?: CarteViewVariant;
+}
+
 export interface CarteMenuItem {
   id: string;
   name: string;

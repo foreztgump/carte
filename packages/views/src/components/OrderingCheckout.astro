@@ -1,0 +1,130 @@
+---
+import OrderingCart from "./OrderingCart.astro";
+import { formatCurrency } from "../format.js";
+import { orderingCheckoutClassesFor } from "../styles.js";
+import type { OrderingCheckoutProps } from "../types.js";
+
+const props = Astro.props as OrderingCheckoutProps;
+const { action, cart, heading = "Checkout", variant = "default" } = props;
+const checkoutClass = orderingCheckoutClassesFor(variant);
+const fieldClass =
+  variant === "headless"
+    ? undefined
+    : "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const labelClass = variant === "headless" ? undefined : "text-sm font-medium text-stone-950";
+const payload = JSON.stringify({ cart });
+---
+
+<section aria-labelledby={`${cart.id}-checkout-heading`} class={checkoutClass} data-carte-variant={variant}>
+  <div class={variant === "headless" ? undefined : "flex items-center justify-between gap-4"}>
+    <h2
+      class={variant === "headless" ? undefined : "text-xl font-semibold text-stone-950"}
+      id={`${cart.id}-checkout-heading`}
+    >
+      {heading}
+    </h2>
+    <p class={variant === "headless" ? undefined : "font-semibold text-stone-950"}>
+      {formatCurrency(cart.totals.total, cart.currency)}
+    </p>
+  </div>
+
+  <button
+    aria-controls={`${cart.id}-checkout-summary`}
+    aria-expanded="false"
+    class={variant === "headless" ? undefined : "mt-4 flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-stone-950 ring-1 ring-amber-200"}
+    data-carte-summary-toggle
+    type="button"
+  >
+    <span>Order summary</span>
+    <span>{formatCurrency(cart.totals.total, cart.currency)}</span>
+  </button>
+
+  <div data-testid="ordering-checkout-summary" hidden id={`${cart.id}-checkout-summary`}>
+    <div class={variant === "headless" ? undefined : "mt-4"}>
+      <OrderingCart cart={cart} heading="Order summary" variant={variant} />
+    </div>
+  </div>
+
+  <form
+    class={variant === "headless" ? undefined : "mt-5 grid gap-4"}
+    data-carte-checkout-form
+    data-checkout-action={action}
+  >
+    <label class={labelClass}>
+      Checkout name
+      <input autocomplete="name" class={fieldClass} name="name" required type="text" />
+    </label>
+    <label class={labelClass}>
+      Checkout email
+      <input autocomplete="email" class={fieldClass} name="email" required type="email" />
+    </label>
+    <label class={labelClass}>
+      Pickup notes
+      <textarea class={fieldClass} name="notes" rows="3"></textarea>
+    </label>
+    <script data-carte-checkout-payload is:inline type="application/json" set:html={payload} />
+    <button
+      class={variant === "headless" ? undefined : "rounded-full bg-amber-700 px-5 py-3 text-sm font-semibold text-white"}
+      type="submit"
+    >
+      Continue to secure payment
+    </button>
+    <p aria-live="polite" data-carte-checkout-status role="status"></p>
+    <p data-carte-checkout-error hidden role="alert"></p>
+  </form>
+</section>
+
+<script is:inline>
+  const storageKey = "carte:ordering-checkout:summary-expanded";
+  const toggles = document.querySelectorAll("[data-carte-summary-toggle]");
+  const checkoutForms = document.querySelectorAll("[data-carte-checkout-form]");
+  const setSummaryState = (toggle, expanded) => {
+    const targetId = toggle.getAttribute("aria-controls");
+    const target = targetId ? document.getElementById(targetId) : null;
+    toggle.setAttribute("aria-expanded", String(expanded));
+    if (target) target.hidden = !expanded;
+    globalThis.localStorage?.setItem(storageKey, String(expanded));
+  };
+  toggles.forEach((toggle) => {
+    const persisted = globalThis.localStorage?.getItem(storageKey) === "true";
+    setSummaryState(toggle, persisted);
+    toggle.addEventListener("click", () => {
+      setSummaryState(toggle, toggle.getAttribute("aria-expanded") !== "true");
+    });
+  });
+  const checkoutPayloadFor = (form) => {
+    const payload = form.querySelector("[data-carte-checkout-payload]")?.textContent ?? "{}";
+    const contact = Object.fromEntries(new FormData(form));
+    return { ...JSON.parse(payload), contact };
+  };
+  const checkoutUrlFrom = async (response) => {
+    const payload = await response.json().catch(() => ({}));
+    return payload.checkoutUrl ?? payload.url ?? "";
+  };
+  checkoutForms.forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const status = form.querySelector("[data-carte-checkout-status]");
+      const error = form.querySelector("[data-carte-checkout-error]");
+      if (error) error.hidden = true;
+      try {
+        const endpoint = form.getAttribute("data-checkout-action") ?? "";
+        const submitRequest = globalThis["fetch"];
+        const response = await submitRequest(endpoint, {
+          body: JSON.stringify(checkoutPayloadFor(form)),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const checkoutUrl = await checkoutUrlFrom(response);
+        if (!response.ok || !checkoutUrl) throw new Error("Checkout could not be started.");
+        if (status) status.textContent = "Redirecting to secure checkout.";
+        globalThis.location.assign(checkoutUrl);
+      } catch (cause) {
+        if (error) {
+          error.hidden = false;
+          error.textContent = cause instanceof Error ? cause.message : "Checkout request failed.";
+        }
+      }
+    });
+  });
+</script>
