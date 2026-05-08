@@ -1,0 +1,68 @@
+---
+import { formatHoursRange } from "../format.js";
+import { hoursClassesFor } from "../styles.js";
+import type { CarteHoursDay, CarteWeekday, HoursWidgetProps } from "../types.js";
+
+const props = Astro.props as HoursWidgetProps;
+const { hours, today, variant = "default" } = props;
+const hoursClass = hoursClassesFor(variant);
+const orderedDays: CarteWeekday[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+const dayLabels: Record<CarteWeekday, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+const hoursByDay = new Map(hours.map((entry) => [entry.day, entry]));
+const todayIndex = orderedDays.indexOf(today);
+const todayHours = hoursByDay.get(today);
+const hoursFor = (entry?: CarteHoursDay): string =>
+  entry?.closed ? "Closed" : formatHoursRange(entry?.opensAt, entry?.closesAt);
+const dayStateFor = (day: CarteWeekday): "past" | "today" | "future" => {
+  const dayIndex = orderedDays.indexOf(day);
+  if (dayIndex < todayIndex) return "past";
+  return dayIndex === todayIndex ? "today" : "future";
+};
+---
+
+<section aria-labelledby="carte-hours-heading" class={hoursClass} data-carte-variant={variant}>
+  <h2
+    class={variant === "headless" ? undefined : "text-lg font-semibold text-stone-950"}
+    id="carte-hours-heading"
+  >
+    Hours
+  </h2>
+  <p class={variant === "headless" ? undefined : "mt-2 text-sm font-medium text-emerald-800"}>
+    Open today: {hoursFor(todayHours)}
+  </p>
+  <ol class={variant === "headless" ? undefined : "mt-4 divide-y divide-stone-100"}>
+    {
+      orderedDays.map((day) => {
+        const state = dayStateFor(day);
+        const entry = hoursByDay.get(day);
+        const rowClass =
+          variant === "headless"
+            ? undefined
+            : `flex justify-between gap-4 py-2 text-sm ${state === "today" ? "font-semibold text-stone-950" : "text-stone-500"}`;
+
+        return (
+          <li aria-current={state === "today" ? "date" : undefined} class={rowClass} data-carte-day-state={state}>
+            <span>{dayLabels[day]}</span>
+            <span>{hoursFor(entry)}</span>
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>

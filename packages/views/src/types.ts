@@ -44,6 +44,36 @@ export interface RestaurantInfoProps {
   variant?: CarteViewVariant;
 }
 
+export type CarteWeekday =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export interface CarteHoursDay {
+  day: CarteWeekday;
+  opensAt?: string;
+  closesAt?: string;
+  closed?: boolean;
+}
+
+export interface HoursWidgetProps {
+  hours: CarteHoursDay[];
+  today: CarteWeekday;
+  variant?: CarteViewVariant;
+}
+
+export interface ReservationFormProps {
+  action: string;
+  defaultDate?: string;
+  defaultTime?: string;
+  partySizeOptions?: number[];
+  variant?: CarteViewVariant;
+}
+
 export interface CarteMenuItem {
   id: string;
   name: string;

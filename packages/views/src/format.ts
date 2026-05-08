@@ -12,3 +12,19 @@ export const formatAllergens = (allergens: AllergenTag[]): string =>
 
 export const formatDietaryTags = (tags: DietaryTag[]): string =>
   tags.map(dietaryLabelFor).join(", ");
+
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const timeDateFor = (time: string): Date => {
+  const [hour = "0", minute = "0"] = time.split(":");
+  const date = new Date(2026, 0, 1, Number(hour), Number(minute));
+  return date;
+};
+
+export const formatTime = (time: string): string => TIME_FORMATTER.format(timeDateFor(time));
+
+export const formatHoursRange = (opensAt?: string, closesAt?: string): string =>
+  opensAt && closesAt ? `${formatTime(opensAt)}–${formatTime(closesAt)}` : "Closed";

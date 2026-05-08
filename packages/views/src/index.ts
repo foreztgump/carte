@@ -11,10 +11,14 @@ export type {
   CarteRestaurantSummary,
   CarteShellProps,
   CarteViewVariant,
+  CarteHoursDay,
+  CarteWeekday,
   DietaryFilterProps,
+  HoursWidgetProps,
   MenuDisplayProps,
   MenuItemProps,
   MenuSectionProps,
+  ReservationFormProps,
   RestaurantHeroProps,
   RestaurantInfoProps,
 } from "./types.js";
@@ -32,8 +36,10 @@ export const CarteShell = {
 } as const satisfies CarteComponentExport;
 
 export const DietaryFilter = componentExport("DietaryFilter");
+export const HoursWidget = componentExport("HoursWidget");
 export const MenuDisplay = componentExport("MenuDisplay");
 export const MenuItem = componentExport("MenuItem");
 export const MenuSection = componentExport("MenuSection");
+export const ReservationForm = componentExport("ReservationForm");
 export const RestaurantHero = componentExport("RestaurantHero");
 export const RestaurantInfo = componentExport("RestaurantInfo");

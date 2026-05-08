@@ -14,6 +14,8 @@ const blockingImpacts = new Set(["critical", "serious"]);
 
 let server: ChildProcessWithoutNullStreams;
 
+test.describe.configure({ mode: "serial" });
+
 const canLoadFixture = (): Promise<boolean> =>
   new Promise((resolveRequest) => {
     const request = get(fixtureUrl, (response) => {

@@ -9,9 +9,11 @@
     ".": "./src/index.ts",
     "./components/CarteShell.astro": "./src/components/CarteShell.astro",
     "./components/DietaryFilter.astro": "./src/components/DietaryFilter.astro",
+    "./components/HoursWidget.astro": "./src/components/HoursWidget.astro",
     "./components/MenuDisplay.astro": "./src/components/MenuDisplay.astro",
     "./components/MenuItem.astro": "./src/components/MenuItem.astro",
     "./components/MenuSection.astro": "./src/components/MenuSection.astro",
+    "./components/ReservationForm.astro": "./src/components/ReservationForm.astro",
     "./components/RestaurantHero.astro": "./src/components/RestaurantHero.astro",
     "./components/RestaurantInfo.astro": "./src/components/RestaurantInfo.astro"
   },
