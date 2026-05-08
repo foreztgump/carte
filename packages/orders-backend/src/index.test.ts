@@ -461,6 +461,32 @@ describe("@carte/orders-backend manifest", () => {
     expect(orders).toHaveLength(1);
   });
 
+  it("returns 400 for Stripe webhooks whose body is malformed JSON instead of throwing", async () => {
+    const manifest = factory();
+    const body = "{not valid json";
+    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
+    const ctx = {
+      input: { body, headers: { "stripe-signature": signature } },
+      kv: {
+        async get() {
+          return undefined;
+        },
+        async set() {},
+      },
+      content: { async create() {} },
+      email: { async send() {} },
+      settings: { stripeWebhookSecret: "whsec_test_orders" },
+      waitUntil() {
+        throw new Error("waitUntil must not run for malformed bodies.");
+      },
+    } as unknown as RouteContext;
+
+    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
+      ok: false,
+      status: 400,
+    });
+  });
+
   it("rejects refund callers without admin scope before external side effects", async () => {
     const manifest = factory();
     const sideEffects: string[] = [];
