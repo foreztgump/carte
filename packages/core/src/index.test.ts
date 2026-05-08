@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import factory from "./index.js";
 
-import type { ContentItem, RouteContext } from "emdash";
+import type { RouteContext } from "emdash";
 
 const CANONICAL_CAPABILITIES = new Set([
   "content:read",
@@ -32,19 +32,22 @@ describe("@carte/core manifest", () => {
   });
 });
 
-const contentItem = (id: string, data: Record<string, unknown>): ContentItem => ({
+type ContentList = NonNullable<RouteContext["content"]>["list"];
+type TestContentItem = Awaited<ReturnType<ContentList>>["items"][number];
+
+const contentItem = (id: string, data: Record<string, unknown>): TestContentItem => ({
   id,
   type: "entry",
   slug: null,
   status: "published",
-  locale: null,
   data,
   createdAt: "2026-05-08T00:00:00.000Z",
   updatedAt: "2026-05-08T00:00:00.000Z",
   publishedAt: "2026-05-08T00:00:00.000Z",
+  locale: null,
 });
 
-const routeContext = (request: Request, list: RouteContext["content"]["list"]): RouteContext =>
+const routeContext = (request: Request, list: ContentList): RouteContext =>
   ({
     request,
     input: undefined,
@@ -55,9 +58,9 @@ const routeContext = (request: Request, list: RouteContext["content"]["list"]): 
 describe("@carte/core GDPR export route", () => {
   it("rejects callers without admin scope", async () => {
     const manifest = factory();
-    const list = async () => ({ items: [], nextCursor: undefined });
+    const list: ContentList = async () => ({ items: [], hasMore: false });
 
-    const response = (await manifest.routes["gdpr/export"].handler(
+    const response = (await manifest.routes["gdpr/export"]!.handler(
       routeContext(new Request("https://carte.test/gdpr/export?email=guest@example.com"), list),
     )) as Response;
 
@@ -81,12 +84,12 @@ describe("@carte/core GDPR export route", () => {
       customer: { email: "other@example.com", name: "Grace" },
       total: 1200,
     });
-    const list = async (collection: string) => ({
+    const list: ContentList = async (collection: string) => ({
       items: collection === "carte_reservations" ? [reservation] : [order, otherOrder],
-      nextCursor: undefined,
+      hasMore: false,
     });
 
-    const response = (await manifest.routes["gdpr/export"].handler(
+    const response = (await manifest.routes["gdpr/export"]!.handler(
       routeContext(
         new Request(`https://carte.test/gdpr/export?email=${requestedEmail}`, {
           headers: { "x-emdash-admin-scope": "true" },
