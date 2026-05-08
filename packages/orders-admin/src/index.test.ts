@@ -209,3 +209,56 @@ describe("@carte/orders-admin order workflows", () => {
     expect(screen.getByText("Hi Ada Lovelace, collect order-101.")).toBeTruthy();
   });
 });
+
+describe("@carte/orders-admin modifier editor", () => {
+  it("creates, edits, and deletes single-tier modifier groups with per-option fees", () => {
+    render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
+
+    fireEvent.change(screen.getByLabelText("Modifier group name"), {
+      target: { value: "Pizza extras" },
+    });
+    fireEvent.change(screen.getByLabelText("Option name"), {
+      target: { value: "Buffalo mozzarella" },
+    });
+    fireEvent.change(screen.getByLabelText("Option fee in cents"), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create modifier group" }));
+
+    expect(screen.getByText("Pizza extras")).toBeTruthy();
+    expect(screen.getByText("Buffalo mozzarella · $2.50")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Edit Pizza extras name"), {
+      target: { value: "Premium pizza extras" },
+    });
+    fireEvent.change(screen.getByLabelText("Edit Buffalo mozzarella fee in cents"), {
+      target: { value: "300" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Pizza extras" }));
+
+    expect(screen.getByText("Premium pizza extras")).toBeTruthy();
+    expect(screen.getByText("Buffalo mozzarella · $3.00")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Premium pizza extras" }));
+    expect(screen.queryByText("Premium pizza extras")).toBeNull();
+    expect(screen.getByText("No modifier groups configured yet.")).toBeTruthy();
+  });
+
+  it("rejects nested modifier groups with a validation error", () => {
+    render(createElement(OrdersAdminApp, { currentPath: "/carte-orders/modifiers" }));
+
+    fireEvent.change(screen.getByLabelText("Modifier group name"), {
+      target: { value: "Sauce choices" },
+    });
+    fireEvent.change(screen.getByLabelText("Option name"), {
+      target: { value: "Garlic ranch" },
+    });
+    fireEvent.change(screen.getByLabelText("Nested modifier group JSON"), {
+      target: { value: '{"name":"Nested sauce"}' },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create modifier group" }));
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Nested modifier groups are not supported in Carte v0.1.",
+    );
+    expect(screen.queryByText("Sauce choices")).toBeNull();
+  });
+});
