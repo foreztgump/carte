@@ -37,10 +37,27 @@ const validateMenuItem = (content: Record<string, unknown>): Record<string, unkn
   };
 };
 
+const PRICE_ERROR = "Menu item price must be a non-negative number.";
+
 const validatePrice = (price: unknown): void => {
   if (price === undefined || price === null) return;
-  if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
-    throw new Error("Menu item price must be a non-negative number.");
+  if (typeof price === "number") {
+    assertNonNegativeAmount(price);
+    return;
+  }
+  if (isStructuredPrice(price)) {
+    assertNonNegativeAmount(price.amount);
+    return;
+  }
+  throw new Error(PRICE_ERROR);
+};
+
+const isStructuredPrice = (value: unknown): value is { amount: unknown; currency?: unknown } =>
+  typeof value === "object" && value !== null && !Array.isArray(value) && "amount" in value;
+
+const assertNonNegativeAmount = (amount: unknown): void => {
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
+    throw new Error(PRICE_ERROR);
   }
 };
 
