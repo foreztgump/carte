@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import factory from "./index.js";
 
+import type { ContentItem, RouteContext } from "emdash";
+
 const CANONICAL_CAPABILITIES = new Set([
   "content:read",
   "content:write",
@@ -27,5 +29,79 @@ describe("@carte/core manifest", () => {
     expect(manifest.capabilities).toContain("content:read");
     expect(manifest.capabilities).toContain("content:write");
     expect(manifest.capabilities).toContain("media:read");
+  });
+});
+
+const contentItem = (id: string, data: Record<string, unknown>): ContentItem => ({
+  id,
+  type: "entry",
+  slug: null,
+  status: "published",
+  locale: null,
+  data,
+  createdAt: "2026-05-08T00:00:00.000Z",
+  updatedAt: "2026-05-08T00:00:00.000Z",
+  publishedAt: "2026-05-08T00:00:00.000Z",
+});
+
+const routeContext = (request: Request, list: RouteContext["content"]["list"]): RouteContext =>
+  ({
+    request,
+    input: undefined,
+    requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
+    content: { list },
+  }) as unknown as RouteContext;
+
+describe("@carte/core GDPR export route", () => {
+  it("rejects callers without admin scope", async () => {
+    const manifest = factory();
+    const list = async () => ({ items: [], nextCursor: undefined });
+
+    const response = (await manifest.routes["gdpr/export"].handler(
+      routeContext(new Request("https://carte.test/gdpr/export?email=guest@example.com"), list),
+    )) as Response;
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Admin scope required" });
+  });
+
+  it("exports reservations and orders matching the requested email", async () => {
+    const manifest = factory();
+    const guestEmail = "Guest@Example.com";
+    const requestedEmail = "guest@example.com";
+    const reservation = contentItem("reservation-1", {
+      guest: { email: guestEmail, name: "Ada", phone: "+15550101010" },
+      partySize: 4,
+    });
+    const order = contentItem("order-1", {
+      customer: { email: guestEmail, name: "Ada", phone: "+15550101010" },
+      total: 4200,
+    });
+    const otherOrder = contentItem("order-2", {
+      customer: { email: "other@example.com", name: "Grace" },
+      total: 1200,
+    });
+    const list = async (collection: string) => ({
+      items: collection === "carte_reservations" ? [reservation] : [order, otherOrder],
+      nextCursor: undefined,
+    });
+
+    const response = (await manifest.routes["gdpr/export"].handler(
+      routeContext(
+        new Request(`https://carte.test/gdpr/export?email=${requestedEmail}`, {
+          headers: { "x-emdash-admin-scope": "true" },
+        }),
+        list,
+      ),
+    )) as Response;
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(response.headers.get("content-disposition")).toContain("carte-gdpr-export");
+    await expect(response.json()).resolves.toMatchObject({
+      email: requestedEmail,
+      reservations: [reservation],
+      orders: [order],
+    });
   });
 });
