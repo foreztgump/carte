@@ -37,7 +37,7 @@ export const licenseCheckRoute = async (
   ctx: RouteContext,
   deps: LicenseCheckRouteDeps = {},
 ): Promise<unknown> => {
-  const workspaceId = workspaceIdFrom(ctx.input);
+  const workspaceId = requireWorkspaceId(ctx);
   const resolveLicense = deps.fetchLicense ?? fetchLicense;
   return checkLicense({
     workspaceId,
@@ -101,13 +101,10 @@ async function fetchLicense(workspaceId: string): Promise<LicenseRecord> {
   return (await response.json()) as LicenseRecord;
 }
 
-function workspaceIdFrom(input: unknown): string {
-  if (isRecord(input) && typeof input.workspaceId === "string") {
-    return input.workspaceId;
+function requireWorkspaceId(ctx: RouteContext): string {
+  const header = ctx.request?.headers?.get("X-Workspace-Id") ?? null;
+  if (header !== null && header.trim() !== "") {
+    return header;
   }
-  return "default";
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  throw new Error("X-Workspace-Id header is required for license-check.");
 }
