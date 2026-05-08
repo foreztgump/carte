@@ -48,6 +48,17 @@ type EraseCollectionArgs = {
   timestamp: string;
 };
 
+type EraseFailure = {
+  targetCollection: string;
+  targetId: string;
+  reason: string;
+};
+
+type EraseCollectionResult = {
+  erased: number;
+  failures: EraseFailure[];
+};
+
 const stubRoute =
   (route: string) =>
   async (ctx: RouteContext): Promise<{ ok: true; plugin: string; route: string }> => {
@@ -155,29 +166,44 @@ const dataWithErasedPii = (
   return { ...data, [containerKey]: erasedContainer };
 };
 
-const eraseAndAuditItem = async (
+const errorReason = (error: unknown): string =>
+  error instanceof Error ? error.message : "audit-write-failed";
+
+// HR9: write the audit entry FIRST. Only erase PII if the audit succeeded.
+// This guarantees no PII mutation lacks an audit trail, even on transient
+// audit-store failures.
+const auditThenEraseItem = async (
   item: ExportedContentItem,
   args: EraseCollectionArgs,
-): Promise<void> => {
+): Promise<EraseFailure | null> => {
   const { collection, content, placeholder, timestamp } = args;
   const erasedData = dataWithErasedPii(item.data, collection.piiContainer, placeholder);
   const [beforeHash, afterHash] = await Promise.all([
     piiHash(item.data, collection.piiContainer),
     piiHash(erasedData, collection.piiContainer),
   ]);
+  try {
+    await content.create(AUDIT_COLLECTION, {
+      actor: AUDIT_ACTOR,
+      action: AUDIT_ACTION,
+      targetCollection: collection.collection,
+      targetId: item.id,
+      beforeHash,
+      afterHash,
+      timestamp,
+    });
+  } catch (error) {
+    return {
+      targetCollection: collection.collection,
+      targetId: item.id,
+      reason: errorReason(error),
+    };
+  }
   await content.update(collection.collection, item.id, erasedData);
-  await content.create(AUDIT_COLLECTION, {
-    actor: AUDIT_ACTOR,
-    action: AUDIT_ACTION,
-    targetCollection: collection.collection,
-    targetId: item.id,
-    beforeHash,
-    afterHash,
-    timestamp,
-  });
+  return null;
 };
 
-const eraseCollection = async (args: EraseCollectionArgs): Promise<number> => {
+const eraseCollection = async (args: EraseCollectionArgs): Promise<EraseCollectionResult> => {
   const { collection, content, normalizedEmail } = args;
   const matches = await matchingItems(
     content,
@@ -185,8 +211,16 @@ const eraseCollection = async (args: EraseCollectionArgs): Promise<number> => {
     collection.emailPath,
     normalizedEmail,
   );
-  await Promise.all(matches.map((item) => eraseAndAuditItem(item, args)));
-  return matches.length;
+  // Sequential per item so a single audit-store hiccup does not cascade.
+  // Track failures for caller visibility instead of throwing.
+  const failures: EraseFailure[] = [];
+  let erased = 0;
+  for (const item of matches) {
+    const failure = await auditThenEraseItem(item, args);
+    if (failure === null) erased += 1;
+    else failures.push(failure);
+  }
+  return { erased, failures };
 };
 
 const gdprExportRoute = async (ctx: RouteContext): Promise<Response> => {
@@ -227,16 +261,22 @@ const gdprEraseRoute = async (ctx: RouteContext): Promise<Response> => {
   try {
     const placeholder = await deterministicPlaceholder(email);
     const timestamp = new Date().toISOString();
-    const [reservations, orders] = await Promise.all(
+    const [reservations, orders] = (await Promise.all(
       GDPR_EXPORT_COLLECTIONS.map((collection) =>
         eraseCollection({ collection, content, normalizedEmail: email, placeholder, timestamp }),
       ),
+    )) as [EraseCollectionResult, EraseCollectionResult];
+    const failed = [...reservations.failures, ...orders.failures];
+    const status = failed.length === 0 ? 200 : 207;
+    return jsonResponse(
+      {
+        email,
+        erasedAt: timestamp,
+        erased: { reservations: reservations.erased, orders: orders.erased },
+        failed,
+      },
+      status,
     );
-    return jsonResponse({
-      email,
-      erasedAt: timestamp,
-      erased: { reservations, orders },
-    });
   } catch (error) {
     ctx.log.error("GDPR erasure failed", { error });
     return jsonResponse({ error: "GDPR erasure failed" }, 500);
