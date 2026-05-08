@@ -28,13 +28,24 @@ const stubRoute =
     return { ok: true, plugin: PLUGIN_ID, route };
   };
 
-const licenseCheckRoute = async (ctx: RouteContext): Promise<unknown> =>
-  checkLicense({
-    workspaceId: workspaceIdFrom(ctx.input),
+export interface LicenseCheckRouteDeps {
+  fetchLicense?: (workspaceId: string) => Promise<LicenseRecord>;
+  now?: Date;
+}
+
+export const licenseCheckRoute = async (
+  ctx: RouteContext,
+  deps: LicenseCheckRouteDeps = {},
+): Promise<unknown> => {
+  const workspaceId = workspaceIdFrom(ctx.input);
+  const resolveLicense = deps.fetchLicense ?? fetchLicense;
+  return checkLicense({
+    workspaceId,
     kv: ctx.kv as LicenseKv,
-    now: new Date(),
-    fetchLicense: () => fetchLicense(workspaceIdFrom(ctx.input)),
+    now: deps.now ?? new Date(),
+    fetchLicense: () => resolveLicense(workspaceId),
   });
+};
 
 const factory = () =>
   definePlugin({
