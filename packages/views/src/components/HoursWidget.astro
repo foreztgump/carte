@@ -1,5 +1,6 @@
 ---
 import { formatHoursRange } from "../format.js";
+import { todayHoursLabelFor } from "../hours.js";
 import { hoursClassesFor } from "../styles.js";
 import type { CarteHoursDay, CarteWeekday, HoursWidgetProps } from "../types.js";
 
@@ -44,7 +45,7 @@ const dayStateFor = (day: CarteWeekday): "past" | "today" | "future" => {
     Hours
   </h2>
   <p class={variant === "headless" ? undefined : "mt-2 text-sm font-medium text-emerald-800"}>
-    Open today: {hoursFor(todayHours)}
+    {todayHoursLabelFor(todayHours)}
   </p>
   <ol class={variant === "headless" ? undefined : "mt-4 divide-y divide-stone-100"}>
     {
