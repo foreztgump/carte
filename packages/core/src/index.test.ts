@@ -53,6 +53,7 @@ const routeContext = (request: Request, list: ContentList): RouteContext =>
     input: undefined,
     requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
     content: { list },
+    log: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
   }) as unknown as RouteContext;
 
 describe("@carte/core GDPR export route", () => {
@@ -269,5 +270,67 @@ describe("@carte/core GDPR erasure route", () => {
     }
     const targets = audits.map((audit) => audit.data.targetCollection);
     expect(new Set(targets)).toEqual(new Set(["carte_reservations", "carte_orders"]));
+  });
+
+  it("does not erase PII when the audit write fails, and surfaces the failure", async () => {
+    const manifest = factory();
+    const guestEmail = "Guest@Example.com";
+    const reservation = contentItem("reservation-1", {
+      guest: { email: guestEmail, name: "Ada", phone: "+15550101010", notes: "n" },
+      partySize: 2,
+    });
+    const order = contentItem("order-1", {
+      customer: { email: guestEmail, name: "Ada", phone: "+15550101010", notes: "n" },
+      total: 1000,
+    });
+    const updated: Array<{ collection: string; id: string }> = [];
+    const list: ContentList = async (collection: string) => ({
+      items: collection === "carte_reservations" ? [reservation] : [order],
+      hasMore: false,
+    });
+    const context = {
+      ...routeContext(
+        new Request("https://carte.test/gdpr/erase?email=guest@example.com", {
+          method: "POST",
+          headers: { "x-emdash-admin-scope": "true" },
+        }),
+        list,
+      ),
+      content: {
+        list,
+        update: async (collection: string, id: string, data: Record<string, unknown>) => {
+          updated.push({ collection, id });
+          return contentItem(id, data);
+        },
+        // Audit create fails for reservation-1 only
+        create: async (_collection: string, data: Record<string, unknown>) => {
+          if (data.targetId === "reservation-1") {
+            throw new Error("audit-store unavailable");
+          }
+          return contentItem("audit", data);
+        },
+      },
+    } as unknown as RouteContext;
+
+    const response = (await manifest.routes["gdpr/erase"]!.handler(context)) as Response;
+
+    // The reservation MUST NOT be erased (audit failed first).
+    expect(updated.find((u) => u.id === "reservation-1")).toBeUndefined();
+    // The order audit succeeded, so it should be erased.
+    expect(updated.find((u) => u.id === "order-1")).toBeDefined();
+
+    expect(response.status).toBe(207);
+    const body = (await response.json()) as {
+      erased: { reservations: number; orders: number };
+      failed: Array<{ targetCollection: string; targetId: string; reason: string }>;
+    };
+    expect(body.erased).toEqual({ reservations: 0, orders: 1 });
+    expect(body.failed).toEqual([
+      expect.objectContaining({
+        targetCollection: "carte_reservations",
+        targetId: "reservation-1",
+        reason: expect.any(String),
+      }),
+    ]);
   });
 });
