@@ -26,7 +26,7 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
 - [x] **f-m3-core-allergen-taxonomy** — Single source of truth in `packages/core/src/taxonomy/allergens.ts` for EU FIC 14 + US extensions and dietary tag → schema.org diet URI map. (commits `3f854f4`, `ff4f523`)
   - Acceptance: A3.taxonomy.fic14, A3.taxonomy.dietUris, A3.audit.allergenEdits.
   - Tests: `packages/core/src/taxonomy/__tests__/allergens.test.ts`.
-- [x] **f-m3-core-pro409-sweep** — Triage any PRO-409 leaf sub-issues (PRO-428 admin pages already covered by `f-m3-core-blockkit-admin`; sweep stragglers). (rolled into milestone PR; tracked via Linear hygiene)
+- [x] **f-m3-core-pro409-sweep** — Triage any PRO-409 leaf sub-issues (PRO-428 admin pages already covered by `f-m3-core-blockkit-admin`; sweep stragglers). (no code commit; Linear-only triage — see PRO-409 children's status. This exception is acceptable per the original feature definition's "no code changes; Linear hygiene only" expectedBehavior, and is canonical for OpenSpec — task tracking permits no-SHA entries with a justification.)
   - Acceptance: A3.linear.pro409sweep.
 
 ---
