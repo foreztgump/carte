@@ -10,6 +10,7 @@ const RESTORE_MS_LOCAL = 0;
 type RestoreInput = {
   content: ContentAccess | undefined;
   itemId: unknown;
+  timezone: string;
   now?: Date;
 };
 
@@ -22,11 +23,12 @@ const restoreLocks = new Map<string, Promise<void>>();
 export const eightySixMenuItem = async ({
   content,
   itemId,
+  timezone,
   now = new Date(),
 }: RestoreInput): Promise<{ ok: true; itemId: string; unavailableUntil: string }> => {
   const id = requireItemId(itemId);
   const update = requireContentUpdate(content);
-  const unavailableUntil = nextSixAmLocal(now).toISOString();
+  const unavailableUntil = nextSixAmInZone(now, timezone).toISOString();
 
   await update(MENU_ITEM_COLLECTION, id, { available: false, unavailableUntil });
   return { ok: true, itemId: id, unavailableUntil };
@@ -80,16 +82,78 @@ const updateAvailability = async (
   await update(MENU_ITEM_COLLECTION, item.id, restoredData);
 };
 
-const nextSixAmLocal = (now: Date): Date => {
-  const restoreAt = new Date(now);
-  restoreAt.setHours(
+const nextSixAmInZone = (now: Date, timeZone: string): Date => {
+  const wall = zonedWallClock(now, timeZone);
+  const todaySixAm = zonedInstant({ year: wall.year, month: wall.month, day: wall.day }, timeZone);
+  if (todaySixAm.getTime() > now.getTime()) return todaySixAm;
+  return zonedInstant(nextDay(wall), timeZone);
+};
+
+type WallClock = { year: number; month: number; day: number };
+
+const zonedWallClock = (instant: Date, timeZone: string): WallClock => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(lookup.year),
+    month: Number(lookup.month),
+    day: Number(lookup.day),
+  };
+};
+
+const zonedInstant = (date: WallClock, timeZone: string): Date => {
+  const utcGuess = Date.UTC(
+    date.year,
+    date.month - 1,
+    date.day,
     RESTORE_HOUR_LOCAL,
     RESTORE_MINUTE_LOCAL,
     RESTORE_SECOND_LOCAL,
     RESTORE_MS_LOCAL,
   );
-  if (restoreAt.getTime() <= now.getTime()) restoreAt.setDate(restoreAt.getDate() + 1);
-  return restoreAt;
+  const offsetMs = zoneOffsetMs(new Date(utcGuess), timeZone);
+  return new Date(utcGuess - offsetMs);
+};
+
+const zoneOffsetMs = (instant: Date, timeZone: string): number => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const asUtc = Date.UTC(
+    Number(lookup.year),
+    Number(lookup.month) - 1,
+    Number(lookup.day),
+    Number(lookup.hour),
+    Number(lookup.minute),
+    Number(lookup.second),
+  );
+  return asUtc - instant.getTime();
+};
+
+const nextDay = (date: WallClock): WallClock => {
+  const next = new Date(Date.UTC(date.year, date.month - 1, date.day + 1));
+  return {
+    year: next.getUTCFullYear(),
+    month: next.getUTCMonth() + 1,
+    day: next.getUTCDate(),
+  };
 };
 
 const parseUnavailableUntil = (value: unknown): Date | null => {

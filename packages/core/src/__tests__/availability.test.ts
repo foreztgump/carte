@@ -55,16 +55,16 @@ const makeContext = (
 };
 
 describe("@carte/core menu item availability", () => {
-  it("86 button marks an item unavailable until the next 6am local time", async () => {
+  it("86 button marks an item unavailable until the next 6am restaurant time", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 4, 6, 23, 0, 0));
-    const ctx = makeContext([], { itemId: "item-1" });
+    vi.setSystemTime(new Date("2026-05-06T23:00:00.000Z"));
+    const ctx = makeContext([], { itemId: "item-1" }, { timezone: "UTC" });
 
     await routes["menu-items/86"].handler(ctx);
 
     expect(ctx.content.update).toHaveBeenCalledWith(MENU_COLLECTION, "item-1", {
       available: false,
-      unavailableUntil: new Date(2026, 4, 7, 6, 0, 0).toISOString(),
+      unavailableUntil: "2026-05-07T06:00:00.000Z",
     });
     vi.useRealTimers();
   });

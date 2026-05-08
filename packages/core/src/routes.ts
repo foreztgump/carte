@@ -1,8 +1,11 @@
-import type { PluginRoute } from "emdash";
+import type { KVAccess, PluginRoute } from "emdash";
 
 import { createAdminRoute } from "./admin-pages.js";
 import { eightySixMenuItem, listMenuItems } from "./availability.js";
 import { createSchemaJsonLd } from "./jsonld.js";
+
+const TIMEZONE_SETTING_KEY = "settings:timezone";
+const TIMEZONE_FALLBACK = "UTC";
 
 const createMenuFeedRoute = (): PluginRoute => ({
   handler: async (ctx) => listMenuItems(ctx.content),
@@ -11,9 +14,15 @@ const createMenuFeedRoute = (): PluginRoute => ({
 const createEightySixRoute = (): PluginRoute => ({
   handler: async (ctx) => {
     const input = ctx.input as { itemId?: unknown };
-    return eightySixMenuItem({ content: ctx.content, itemId: input.itemId });
+    const timezone = await readTimezone(ctx.kv);
+    return eightySixMenuItem({ content: ctx.content, itemId: input.itemId, timezone });
   },
 });
+
+const readTimezone = async (kv: KVAccess): Promise<string> => {
+  const value = await kv.get<string>(TIMEZONE_SETTING_KEY);
+  return typeof value === "string" && value.length > 0 ? value : TIMEZONE_FALLBACK;
+};
 
 export const routes = {
   admin: createAdminRoute("menus"),
