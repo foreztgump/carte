@@ -1,0 +1,59 @@
+# Spec — `carte-gdpr-hardening`
+
+## ADDED Requirements
+
+### Requirement: Guest data export
+
+A handler under `@carte/core` SHALL export, given an email, all reservations and orders for that email as a downloadable JSON document. Unauthorised callers SHALL receive 401.
+
+#### Scenario: Export returns reservations + orders for an email
+
+- **GIVEN** a guest with prior reservations and orders associated with `guest@example.com`
+- **WHEN** an admin-scoped caller GETs `/_emdash/api/plugins/carte-core/gdpr/export?email=guest@example.com`
+- **THEN** the response is a JSON document containing every matching reservation and order; an unauthorised caller without admin scope receives 401.
+
+### Requirement: Guest data erasure with PII-strip retention
+
+An erasure handler SHALL replace `name`, `email`, `phone`, and `notes` on the guest's reservations and orders with deterministic-hash placeholders and SHALL preserve revenue fields (`total`, `currency`, `lineItems`). The retention policy SHALL be documented in `packages/core/README.md` (or `RETENTION.md`).
+
+#### Scenario: PII fields zeroed, revenue preserved
+
+- **GIVEN** a guest with two prior orders
+- **WHEN** the erasure handler runs for the guest's email
+- **THEN** name/email/phone/notes are replaced with deterministic hashes; total/currency/lineItems are preserved.
+
+### Requirement: KV per-IP rate limiting on public routes
+
+`/submit` (reservations) and `/checkout` (orders-backend) SHALL apply a sliding-window per-IP rate limiter backed by KV. The added subrequest cost SHALL be ≤ 2 per route invocation.
+
+#### Scenario: 100 requests in 60s throttled
+
+- **GIVEN** 100 requests from a single IP within 60 seconds
+- **WHEN** the threshold is crossed
+- **THEN** subsequent requests return 429.
+
+### Requirement: Pen-smoke tests
+
+The mission SHALL include reproducible Vitest suites that verify (a) Stripe webhook replay is a no-op, (b) 1000-concurrent submit produces no oversell, (c) license-check graceful degrade leaves the restaurant usable on simulated outage.
+
+#### Scenario: 1000-concurrent submit produces no oversell
+
+- **GIVEN** capacity 200 for a date/slot
+- **WHEN** 1000 concurrent submit calls arrive under the pen-smoke harness
+- **THEN** exactly 200 reservations succeed and 800 are rejected with conflict; no oversell occurs.
+
+#### Scenario: License outage leaves restaurant usable
+
+- **GIVEN** a simulated DNS failure for `license.carteplugin.dev`
+- **WHEN** the AI plugin requests a license check
+- **THEN** the cached value is honoured (or trial-mode banner is surfaced) and the restaurant is never locked out.
+
+### Requirement: AgentShield clean across all packages + CI step
+
+`npx ecc-agentshield scan packages/ .factory/ .claude/` SHALL exit 0. `.github/workflows/ci.yml` SHALL include an AgentShield step that runs on every PR. Allowlist entries SHALL each carry a one-line rationale comment and SHALL be reviewed by `security-review-droid`.
+
+#### Scenario: AgentShield exit 0 and CI step present
+
+- **GIVEN** the consolidated v0.1 codebase and the CI workflow
+- **WHEN** `npx ecc-agentshield scan packages/ .factory/ .claude/` runs and `.github/workflows/ci.yml` is inspected
+- **THEN** the scan exits 0 and the workflow includes an AgentShield job that runs on every PR; any allowlist entry carries a rationale comment.
