@@ -50,6 +50,40 @@ describe("@carte/core content:beforeSave", () => {
     });
   });
 
+  it("rejects structured price with negative amount", async () => {
+    const handler = getHookHandler("content:beforeSave");
+
+    await expect(
+      handler(menuItemEvent({ price: { amount: -1, currency: "USD" } }), EMPTY_CONTEXT),
+    ).rejects.toThrow("price must be a non-negative number");
+  });
+
+  it("rejects structured price with NaN amount", async () => {
+    const handler = getHookHandler("content:beforeSave");
+
+    await expect(
+      handler(menuItemEvent({ price: { amount: Number.NaN, currency: "USD" } }), EMPTY_CONTEXT),
+    ).rejects.toThrow("price must be a non-negative number");
+  });
+
+  it("rejects structured price missing amount", async () => {
+    const handler = getHookHandler("content:beforeSave");
+
+    await expect(
+      handler(menuItemEvent({ price: { currency: "USD" } }), EMPTY_CONTEXT),
+    ).rejects.toThrow("price must be a non-negative number");
+  });
+
+  it("accepts structured price with non-negative amount", async () => {
+    const handler = getHookHandler("content:beforeSave");
+
+    await expect(
+      handler(menuItemEvent({ price: { amount: 12.5, currency: "USD" } }), EMPTY_CONTEXT),
+    ).resolves.toMatchObject({
+      price: { amount: 12.5, currency: "USD" },
+    });
+  });
+
   it("rejects malformed hours strings", async () => {
     const handler = getHookHandler("content:beforeSave");
 
