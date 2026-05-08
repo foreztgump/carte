@@ -1,5 +1,6 @@
 ---
 import MenuSection from "./MenuSection.astro";
+import { safeJsonForScript } from "../safe-json.js";
 import { menuJsonLdFor } from "../schema.js";
 import { menuClassesFor } from "../styles.js";
 import type { MenuDisplayProps } from "../types.js";
@@ -7,7 +8,7 @@ import type { MenuDisplayProps } from "../types.js";
 const props = Astro.props as MenuDisplayProps;
 const { menu, variant = "default" } = props;
 const menuClass = menuClassesFor(variant);
-const jsonLd = JSON.stringify(menuJsonLdFor(menu));
+const jsonLd = safeJsonForScript(menuJsonLdFor(menu));
 ---
 
 <section aria-labelledby={`${menu.id}-heading`} class={menuClass} data-carte-variant={variant} id={menu.id}>

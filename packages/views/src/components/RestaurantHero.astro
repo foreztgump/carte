@@ -1,4 +1,5 @@
 ---
+import { safeJsonForScript } from "../safe-json.js";
 import { restaurantJsonLdFor } from "../schema.js";
 import { heroClassesFor } from "../styles.js";
 import type { RestaurantHeroProps } from "../types.js";
@@ -7,7 +8,7 @@ const props = Astro.props as RestaurantHeroProps;
 const { restaurant, variant = "default" } = props;
 const heroClass = heroClassesFor(variant);
 const detailParts = [restaurant.cuisine?.join(" · "), restaurant.priceRange].filter(Boolean);
-const jsonLd = JSON.stringify(restaurantJsonLdFor(restaurant));
+const jsonLd = safeJsonForScript(restaurantJsonLdFor(restaurant));
 ---
 
 <section class={heroClass} data-carte-variant={variant}>

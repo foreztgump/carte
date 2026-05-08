@@ -1,6 +1,7 @@
 ---
 import OrderingCart from "./OrderingCart.astro";
 import { formatCurrency } from "../format.js";
+import { safeJsonForScript } from "../safe-json.js";
 import { orderingCheckoutClassesFor } from "../styles.js";
 import type { OrderingCheckoutProps } from "../types.js";
 
@@ -12,7 +13,7 @@ const fieldClass =
     ? undefined
     : "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 const labelClass = variant === "headless" ? undefined : "text-sm font-medium text-stone-950";
-const payload = JSON.stringify({ cart });
+const payload = safeJsonForScript({ cart });
 ---
 
 <section aria-labelledby={`${cart.id}-checkout-heading`} class={checkoutClass} data-carte-variant={variant}>
