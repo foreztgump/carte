@@ -1,59 +1,99 @@
-# Spec — `carte-reservations`
+# carte-reservations
 
 ## ADDED Requirements
 
-### Requirement: Manifest with canonical capabilities
+### Requirement: Reservations manifest uses canonical capabilities
 
-`@carte/reservations` SHALL declare exactly `content:read`, `content:write`, `email:send`, register collections `carte_reservations` and `carte_reservation_blocks`, and mount routes `submit`, `confirm`, `cancel-by-token`, `admin/*`.
+The `@carte/reservations` plugin manifest SHALL declare only the canonical capabilities required for reservation content and email flows.
 
-#### Scenario: emdash plugin validate clean
+#### Scenario: Manifest declares minimal canonical capabilities
 
-- **GIVEN** a developer running `pnpm -F @carte/reservations exec emdash plugin validate`
-- **WHEN** the command executes
-- **THEN** it exits 0.
+- **Given** the reservations plugin manifest is created
+- **When** its capabilities are inspected
+- **Then** they are exactly `content:read`, `content:write`, and `email:send`
 
-### Requirement: Capacity counter uses KV atomic decrement (HR6)
+### Requirement: Reservations collections are declared
 
-Capacity per slot SHALL be tracked in KV under key `capacity:{date}:{slot}` using an atomic decrement primitive. The system SHALL NOT read-then-write the same key on the capacity path. On reservation cancellation or hold expiry, the counter SHALL be restored via the equivalent atomic increment inside `ctx.waitUntil`.
+The reservations plugin manifest SHALL declare `carte_reservations` and `carte_reservation_blocks` as plugin collections so route handlers can access reservation records and blocks through the EmDash content boundary.
 
-#### Scenario: 100 concurrent submits for capacity 50
+#### Scenario: Manifest exposes reservation collection declarations
 
-- **GIVEN** capacity `50` for a date/slot
-- **WHEN** 100 concurrent submit calls arrive
-- **THEN** exactly 50 reservations succeed and 50 are rejected with conflict.
+- **Given** the reservations plugin manifest is created
+- **When** its collection declarations are inspected
+- **Then** `carte_reservations` and `carte_reservation_blocks` are present with query indexes for booking and block lookups
 
-#### Scenario: Hold expiry restores counter
+### Requirement: Reservation capacity holds are atomic
 
-- **GIVEN** a 10-minute hold that expires
-- **WHEN** the TTL fires
-- **THEN** the capacity counter is incremented inside `ctx.waitUntil`.
+The reservations plugin SHALL reserve seats by atomically decrementing `capacity:{date}:{slot}` counters, rejecting requests that would make the counter negative, and writing `hold:{holdId}` with a 10-minute TTL.
 
-### Requirement: Submit / confirm / cancel routes via HMAC tokens
+#### Scenario: Concurrent reservation holds do not oversell
 
-The `submit` route SHALL create a pending reservation, decrement capacity, write `hold:{holdId}` with TTL 600 seconds, and queue a "received" email via `ctx.waitUntil`. The `confirm` route SHALL accept an HMAC-signed token and flip the reservation to confirmed. The `cancel-by-token` route SHALL accept an HMAC-signed token, flip to cancelled, and restore capacity inside `ctx.waitUntil`.
+- **Given** a slot has capacity for 50 one-person reservation holds
+- **When** 100 concurrent reservation hold attempts run for that same slot
+- **Then** exactly 50 attempts succeed and exactly 50 attempts are rejected
+- **And** the remaining capacity for `capacity:{date}:{slot}` is 0
 
-#### Scenario: Invalid token on confirm
+#### Scenario: Expired or cancelled holds restore capacity after the response
 
-- **GIVEN** a confirm request with a malformed token
-- **WHEN** the route handler executes
-- **THEN** the response is 400 and no state changes.
+- **Given** a reservation hold exists at `hold:{holdId}` with a 600-second TTL
+- **When** the hold expires or is cancelled
+- **Then** the capacity restoration is scheduled through `ctx.waitUntil`
+- **And** the original party size is restored to `capacity:{date}:{slot}`
 
-### Requirement: Slots computed at read
+### Requirement: Public reservation routes manage reservation lifecycle
 
-The system SHALL NOT persist slot rows. Available slots SHALL be derived at read time from hours minus blocks (`carte_reservation_blocks`) minus current bookings minus active holds.
+The reservations plugin SHALL expose public `submit`, `confirm`, and `cancel-by-token` routes that create pending reservations, confirm by HMAC token, and cancel by HMAC token while keeping capacity and email side effects consistent.
 
-#### Scenario: Slot generator under sandbox budget
+#### Scenario: Submit creates a pending reservation and queues receipt email
 
-- **GIVEN** a worst-case slot fetch on a busy day
-- **WHEN** the generator executes
-- **THEN** subrequest count is ≤ 10 and CPU time ≤ 50ms.
+- **Given** a reservable slot has enough remaining capacity
+- **When** a guest submits a reservation request
+- **Then** a pending reservation is persisted
+- **And** slot capacity is decremented by the party size
+- **And** the received email is queued through `ctx.waitUntil`
 
-### Requirement: Email side-effects in waitUntil (HR2)
+#### Scenario: Confirm token flips reservation state
 
-Every email send (`received`, `confirmed`, `cancelled`) SHALL be scheduled inside `ctx.waitUntil`, never awaited inline on the response path.
+- **Given** a pending reservation exists with a valid confirmation token
+- **When** the `confirm` route receives that token
+- **Then** the reservation status becomes `confirmed`
+- **And** the confirmation email is queued through `ctx.waitUntil`
 
-#### Scenario: Email send scheduled, not awaited
+#### Scenario: Cancel token restores capacity after response
 
-- **GIVEN** any of submit / confirm / cancel
-- **WHEN** the handler returns
-- **THEN** the email send is recorded as a `ctx.waitUntil` argument; the response was sent before the email completed.
+- **Given** a confirmed reservation exists with a valid cancellation token
+- **When** the `cancel-by-token` route receives that token
+- **Then** the reservation status becomes `cancelled`
+- **And** capacity restoration and cancellation email are queued through `ctx.waitUntil`
+
+### Requirement: Reservations admin lists active bookings
+
+The reservations plugin SHALL render a sandbox-safe Block Kit admin page listing pending and confirmed reservations without forbidden Block Kit primitives.
+
+#### Scenario: Admin page excludes cancelled reservations
+
+- **Given** pending, confirmed, and cancelled reservations exist
+- **When** the reservations admin route renders
+- **Then** pending and confirmed reservations are listed
+- **And** cancelled reservations are omitted
+- **And** the response uses `label` and `items`, not `text` or `stats`
+
+### Requirement: Reservation slots are read-time projections
+
+The reservations plugin SHALL derive available slots at read time from restaurant hours, reservation blocks, current bookings, and active holds, without persisting slot rows.
+
+#### Scenario: Slot generation subtracts mutable booking state
+
+- **Given** a restaurant has opening hours, closure blocks, a per-slot capacity override, current reservations, and active holds
+- **When** available reservation slots are computed for that date
+- **Then** slots outside hours and inside closure blocks are omitted
+- **And** remaining capacity is bounded by the default setting or per-slot override
+- **And** pending and confirmed bookings plus unexpired holds reduce remaining capacity
+- **And** cancelled bookings and expired holds do not reduce remaining capacity
+
+#### Scenario: Slot reads stay inside sandbox budgets
+
+- **Given** the worst-case day contains 5-minute reservation slots
+- **When** availability is computed at read time
+- **Then** the bounded read plan uses no more than 10 sandbox subrequests
+- **And** the pure slot projection completes under the 50ms CPU budget
