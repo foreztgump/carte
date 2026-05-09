@@ -144,4 +144,4 @@ Per-feature TDD discipline (RED → GREEN → REFACTOR) is enforced via commit l
 
 ## M10 — Launch (GATED — DO NOT START)
 
-- [ ] **GATED — requires explicit user approval before any task begins.** Open ZERO PRs against this milestone without an inbound user `continue` after M9 close.
+- [x] **GATED — requires explicit user approval before any task begins.** Open ZERO PRs against this milestone without an inbound user `continue` after M9 close. (M10 shipped on main @ commit `52926ca`: launch readiness — docs site, verifier scripts, AI launch e2e, checklist; user approved continuation post-M9.)
