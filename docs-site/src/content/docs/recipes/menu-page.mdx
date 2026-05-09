@@ -1,0 +1,113 @@
+---
+title: Build a menu page
+description: Wire @carte/core menu data into the @carte/views Astro components.
+sidebar:
+  order: 2
+---
+
+This recipe renders a public menu page from fresh Carte content. It uses
+[`@carte/core`](/plugins/carte-core/) for menu collections and taxonomy, then
+passes plain data into [`@carte/views`](/plugins/carte-views/) components.
+
+## 1. Create menu content in EmDash
+
+Create one restaurant, one menu, one section, and two menu items in EmDash. The
+Carte core collections are:
+
+```text
+carte_restaurants
+carte_menus
+carte_menu_sections
+carte_menu_items
+```
+
+Expected output after publishing:
+
+```text
+Published carte_restaurants: demo-bistro
+Published carte_menus: dinner
+Published carte_menu_sections: mains
+Published carte_menu_items: squash-risotto
+Published carte_menu_items: market-salad
+```
+
+Use canonical taxonomy tags from `@carte/core`; for example `milk`, `tree-nuts`,
+`vegan`, and `gluten-free`. The `content:beforeSave` hook rejects unknown
+allergens and negative prices.
+
+## 2. Add a storefront page
+
+Create `src/pages/menu.astro` in the host Astro site:
+
+```astro
+---
+import { DietaryFilter, MenuDisplay, RestaurantHero } from "@carte/views";
+
+const restaurant = {
+  name: "Demo Bistro",
+  tagline: "Seasonal neighborhood cooking",
+  imageUrl: "/images/hero.jpg",
+};
+
+const dinnerMenu = {
+  id: "dinner",
+  name: "Dinner",
+  description: "Available Tuesday through Saturday.",
+  sections: [
+    {
+      id: "mains",
+      name: "Mains",
+      items: [
+        {
+          id: "squash-risotto",
+          name: "Squash Risotto",
+          description: "Brown butter, sage, and toasted pepitas.",
+          price: 24,
+          currency: "USD",
+          allergens: ["milk", "tree-nuts"],
+          dietaryTags: ["vegetarian"],
+        },
+        {
+          id: "market-salad",
+          name: "Market Salad",
+          description: "Greens, herbs, citrus vinaigrette.",
+          price: 15,
+          currency: "USD",
+          allergens: [],
+          dietaryTags: ["vegan", "gluten-free"],
+        },
+      ],
+    },
+  ],
+};
+---
+
+<RestaurantHero restaurant={restaurant} />
+<DietaryFilter allergens={["milk", "tree-nuts"]} targetMenuId="dinner" />
+<MenuDisplay menu={dinnerMenu} />
+```
+
+Expected output from the Astro dev server:
+
+```text
+13:00:00 [200] /menu
+```
+
+## 3. Verify the menu and JSON-LD route
+
+```bash
+pnpm astro dev --host 127.0.0.1
+curl -s http://127.0.0.1:4321/menu | grep "Squash Risotto"
+curl -s http://localhost:8787/_emdash/api/plugins/carte-core/schema-jsonld | grep "MenuItem"
+```
+
+Expected output:
+
+```text
+Squash Risotto
+"@type":"MenuItem"
+```
+
+`@carte/views` components do not fetch. Keep data access in the host page or
+route layer, and pass the resulting props into `MenuDisplay`,
+`RestaurantHero`, and `DietaryFilter`.

@@ -1,0 +1,136 @@
+---
+title: Quickstart
+description: Install EmDash and all six Carte v0.1 plugins on a fresh project.
+sidebar:
+  order: 1
+---
+
+This recipe takes a fresh EmDash site from zero to the complete Carte v0.1
+plugin family. It installs the sandboxed menu, reservation, and order backends,
+the native admin plugins, and the Astro storefront component package.
+
+Related plugin overviews:
+[`@carte/core`](/plugins/carte-core/),
+[`@carte/reservations`](/plugins/carte-reservations/),
+[`@carte/orders-backend`](/plugins/carte-orders-backend/),
+[`@carte/orders-admin`](/plugins/carte-orders-admin/),
+[`@carte/views`](/plugins/carte-views/), and
+[`@carte/ai`](/plugins/carte-ai/).
+
+## 1. Create a fresh EmDash project
+
+```bash
+pnpm create emdash@^0.9.0 my-restaurant
+cd my-restaurant
+pnpm install
+```
+
+Expected output:
+
+```text
+Done in ...
+EmDash project created in my-restaurant
+```
+
+Carte v0.1 targets EmDash plugin SDK `^0.9.0`. Keep the generated EmDash
+version on that range until the Carte release notes announce a newer target.
+
+## 2. Install the Carte packages
+
+```bash
+pnpm add @carte/core @carte/reservations @carte/orders-backend
+pnpm add @carte/orders-admin @carte/ai
+pnpm add -D @carte/views astro
+```
+
+Expected output:
+
+```text
+dependencies:
++ @carte/core
++ @carte/reservations
++ @carte/orders-backend
++ @carte/orders-admin
++ @carte/ai
+devDependencies:
++ @carte/views
++ astro
+```
+
+## 3. Register the plugins
+
+Add the Carte plugin package names to the EmDash plugin list in your site
+configuration:
+
+```ts
+export default {
+  plugins: [
+    "@carte/core",
+    "@carte/reservations",
+    "@carte/orders-backend",
+    "@carte/orders-admin",
+    "@carte/ai",
+  ],
+};
+```
+
+Expected output when EmDash loads the manifest:
+
+```text
+Loaded plugin @carte/core
+Loaded plugin @carte/reservations
+Loaded plugin @carte/orders-backend
+Loaded plugin @carte/orders-admin
+Loaded plugin @carte/ai
+```
+
+The sandboxed plugins declare only canonical EmDash capabilities:
+`content:read`, `content:write`, `media:read`, `email:send`, and
+`network:request`. Plugin KV is scoped by EmDash automatically; do not add a KV
+capability.
+
+## 4. Fill required settings
+
+Set these values in EmDash settings before sending real traffic:
+
+```text
+@carte/core
+- defaultCurrency: usd
+- defaultMenuLocale: en-US
+- timezone: America/New_York
+
+@carte/orders-backend
+- stripePublicKey: pk_test_...
+- stripeSecretKey: sk_test_...       (secret)
+- stripeWebhookSecret: whsec_...     (secret)
+
+@carte/ai
+- anthropicApiKey, openaiApiKey, or geminiApiKey (secret)
+```
+
+Expected output after saving settings:
+
+```text
+Settings saved
+Secrets stored in EmDash settings
+```
+
+## 5. Smoke-test the public routes
+
+```bash
+curl -s http://localhost:8787/_emdash/api/plugins/carte-core/schema-jsonld
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-reservations/submit
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-orders-backend/checkout
+```
+
+Expected output:
+
+```text
+{"@context":"https://schema.org","@type":"Restaurant",...}
+{"ok":false,"error":"...validation..."}
+{"ok":false,"error":"...validation..."}
+```
+
+The reservation and checkout calls are expected to reject empty payloads. A JSON
+validation response confirms that the real plugin routes are mounted at
+`/_emdash/api/plugins/<plugin-id>/<route>`.

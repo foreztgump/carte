@@ -1,0 +1,21 @@
+---
+title: "@carte/orders-backend"
+description: Stripe Checkout, order webhooks, idempotency, and refund routes.
+---
+
+`@carte/orders-backend` is the sandboxed ordering backend for Carte v0.1. It
+creates Stripe Checkout sessions, verifies Stripe webhooks before state changes,
+deduplicates event replays, snapshots line items, and queues receipt work outside
+the response path.
+
+## Primary responsibilities
+
+- Uses Stripe Checkout so Carte never receives raw card PAN, CVC, or expiry.
+- Persists cart holds and order snapshots with bounded TTLs.
+- Deduplicates webhook re-delivery with seven-day idempotency keys.
+- Exposes typed order mutation routes consumed by native admin surfaces.
+
+## Recipes
+
+- [Quickstart](/recipes/quickstart/)
+- [Accept a first order](/recipes/first-order/)

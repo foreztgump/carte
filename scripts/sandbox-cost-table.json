@@ -1,0 +1,41 @@
+{
+  "caps": {
+    "cpuMs": 50,
+    "subrequests": 10
+  },
+  "statementCpuMs": 0.01,
+  "operations": {
+    "ctx.kv.get": {
+      "subrequests": 1,
+      "cpuMs": 2
+    },
+    "ctx.kv.put": {
+      "subrequests": 1,
+      "cpuMs": 3
+    },
+    "ctx.kv.atomicDecrement": {
+      "subrequests": 1,
+      "cpuMs": 3
+    },
+    "ctx.content.list": {
+      "subrequests": 1,
+      "cpuMs": 5
+    },
+    "ctx.content.get": {
+      "subrequests": 1,
+      "cpuMs": 3
+    },
+    "ctx.content.update": {
+      "subrequests": 1,
+      "cpuMs": 5
+    },
+    "ctx.content.create": {
+      "subrequests": 1,
+      "cpuMs": 5
+    },
+    "ctx.fetch": {
+      "subrequests": 1,
+      "cpuMs": 10
+    }
+  }
+}

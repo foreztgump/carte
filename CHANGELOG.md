@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.1.0 — Launch readiness
+
+### Added — M3 through M9 plugin family
+
+- M3 `@carte/core`: menus, restaurant info, hours, canonical EmDash manifest, Block Kit admin, timezone-aware 86 restore, allergen/dietary taxonomy, audit entries, and schema.org Restaurant/Menu JSON-LD.
+- M4 `@carte/reservations`: reservation collections, public submit/confirm/cancel routes, HMAC guest tokens, email-first notifications, race-safe capacity holds, and read-time slot generation.
+- M5 `@carte/orders-backend`: Stripe Checkout, PCI-minimized order flow, idempotent webhook handling, refund route, order snapshots, and sandboxed Block Kit admin.
+- M6 `@carte/orders-admin`: native React order-management UI with list/detail views, refunds, status workflow, email template editing, and single-tier modifier editing.
+- M7 `@carte/views`: Astro peer-dependency storefront components for restaurant info, menus, dietary filters, hours, reservations, cart/checkout, and success/status pages.
+- M8 `@carte/ai`: native AI panel with license/trial state, BYO LLM key support, SSE chat, PII boundary enforcement, write-on-confirm tool calls, audit logs, 10-minute undo, inline actions, and MCP wrapper.
+- M9 GDPR/security hardening: guest-data export and erasure, public-route rate limiting, pen-smoke coverage for replay/capacity/license-outage paths, and AgentShield CI coverage.
+
+### Added — M10 launch readiness
+
+- Public Astro Starlight docs site under `docs-site/` with plugin overview pages and end-to-end recipes.
+- Rich Results verifier wired to `pnpm verify:rich-results`.
+- Sandbox budget auditor for sandboxed plugin route handlers.
+- AI launch Playwright suite covering 86 item, update price, block date, and move reservation flows.
+- Root `LAUNCH_CHECKLIST.md` mapping PRO-418 success metrics to verification owners and HITL-deferred gates.
+- README v0.2 roadmap section for successor work after the v0.1 launch package.
+
 ## 0.0.1 — 2026-05-06 (mission close)
 
 This release closes the **WP Analysis + OQ Resolution + Monorepo Scaffolding** mission (Factory mission `d702a513-34b3-427e-85eb-59c759f31778`). It contains no plugin business logic — only documentation, locked decisions, and the empty monorepo skeleton against which the per-plugin missions will execute.

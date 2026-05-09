@@ -1,0 +1,20 @@
+---
+title: "@carte/core"
+description: Menu, restaurant settings, taxonomy, and Schema.org foundation for Carte.
+---
+
+`@carte/core` is the sandboxed foundation plugin for Carte v0.1. It owns the
+restaurant profile, menu collections, canonical allergen and dietary taxonomy,
+Block Kit admin routes, 86-state restore behavior, and Schema.org JSON-LD output.
+
+## Primary responsibilities
+
+- Declares the core restaurant and menu content model.
+- Publishes canonical EU FIC allergen tags plus documented US extensions.
+- Generates Restaurant and Menu JSON-LD for rich results validation.
+- Invalidates cached JSON-LD from EmDash content hooks with `ctx.waitUntil`.
+
+## Recipes
+
+- [Quickstart](/recipes/quickstart/)
+- [Build a menu page](/recipes/menu-page/)

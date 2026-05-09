@@ -1,0 +1,22 @@
+---
+title: "@carte/views"
+description: Astro storefront components for menus, reservations, carts, and checkout.
+---
+
+`@carte/views` is the Astro component package for Carte storefronts. It is a
+peer-dependency component library rather than an EmDash plugin, so pages pass
+data into components through props instead of fetching inside the components.
+
+## Primary responsibilities
+
+- Renders restaurant hero, menu, dietary filters, hours, and info components.
+- Provides reservation form, cart, and checkout components for storefront pages.
+- Ships default Tailwind-styled components with headless variants.
+- Keeps data access in the host site or plugin route layer, not in components.
+
+## Recipes
+
+- [Quickstart](/recipes/quickstart/)
+- [Build a menu page](/recipes/menu-page/)
+- [Wire a reservation form](/recipes/reservation-form/)
+- [Accept a first order](/recipes/first-order/)

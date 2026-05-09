@@ -1,0 +1,21 @@
+---
+title: "@carte/reservations"
+description: Race-safe reservation holds, confirmations, cancellations, and capacity checks.
+---
+
+`@carte/reservations` is the sandboxed reservation plugin for Carte v0.1. It
+computes slots at read time, creates short-lived holds, sends confirmation and
+cancellation email in post-response work, and keeps capacity changes within the
+EmDash sandbox budget.
+
+## Primary responsibilities
+
+- Computes available reservation slots from hours, blocks, bookings, and holds.
+- Uses atomic capacity updates to avoid overselling covers.
+- Issues HMAC-backed confirmation and cancellation tokens.
+- Schedules outbound email work with `ctx.waitUntil`.
+
+## Recipes
+
+- [Quickstart](/recipes/quickstart/)
+- [Wire a reservation form](/recipes/reservation-form/)
