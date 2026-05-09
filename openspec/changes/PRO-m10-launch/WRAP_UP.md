@@ -46,6 +46,40 @@ The three code-bearing features (`rich-results`, `sandbox-budget`, `ai-e2e`) eac
 
 Commit `4e30d4a` (`fix(scripts): tests resolve binaries via repo-root pnpm scripts [PRO-418]`) is an orchestrator-direct test-portability fix landed after the worker-claimed pass: it adds `.npmrc`, defines the `audit:sandbox-budget` root script, and switches `scripts/__tests__/` to invoke binaries via `pnpm run …` so the validator gauntlet's invocation context resolves the same way as a fresh shell. The pr-agent post-PR-open gate confirmed this commit introduced no new findings.
 
+## PR Review Triage
+
+**Tooling**: pr-agent local provider (`CONFIG__GIT_PROVIDER=local`); model `openai/glm-5.1-syn` with `CONFIG__CUSTOM_REASONING_MODEL=true` and `MAX_MODEL_TOKENS=256000`; fallback `openai/gpt-5.4-mini`.
+
+**Two runs**:
+
+- In-mission `f-pragent-m10` — `/home/cownose/.factory/missions/343410ef-f054-4252-b8e2-7a108ff4e717/validation/M10/pr-agent/review.md`
+- Post-PR-open gate (PR #12 @ `4e30d4a`) — `/home/cownose/.factory/missions/343410ef-f054-4252-b8e2-7a108ff4e717/validation/M10/pr-agent/review-postopen.md`
+
+Diff size: **25,997 / 256,000 tokens** (~10% of cap — full diff sent, no pruning).
+
+**Final verdict**: **CLEAN — gate passes.** Counts:
+
+- P0: 0
+- P1: 0
+- Critical: 0
+- Important: 0
+- Suggestions: 1
+- Nits: 0
+- Tests review: PR contains tests ✓
+- Security review: No security concerns identified ✓
+
+**Blocking findings (P0 / P1 / Critical / unresolved Important)**: _None._
+
+**Known re-findings (already filed in Linear)**:
+
+| Finding                                                                                                                                                                                                                                 | File:Line                                 | Linear  | Status                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| `audit-sandbox-budget` `budgetMargin` hardcodes subrequest cap (10) and CPU cap (50) instead of reading `project.costTable.caps`; PASS/WARN/FAIL gating reads the cost table correctly, only the margin column can drift if caps change | `scripts/audit-sandbox-budget.ts:433-434` | PRO-640 | Already filed; re-flagged on the post-PR-open run as a non-blocking "suggestion". Cosmetic display drift only. |
+
+**New non-blocking findings on the post-PR-open run**: _None._
+
+**Action**: zero fixes needed. All M10 hard-rule constraints respected — no `packages/*/src/` edits in this milestone; orchestrator-direct test-portability fix `4e30d4a` is the only mid-mission code change and is itself a test-only patch (`.npmrc`, root `audit:sandbox-budget` script wiring, and `scripts/__tests__/` invocation context). The pr-agent post-PR-open gate confirmed `4e30d4a` introduced no new findings.
+
 ## Discovered follow-ups (non-blocking)
 
 - **PRO-638** — M7 `@carte/views` fixture `DietaryFilter` crash, surfaced incidentally while wiring the `ai-chat-launch` Playwright fixture. Out-of-M10-scope (M7 territory, locked per AGENTS.md M10 hard rule #2). Tracked as a successor.
