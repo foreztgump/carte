@@ -11,6 +11,7 @@
 import { definePlugin } from "emdash";
 
 import type { PluginStorageConfig, RouteContext } from "emdash";
+import { enforceRateLimit, rateLimitResponse } from "./rate-limit.js";
 import { renderReservationsAdmin } from "./routes/admin.js";
 import { cancelReservationByToken } from "./routes/cancel.js";
 import { confirmReservation } from "./routes/confirm.js";
@@ -66,6 +67,12 @@ const stubRoute =
     return { ok: true, plugin: PLUGIN_ID, route };
   };
 
+const rateLimitedSubmitRoute = async (ctx: RouteContext): Promise<unknown> => {
+  const limit = await enforceRateLimit(ctx, "submit");
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+  return submitReservation(ctx);
+};
+
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -77,7 +84,7 @@ const factory = () =>
       admin: { handler: renderReservationsAdmin },
       "admin/blocks": { handler: stubRoute("admin/blocks") },
       "admin/settings": { handler: stubRoute("admin/settings") },
-      submit: { handler: submitReservation, public: true },
+      submit: { handler: rateLimitedSubmitRoute, public: true },
       confirm: { handler: confirmReservation, public: true },
       "cancel-by-token": { handler: cancelReservationByToken, public: true },
     },

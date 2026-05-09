@@ -1,18 +1,11 @@
 import { reserveCapacity } from "../capacity.js";
-import {
-  defer,
-  enforceSubmitRateLimit,
-  getCapacityStore,
-  getReservations,
-  getTokenSecret,
-} from "./context.js";
+import { defer, getCapacityStore, getReservations, getTokenSecret } from "./context.js";
 import { sendReservationEmailOnce } from "./email.js";
 import { parseSubmitInput } from "./input.js";
 import { createReservationToken } from "./tokens.js";
 import type { ReservationRecord, ReservationRouteContext, RouteResult } from "./types.js";
 
 export async function submitReservation(ctx: ReservationRouteContext): Promise<RouteResult> {
-  if (!(await enforceSubmitRateLimit(ctx))) return failure(429, "Too many reservation requests");
   const input = parseSubmitInput(ctx.input);
   if (input === null) return failure(400, "Invalid reservation request");
   const reservationId = crypto.randomUUID();

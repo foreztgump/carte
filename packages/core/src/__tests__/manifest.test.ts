@@ -25,6 +25,8 @@ describe("@carte/core manifest", () => {
       "admin/hours",
       "admin/restaurant",
       "admin/settings",
+      "gdpr/erase",
+      "gdpr/export",
       "menu-feed",
       "menu-items/86",
       "schema-jsonld",

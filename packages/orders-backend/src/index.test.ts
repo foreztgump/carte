@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RouteContext } from "emdash";
 
@@ -34,6 +34,46 @@ const expectNoForbiddenBlockKitFields = (value: unknown): void => {
     } else {
       expectNoForbiddenBlockKitFields(child);
     }
+  }
+};
+
+type RateLimitCounters = {
+  get: number;
+  set: number;
+  setOptions: Array<Record<string, unknown> | undefined>;
+};
+
+const rateLimitContext = (ip: string | null, counters: RateLimitCounters): RouteContext => {
+  const store = new Map<string, unknown>();
+  return {
+    input: {},
+    request: new Request("https://example.test/checkout"),
+    requestMeta: { ip, userAgent: null, referer: null, geo: null },
+    kv: {
+      async get<T>(key: string): Promise<T | null> {
+        counters.get += 1;
+        return (store.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown, options?: Record<string, unknown>): Promise<void> {
+        counters.set += 1;
+        counters.setOptions.push(options);
+        store.set(key, value);
+      },
+    },
+  } as unknown as RouteContext;
+};
+
+const checkoutHandler = () => {
+  const handler = factory().routes.checkout?.handler;
+  if (handler === undefined) throw new Error("checkout route missing");
+  return handler;
+};
+
+const callCheckout = async (ctx: RouteContext): Promise<unknown> => {
+  try {
+    return await checkoutHandler()(ctx);
+  } catch (error) {
+    return error;
   }
 };
 
@@ -150,7 +190,13 @@ describe("@carte/orders-backend manifest", () => {
           },
         ],
       },
+      request: new Request("https://example.test/checkout"),
+      requestMeta: { ip: "203.0.113.44", userAgent: null, referer: null, geo: null },
       kv: {
+        async get() {
+          subrequests.push("kv.get");
+          return null;
+        },
         async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
           subrequests.push("kv.set");
           if (options) {
@@ -175,8 +221,15 @@ describe("@carte/orders-backend manifest", () => {
     const result = await checkoutRoute?.handler(ctx);
 
     expect(result).toEqual({ checkoutUrl: "https://checkout.stripe.com/c/pay_123" });
-    expect(kvWrites).toEqual([{ key: "cart-hold:cart_123", options: { expirationTtl: 600 } }]);
-    expect(subrequests).toHaveLength(2);
+    expect(kvWrites).toContainEqual({
+      key: "cart-hold:cart_123",
+      options: { expirationTtl: 600 },
+    });
+    expect(kvWrites).toContainEqual({
+      key: "rate-limit:checkout:203.0.113.44",
+      options: { expirationTtl: 120 },
+    });
+    expect(subrequests).toHaveLength(4);
     expect(subrequests.length).toBeLessThanOrEqual(4);
   });
 
@@ -578,6 +631,90 @@ describe("@carte/orders-backend manifest", () => {
       "Refund route requires admin scope.",
     );
     expect(sideEffects).toEqual([]);
+  });
+});
+
+describe("@carte/orders-backend checkout rate limit", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("throttles burst traffic from one IP inside a 60 second window", async () => {
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
+    const ctx = rateLimitContext("203.0.113.20", counters);
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) responses.push(await callCheckout(ctx));
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
+    expect(responses[60]).toBeInstanceOf(Response);
+    expect((responses[60] as Response).status).toBe(429);
+    expect(counters.get).toBe(100);
+    expect(counters.set).toBe(60);
+  });
+
+  it("allows legitimate one request per second traffic", async () => {
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
+    const ctx = rateLimitContext("203.0.113.21", counters);
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) {
+      vi.setSystemTime(new Date(Date.UTC(2026, 4, 8, 12, 0, index)));
+      responses.push(await callCheckout(ctx));
+    }
+
+    expect(responses.every((response) => !(response instanceof Response))).toBe(true);
+    expect(counters.get).toBe(100);
+    expect(counters.set).toBe(100);
+  });
+
+  it("writes rate-limit counters with a TTL covering the 60s window", async () => {
+    const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
+    const ctx = rateLimitContext("203.0.113.22", counters);
+
+    await callCheckout(ctx);
+
+    expect(counters.set).toBe(1);
+    expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
+  });
+
+  it("does not let spoofed x-forwarded-for bypass rate limit when ip is null", async () => {
+    const baseStore = new Map<string, unknown>();
+    const sharedKv = {
+      async get<T>(key: string): Promise<T | null> {
+        return (baseStore.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown): Promise<void> {
+        baseStore.set(key, value);
+      },
+    };
+    const buildCtx = (xff: string): RouteContext =>
+      ({
+        input: {},
+        request: new Request("https://example.test/checkout", {
+          headers: { "x-forwarded-for": xff },
+        }),
+        requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
+        kv: sharedKv,
+      }) as unknown as RouteContext;
+
+    const responses = [];
+    for (let index = 0; index < 100; index += 1) {
+      responses.push(await callCheckout(buildCtx(`10.0.0.${index}`)));
+    }
+
+    const throttled = responses.filter(
+      (response) => response instanceof Response && response.status === 429,
+    );
+    expect(throttled.length).toBeGreaterThan(0);
   });
 });
 

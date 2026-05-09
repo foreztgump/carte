@@ -12,7 +12,7 @@ The Carte orders backend will own:
 Execution model: **sandboxed**. Capabilities declared:
 `content:read`, `content:write`, `email:send`, `network:request` — `allowedHosts`
 restricted to `api.stripe.com` and `checkout.stripe.com`. PCI scope is minimized
-by Stripe Checkout — Carte infrastructure never receives sensitive card details.
+by Stripe Checkout — Carte infrastructure NEVER receives raw PAN/CVC.
 
 Subrequest budget note (per AGENTS.md): the future webhook handler is expected
 to consume ~7 of the 10 sandbox subrequests per invocation. Stay within budget;

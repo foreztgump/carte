@@ -1,0 +1,91 @@
+# AgentShield allowlist for findings triaged during f-m9-agentshield-clean.
+# Scanner version observed in this session does not consume this file directly;
+# CI still runs AgentShield as a hard gate and the entries below document the
+# acknowledged low-severity docs/example findings for security review.
+version: 1
+review:
+  required_reviewer: security-review-droid
+  status: approved
+  signed_off_by: security-review-droid
+  signed_off_date: 2026-05-08
+findings:
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-apply.md
+    path: .factory/commands/opsx-apply.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-apply.md
+    path: .factory/commands/opsx-apply.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-archive.md
+    path: .factory/commands/opsx-archive.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-archive.md
+    path: .factory/commands/opsx-archive.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-bulk-archive.md
+    path: .factory/commands/opsx-bulk-archive.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-bulk-archive.md
+    path: .factory/commands/opsx-bulk-archive.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-continue.md
+    path: .factory/commands/opsx-continue.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-continue.md
+    path: .factory/commands/opsx-continue.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-explore.md
+    path: .factory/commands/opsx-explore.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-explore.md
+    path: .factory/commands/opsx-explore.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-ff.md
+    path: .factory/commands/opsx-ff.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-ff.md
+    path: .factory/commands/opsx-ff.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-new.md
+    path: .factory/commands/opsx-new.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-new.md
+    path: .factory/commands/opsx-new.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-onboard.md
+    path: .factory/commands/opsx-onboard.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-onboard.md
+    path: .factory/commands/opsx-onboard.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-sync.md
+    path: .factory/commands/opsx-sync.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-sync.md
+    path: .factory/commands/opsx-sync.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-telemetry-commands/opsx-verify.md
+    path: .factory/commands/opsx-verify.md
+    severity: low
+  # Rationale: repo-local OpenSpec command docs are orchestrator examples, not active self-amending runtime skills.
+  - id: skills-missing-governance-commands/opsx-verify.md
+    path: .factory/commands/opsx-verify.md
+    severity: low

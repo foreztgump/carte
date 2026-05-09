@@ -11,10 +11,13 @@
 
 import { definePlugin } from "emdash";
 
+import { enforceRateLimit, rateLimitResponse } from "./rate-limit.js";
 import { adminRoute } from "./routes/admin.js";
 import { checkoutRoute } from "./routes/checkout.js";
 import { refundRoute } from "./routes/refund.js";
 import { webhookStripeRoute } from "./routes/webhook-stripe.js";
+
+import type { RouteContext } from "emdash";
 
 const PLUGIN_ID = "carte-orders-backend";
 const PLUGIN_VERSION = "0.1.0";
@@ -144,6 +147,12 @@ export const createOrderLineItemSnapshot = (
   })),
 });
 
+const rateLimitedCheckoutRoute = async (ctx: RouteContext): Promise<unknown> => {
+  const limit = await enforceRateLimit(ctx, "checkout");
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+  return checkoutRoute(ctx);
+};
+
 const factory = () =>
   definePlugin({
     id: PLUGIN_ID,
@@ -159,7 +168,7 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: adminRoute },
-      checkout: { handler: checkoutRoute, public: true },
+      checkout: { handler: rateLimitedCheckoutRoute, public: true },
       "webhook-stripe": { handler: webhookStripeRoute, public: true },
       refund: { handler: refundRoute },
     },
