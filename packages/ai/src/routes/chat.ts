@@ -1,6 +1,6 @@
 import { appendChatMessages, readChatHistory } from "../chat-history.js";
 import type { ChatKv, ChatMessage } from "../chat-history.js";
-import { prepareLlmTurn } from "../pii-boundary.js";
+import { prepareLlmTurn, redactPii } from "../pii-boundary.js";
 
 export type LlmStreamer = (input: {
   message: string;
@@ -41,7 +41,7 @@ export async function chatStreamRoute(
   const assistantMessage = chunks.join("");
 
   await appendChatMessages(ctx.kv, workspaceId, input.userId, [
-    { role: "user", content: input.message },
+    { role: "user", content: persistedUserMessage(input) },
     { role: "assistant", content: assistantMessage },
   ]);
 
@@ -59,6 +59,13 @@ export async function historyRoute(ctx: ChatRouteContext): Promise<{ messages: C
 
 function promptFor(input: ChatInput): string {
   return prepareLlmTurn(input, (safeInput) => JSON.stringify(safeInput));
+}
+
+function persistedUserMessage(input: ChatInput): string {
+  if (input.piiOptIn) {
+    return input.message;
+  }
+  return redactPii(input.message) as string;
 }
 
 function formatSse(chunks: string[]): string {
