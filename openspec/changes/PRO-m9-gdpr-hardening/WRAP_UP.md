@@ -21,7 +21,7 @@ Shipped M9 GDPR hardening onto `main` via semantic three-way merge: admin-only G
 - Mission validation: PASS
 - pr-agent rerun #1: CLEAN — `/home/cownose/.factory/missions/343410ef-f054-4252-b8e2-7a108ff4e717/validation/M9/pr-agent/review-rerun.md`
 - `pnpm -r typecheck`: PASS
-- `pnpm -r test`: PASS — 205 tests total
+- `pnpm -r test`: PASS — 204 tests total
 - `pnpm -r lint`: PASS
 
 ## PR Review Triage
