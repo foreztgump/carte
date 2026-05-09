@@ -48,7 +48,7 @@ describe("MCP wrapper Worker", () => {
         toolName: "listMenuItems",
         workspaceId: "ws-1",
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Workspace-Id": "ws-1" },
       method: "POST",
     });
   });

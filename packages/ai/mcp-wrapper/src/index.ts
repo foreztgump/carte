@@ -125,7 +125,7 @@ async function proxyToolCall(
       toolName: requiredName(params),
       workspaceId,
     }),
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Workspace-Id": workspaceId },
     method: "POST",
   });
   return jsonRpcResult(message.id, { content: [{ text: await response.text(), type: "text" }] });
