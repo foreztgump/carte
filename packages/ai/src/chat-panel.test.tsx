@@ -149,6 +149,74 @@ describe("PII boundary", () => {
       }),
     );
   });
+
+  it("redacts PII inside the user message when piiOptIn is false", () => {
+    const assembler = vi.fn((input: unknown) => JSON.stringify(input));
+    const prompt = prepareLlmTurn(
+      {
+        message: "contact me at user@example.com about reservation 555-1234",
+        piiOptIn: false,
+      },
+      assembler,
+    );
+
+    expect(prompt).not.toContain("user@example.com");
+    expect(prompt).not.toContain("555-1234");
+    expect(assembler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.not.stringContaining("user@example.com") as unknown as string,
+      }),
+    );
+    expect(assembler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.not.stringContaining("555-1234") as unknown as string,
+      }),
+    );
+  });
+
+  it("passes the message through verbatim when piiOptIn is true", () => {
+    const assembler = vi.fn((input: unknown) => JSON.stringify(input));
+    const message = "contact me at user@example.com about reservation 555-1234";
+    prepareLlmTurn({ message, piiOptIn: true }, assembler);
+
+    expect(assembler).toHaveBeenCalledWith(expect.objectContaining({ message }));
+  });
+});
+
+describe("chat route PII boundary", () => {
+  it("strips PII from the message sent to the LLM when piiOptIn is false", async () => {
+    const kv = createKv();
+    const captured: string[] = [];
+    const message = "contact me at user@example.com about reservation 555-1234";
+    await chatStreamRoute(
+      workspaceRouteContext(kv, { message, piiOptIn: false, userId }, workspaceId),
+      async (input) => {
+        captured.push(input.prompt);
+        return ["ok"];
+      },
+    );
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).not.toContain("user@example.com");
+    expect(captured[0]).not.toContain("555-1234");
+  });
+
+  it("forwards the message verbatim to the LLM when piiOptIn is true", async () => {
+    const kv = createKv();
+    const captured: string[] = [];
+    const message = "contact me at user@example.com about reservation 555-1234";
+    await chatStreamRoute(
+      workspaceRouteContext(kv, { message, piiOptIn: true, userId }, workspaceId),
+      async (input) => {
+        captured.push(input.prompt);
+        return ["ok"];
+      },
+    );
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toContain("user@example.com");
+    expect(captured[0]).toContain("555-1234");
+  });
 });
 
 function routeContext(kv: ChatKv, input: Record<string, unknown>) {
