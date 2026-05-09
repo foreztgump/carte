@@ -1,0 +1,179 @@
+---
+title: Enable the AI panel
+description: Configure @carte/ai licensing, BYO LLM keys, confirmable writes, audit, and undo.
+sidebar:
+  order: 5
+---
+
+This recipe enables the commercial [`@carte/ai`](/plugins/carte-ai/) native
+admin panel. The plugin is read-by-default: write tools return a diff preview
+and require explicit confirmation before mutation. Executed writes create audit
+entries and ten-minute undo tokens.
+
+## 1. Install and register the plugin
+
+```bash
+pnpm add @carte/ai
+```
+
+Add the plugin to your EmDash plugin list:
+
+```ts
+export default {
+  plugins: ["@carte/ai"],
+};
+```
+
+Expected output when EmDash loads the manifest:
+
+```text
+Loaded plugin @carte/ai
+Admin page registered at /carte-ai
+```
+
+## 2. Save license and BYO LLM settings
+
+`@carte/ai` checks `license.carteplugin.dev` and caches license state for 24
+hours. If the license server is temporarily unavailable, the plugin keeps the
+last known good state or starts trial mode rather than locking out the
+restaurant.
+
+In EmDash settings, save one workspace-scoped BYO LLM key:
+
+```text
+anthropicApiKey: sk-ant-...     (secret)
+# or
+openaiApiKey: sk-...            (secret)
+# or
+geminiApiKey: AIza...           (secret)
+```
+
+Expected output:
+
+```text
+Settings saved for @carte/ai
+License access: trial
+```
+
+Secrets stay in EmDash settings. Do not place LLM keys in source, fixtures,
+snapshots, logs, or prompts.
+
+## 3. Verify read tools
+
+```bash
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+  -H 'content-type: application/json' \
+  -H 'x-workspace-id: demo-workspace' \
+  -d '{
+    "toolName": "listMenuItems",
+    "arguments": {}
+  }'
+```
+
+Expected output:
+
+```json
+{
+  "ok": true,
+  "status": "executed",
+  "result": []
+}
+```
+
+Read tools execute without confirmation. PII is still blocked from LLM egress
+unless the user opts in for that turn at the tool-call boundary.
+
+## 4. Preview and confirm a write
+
+Start a write action, such as a menu price update:
+
+```bash
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+  -H 'content-type: application/json' \
+  -H 'x-workspace-id: demo-workspace' \
+  -d '{
+    "toolName": "updateMenuItemPrice",
+    "arguments": {
+      "id": "squash-risotto",
+      "price": 26,
+      "before": { "price": 24 }
+    }
+  }'
+```
+
+Expected output:
+
+```json
+{
+  "ok": true,
+  "status": "confirmation_required",
+  "confirmToken": "...",
+  "diff": {
+    "before": { "price": 24 },
+    "after": { "price": 26 }
+  }
+}
+```
+
+Confirm only after reviewing the diff:
+
+```bash
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+  -H 'content-type: application/json' \
+  -H 'x-workspace-id: demo-workspace' \
+  -d '{
+    "toolName": "updateMenuItemPrice",
+    "confirmToken": "PASTE_CONFIRM_TOKEN_HERE",
+    "arguments": {}
+  }'
+```
+
+Expected output:
+
+```json
+{
+  "ok": true,
+  "status": "executed",
+  "undoToken": "..."
+}
+```
+
+## 5. Undo within ten minutes
+
+```bash
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+  -H 'content-type: application/json' \
+  -H 'x-workspace-id: demo-workspace' \
+  -d '{
+    "undoToken": "PASTE_UNDO_TOKEN_HERE"
+  }'
+```
+
+Expected output:
+
+```json
+{
+  "ok": true,
+  "status": "undone"
+}
+```
+
+The audit record includes actor, timestamp, tool name, before/after diff, and
+the undo token.
+
+## 6. Optional MCP wrapper
+
+Until EmDash exposes native MCP registration, point external MCP clients at the
+standalone wrapper Worker. It proxies tool calls to the plugin route:
+
+```text
+/_emdash/api/plugins/carte-ai/tool-call
+```
+
+Expected output from an MCP `tools/list` request:
+
+```json
+{
+  "tools": [{ "name": "listMenuItems" }, { "name": "updateMenuItemPrice" }]
+}
+```

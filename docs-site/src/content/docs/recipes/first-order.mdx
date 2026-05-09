@@ -1,0 +1,131 @@
+---
+title: Accept a first order
+description: Create a Stripe Checkout order through @carte/orders-backend and @carte/views.
+sidebar:
+  order: 4
+---
+
+This recipe connects a storefront checkout form to
+[`@carte/orders-backend`](/plugins/carte-orders-backend/) and renders the
+cart with [`@carte/views`](/plugins/carte-views/). Stripe Checkout hosts all
+card entry, so Carte infrastructure never receives raw PAN, CVC, or expiry data.
+
+## 1. Configure Stripe settings
+
+In EmDash settings for `@carte/orders-backend`, save test-mode Stripe keys:
+
+```text
+stripePublicKey: pk_test_...
+stripeSecretKey: sk_test_...       (secret)
+stripeWebhookSecret: whsec_...     (secret)
+currency: usd
+```
+
+Expected output:
+
+```text
+Settings saved for @carte/orders-backend
+Secret values stored by EmDash
+```
+
+The plugin uses `network:request` with allowed hosts `api.stripe.com` and
+`checkout.stripe.com`.
+
+## 2. Render a checkout page
+
+Create `src/pages/checkout.astro` in the host Astro site:
+
+```astro
+---
+import { OrderingCart, OrderingCheckout } from "@carte/views";
+
+const cart = {
+  id: "cart_demo_001",
+  currency: "USD",
+  lineItems: [
+    {
+      id: "line_001",
+      menuItemId: "squash-risotto",
+      name: "Squash Risotto",
+      quantity: 2,
+      unitPrice: 24,
+      modifiers: [{ id: "extra-sage", name: "Extra sage", price: 1 }],
+    },
+  ],
+  totals: { subtotal: 50, tax: 4, serviceFee: 0, tip: 0, total: 54 },
+};
+---
+
+<OrderingCart cart={cart} />
+<OrderingCheckout
+  action="/_emdash/api/plugins/carte-orders-backend/checkout"
+  cart={cart}
+/>
+```
+
+Expected output from the Astro dev server:
+
+```text
+13:00:00 [200] /checkout
+```
+
+## 3. Create a Checkout Session
+
+```bash
+curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-orders-backend/checkout \
+  -H 'content-type: application/json' \
+  -d '{
+    "cartId": "cart_demo_001",
+    "successUrl": "https://restaurant.example/success",
+    "cancelUrl": "https://restaurant.example/checkout",
+    "customerEmail": "guest@example.test",
+    "lineItems": [
+      {
+        "name": "Squash Risotto",
+        "quantity": 2,
+        "unitPrice": 24,
+        "modifiers": [{ "name": "Extra sage", "price": 1 }]
+      }
+    ]
+  }'
+```
+
+Expected output:
+
+```json
+{
+  "checkoutUrl": "https://checkout.stripe.com/c/..."
+}
+```
+
+Redirect the guest to `checkoutUrl`. Do not collect card fields in Carte forms;
+Stripe Checkout handles card number, CVC, expiry, SCA, and wallet payment UI.
+
+## 4. Forward the Stripe webhook
+
+```bash
+stripe listen \
+  --forward-to localhost:8787/_emdash/api/plugins/carte-orders-backend/webhook-stripe
+```
+
+Expected output:
+
+```text
+Ready! Your webhook signing secret is whsec_...
+```
+
+Paste that signing secret into `stripeWebhookSecret`, then complete the test
+Checkout Session.
+
+Expected webhook response:
+
+```json
+{
+  "ok": true,
+  "status": "processed"
+}
+```
+
+The webhook verifies the Stripe signature before content reads, deduplicates
+replays with `idempotency:{stripeEventId}` for seven days, snapshots line-item
+names and prices, and queues post-response work in `ctx.waitUntil`.

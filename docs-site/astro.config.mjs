@@ -26,6 +26,16 @@ export default defineConfig({
             { label: "@carte/ai", slug: "plugins/carte-ai" },
           ],
         },
+        {
+          label: "Recipes",
+          items: [
+            { label: "Quickstart", slug: "recipes/quickstart" },
+            { label: "Build a menu page", slug: "recipes/menu-page" },
+            { label: "Wire a reservation form", slug: "recipes/reservation-form" },
+            { label: "Accept a first order", slug: "recipes/first-order" },
+            { label: "Enable the AI panel", slug: "recipes/ai-panel" },
+          ],
+        },
       ],
     }),
   ],
