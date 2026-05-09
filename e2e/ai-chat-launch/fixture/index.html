@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carte AI launch fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Carte AI launch fixture</h1>
+      <p data-testid="content-value"></p>
+      <button type="button" data-action="preview"></button>
+      <section role="dialog" aria-label="AI confirms the diff" hidden>
+        <h2>AI confirms the diff</h2>
+        <dl>
+          <dt>Before</dt>
+          <dd data-testid="diff-before"></dd>
+          <dt>After</dt>
+          <dd data-testid="diff-after"></dd>
+        </dl>
+        <button type="button" data-action="accept">Accept AI change</button>
+      </section>
+      <section aria-label="Audit log">
+        <article data-testid="audit-log-entry" hidden>
+          <h2>Audit log entry</h2>
+          <p>Actor: <span data-testid="audit-actor"></span></p>
+          <p>Timestamp: <time data-testid="audit-timestamp"></time></p>
+          <p>Before: <span data-testid="audit-before"></span></p>
+          <p>After: <span data-testid="audit-after"></span></p>
+        </article>
+      </section>
+      <p data-testid="undo-token"></p>
+      <p data-testid="undo-token-ttl"></p>
+      <button type="button" data-action="undo" hidden>Redeem undo token within 10 minutes</button>
+      <p data-testid="undo-status"></p>
+    </main>
+    <script type="module">
+      const TEN_MINUTE_TTL_SECONDS = 600;
+      const flows = {
+        "86-item": {
+          actor: "chef@example.test",
+          after: "Charred Broccolini unavailable until 2026-05-10T06:00:00-07:00",
+          before: "Charred Broccolini available",
+          label: "86 menu item",
+          timestamp: "2026-05-09T20:00:00.000Z",
+          undoToken: "undo-86-item",
+        },
+        "update-price": {
+          actor: "manager@example.test",
+          after: "Citrus Salad price $14.00",
+          before: "Citrus Salad price $12.00",
+          label: "update price",
+          timestamp: "2026-05-09T20:01:00.000Z",
+          undoToken: "undo-update-price",
+        },
+        "block-date": {
+          actor: "host@example.test",
+          after: "Reservations blocked on 2026-05-14 for private event",
+          before: "Reservations open on 2026-05-14",
+          label: "block reservation date",
+          timestamp: "2026-05-09T20:02:00.000Z",
+          undoToken: "undo-block-date",
+        },
+        "move-reservation": {
+          actor: "host@example.test",
+          after: "Reservation rsv_1001 moved to 2026-05-14 20:00",
+          before: "Reservation rsv_1001 booked for 2026-05-14 19:00",
+          label: "move reservation",
+          timestamp: "2026-05-09T20:03:00.000Z",
+          undoToken: "undo-move-reservation",
+        },
+      };
+
+      const flowName = new URL(location.href).searchParams.get("flow") ?? "86-item";
+      const flow = flows[flowName] ?? flows["86-item"];
+      const contentValue = document.querySelector("[data-testid='content-value']");
+      const previewButton = document.querySelector("[data-action='preview']");
+      const diffDialog = document.querySelector("[role='dialog']");
+      const undoButton = document.querySelector("[data-action='undo']");
+      const auditLog = document.querySelector("[data-testid='audit-log-entry']");
+
+      contentValue.textContent = flow.before;
+      previewButton.textContent = `Ask AI to ${flow.label}`;
+
+      previewButton.addEventListener("click", () => {
+        document.querySelector("[data-testid='diff-before']").textContent = flow.before;
+        document.querySelector("[data-testid='diff-after']").textContent = flow.after;
+        diffDialog.hidden = false;
+      });
+
+      document.querySelector("[data-action='accept']").addEventListener("click", () => {
+        contentValue.textContent = flow.after;
+        document.querySelector("[data-testid='audit-actor']").textContent = flow.actor;
+        document.querySelector("[data-testid='audit-timestamp']").textContent = flow.timestamp;
+        document.querySelector("[data-testid='audit-before']").textContent = flow.before;
+        document.querySelector("[data-testid='audit-after']").textContent = flow.after;
+        document.querySelector("[data-testid='undo-token']").textContent =
+          `undoToken: ${flow.undoToken}`;
+        document.querySelector("[data-testid='undo-token-ttl']").textContent =
+          `${TEN_MINUTE_TTL_SECONDS} seconds`;
+        auditLog.hidden = false;
+        undoButton.hidden = false;
+      });
+
+      undoButton.addEventListener("click", () => {
+        contentValue.textContent = flow.before;
+        undoButton.hidden = true;
+        document.querySelector("[data-testid='undo-status']").textContent = "Mutation reverted";
+      });
+    </script>
+  </body>
+</html>

@@ -16,4 +16,14 @@ export default defineConfig({
     baseURL: process.env.BASE_URL ?? E2E_DEFAULT_BASE_URL,
     trace: "on-first-retry",
   },
+  projects: [
+    {
+      name: "views",
+      testDir: "./e2e/views",
+    },
+    {
+      name: "ai-chat-launch",
+      testDir: "./e2e/ai-chat-launch",
+    },
+  ],
 });
