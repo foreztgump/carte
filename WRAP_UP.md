@@ -226,3 +226,25 @@ for v0.2 scoping: `@carte/floor-plan`, limited-quantity inventory, an embedded
 Payment Element option, kitchen order-status PWA, and an advanced modifier
 engine. New `PRO-419+` v0.2 epics will be linked from that section as they are
 opened.
+
+## PR Review Triage
+
+pr-agent local review on PR #14 (2026-05-09): pending post-open run; will be
+recorded here at merge time.
+
+For the mission as a whole, every milestone PR (M3–M10) plus PR #13 (OpenSpec
+archive) passed pr-agent local review with **0 P0 / 0 P1 / 0 Critical / 0
+unresolved Important** findings. Aggregate triage outcome across the mission:
+
+- 0 Critical findings carried to merge
+- 0 P0 actionable
+- 0 P1 actionable
+- 0 unresolved Important
+
+Saved review artifacts live under
+`~/.factory/missions/343410ef-f054-4252-b8e2-7a108ff4e717/validation/<milestone>/pr-agent/`
+and `validation/PR-13-archive/pr-agent/review.md`.
+
+This PR is documentation-only (the mission retrospective itself) — no code
+changes, no functional impact. There is nothing to triage beyond the routing
+note above.
