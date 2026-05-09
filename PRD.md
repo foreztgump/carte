@@ -19,7 +19,7 @@ The WordPress restaurant plugin space has six chronic problems that EmDash archi
 
 1. **Plugin sprawl.** A typical WP restaurant site needs WPCafe (menu) + Five Star (reservations) + GloriaFood (orders) + Yoast (SEO) + Smush (images). Five plugins, five upgrade cycles, five attack surfaces. Carte ships menus + reservations + orders coherently versioned.
 2. **Update anxiety.** Restaurant owners cannot afford site downtime during dinner service. EmDash's sandboxed plugin model means a Carte bug cannot take down the rest of the site.
-3. **AI is bolted on or absent.** No major WP restaurant plugin has native AI for menu/price/inventory operations. Carte's AI is the *primary* admin surface, not a feature add-on.
+3. **AI is bolted on or absent.** No major WP restaurant plugin has native AI for menu/price/inventory operations. Carte's AI is the _primary_ admin surface, not a feature add-on.
 4. **Performance during peak hours.** WP restaurant plugins query the DB on every menu page load. Cloudflare edge cache + Portable Text means Carte serves menus from 300+ edge locations.
 5. **Mobile checkout is an afterthought.** Most WP plugins were built desktop-first. Carte is mobile-first by design — 70%+ of food orders happen on phones.
 6. **Schema.org is incomplete or wrong.** Most WP plugins emit broken or partial Restaurant/Menu JSON-LD. Carte emits canonical, complete JSON-LD that's eligible for Google rich results and AI agent ingestion.
@@ -66,20 +66,22 @@ Verified capabilities used (per `github.com/emdash-cms/emdash/blob/main/skills/c
 
 ## Plugin Family
 
-| Plugin | Format | License | v0.1 Pricing | Description |
-|---|---|---|---|---|
-| `@carte/core` | standard | MIT | Free | Menus, items, sections, restaurant info, hours, schema.org, x402 config |
-| `@carte/reservations` | standard | MIT | Free | Booking form, time-slot logic, capacity, email confirmations |
-| `@carte/orders-backend` | standard | MIT | Free | Stripe webhooks, cart hold logic, order state machine, email receipts |
-| `@carte/orders-admin` | native | MIT | Free | React admin: order management, modifier editor, refund UI |
-| `@carte/views` | native (peer dep npm) | MIT | Free | Astro components: menu, hours, reservation form, order cart |
-| `@carte/ai` | native | Commercial | $99/yr (14-day free trial) | React chat panel, MCP tool wrappers, inline AI actions |
+| Plugin                  | Format                | License    | v0.1 Pricing               | Description                                                             |
+| ----------------------- | --------------------- | ---------- | -------------------------- | ----------------------------------------------------------------------- |
+| `@carte/core`           | standard              | MIT        | Free                       | Menus, items, sections, restaurant info, hours, schema.org, x402 config |
+| `@carte/reservations`   | standard              | MIT        | Free                       | Booking form, time-slot logic, capacity, email confirmations            |
+| `@carte/orders-backend` | standard              | MIT        | Free                       | Stripe webhooks, cart hold logic, order state machine, email receipts   |
+| `@carte/orders-admin`   | native                | MIT        | Free                       | React admin: order management, modifier editor, refund UI               |
+| `@carte/views`          | native (peer dep npm) | MIT        | Free                       | Astro components: menu, hours, reservation form, order cart             |
+| `@carte/ai`             | native                | Commercial | $99/yr (14-day free trial) | React chat panel, MCP tool wrappers, inline AI actions                  |
 
 Bundles for v0.1: none. Single plugin family, AI as the only paid SKU. Future:
+
 - **Carte Pro** (v0.3): `@carte/multi-location` + `@carte/floor-plan` + `@carte/ai`
 - **Carte Operations** (v1.0): adds `@carte/delivery`, `@carte/qr-ordering`, advanced modifier engine
 
 Dependency rules:
+
 - `reservations`, `orders-backend`, `orders-admin`, `views`, `ai` all `require: ["@carte/core"]`
 - `orders-admin` requires `orders-backend`
 - `views` is npm peer dep installed in user's Astro project (not via marketplace)
@@ -90,155 +92,165 @@ Dependency rules:
 ## Capability Manifests
 
 ### `@carte/core` (standard)
+
 ```typescript
 import { definePlugin } from "emdash";
 
-export default () => definePlugin({
-  id: "carte-core",
-  version: "0.1.0",
-  capabilities: ["content:read", "content:write", "media:read"],
-  // No external network, no email — fully self-contained
-  hooks: {
-    "content:beforeSave": async (event, ctx) => {
-      if (!event.collection.startsWith("carte_")) return;
-      // Validate menu item prices, normalize allergens, validate hours format
+export default () =>
+  definePlugin({
+    id: "carte-core",
+    version: "0.1.0",
+    capabilities: ["content:read", "content:write", "media:read"],
+    // No external network, no email — fully self-contained
+    hooks: {
+      "content:beforeSave": async (event, ctx) => {
+        if (!event.collection.startsWith("carte_")) return;
+        // Validate menu item prices, normalize allergens, validate hours format
+      },
+      "content:afterSave": async (event, ctx) => {
+        if (!event.collection.startsWith("carte_")) return;
+        ctx.waitUntil(invalidateCarteCache(ctx, event));
+      },
     },
-    "content:afterSave": async (event, ctx) => {
-      if (!event.collection.startsWith("carte_")) return;
-      ctx.waitUntil(invalidateCarteCache(ctx, event));
+    routes: ["admin", "menu-feed", "schema-jsonld"],
+    storage: {
+      settings: {
+        defaultCurrency: "USD",
+        defaultMenuLocale: "en",
+        timezone: "America/Los_Angeles",
+        x402WalletAddress: "", // optional, for x402-gated content
+      },
     },
-  },
-  routes: ["admin", "menu-feed", "schema-jsonld"],
-  storage: {
-    settings: {
-      defaultCurrency: "USD",
-      defaultMenuLocale: "en",
-      timezone: "America/Los_Angeles",
-      x402WalletAddress: "",  // optional, for x402-gated content
+    admin: {
+      pages: [
+        { path: "/carte", label: "Menus", icon: "menu" },
+        { path: "/carte/restaurant", label: "Restaurant", icon: "store" },
+        { path: "/carte/hours", label: "Hours", icon: "clock" },
+        { path: "/carte/settings", label: "Settings", icon: "cog" },
+      ],
     },
-  },
-  admin: {
-    pages: [
-      { path: "/carte", label: "Menus", icon: "menu" },
-      { path: "/carte/restaurant", label: "Restaurant", icon: "store" },
-      { path: "/carte/hours", label: "Hours", icon: "clock" },
-      { path: "/carte/settings", label: "Settings", icon: "cog" },
-    ],
-  },
-});
+  });
 ```
 
 ### `@carte/reservations` (standard)
+
 ```typescript
-export default () => definePlugin({
-  id: "carte-reservations",
-  version: "0.1.0",
-  capabilities: ["content:read", "content:write", "email:send"],
-  hooks: {
-    "content:afterSave": async (event, ctx) => {
-      if (event.collection !== "carte_reservations") return;
-      ctx.waitUntil(handleReservationSideEffects(ctx, event.content));
+export default () =>
+  definePlugin({
+    id: "carte-reservations",
+    version: "0.1.0",
+    capabilities: ["content:read", "content:write", "email:send"],
+    hooks: {
+      "content:afterSave": async (event, ctx) => {
+        if (event.collection !== "carte_reservations") return;
+        ctx.waitUntil(handleReservationSideEffects(ctx, event.content));
+      },
     },
-  },
-  routes: ["admin", "submit", "confirm", "cancel-by-token"],
-  storage: {
-    settings: {
-      confirmationFromAddress: "noreply@example.com",
-      defaultDurationMinutes: 90,
-      reservationLeadHours: 2,
-      reservationMaxAdvanceDays: 60,
-      autoConfirm: false,            // false = pending → manual confirm
+    routes: ["admin", "submit", "confirm", "cancel-by-token"],
+    storage: {
+      settings: {
+        confirmationFromAddress: "noreply@example.com",
+        defaultDurationMinutes: 90,
+        reservationLeadHours: 2,
+        reservationMaxAdvanceDays: 60,
+        autoConfirm: false, // false = pending → manual confirm
+      },
     },
-  },
-  admin: {
-    pages: [
-      { path: "/carte-reservations", label: "Reservations", icon: "calendar" },
-      { path: "/carte-reservations/blocks", label: "Closures", icon: "x-circle" },
-    ],
-  },
-});
+    admin: {
+      pages: [
+        { path: "/carte-reservations", label: "Reservations", icon: "calendar" },
+        { path: "/carte-reservations/blocks", label: "Closures", icon: "x-circle" },
+      ],
+    },
+  });
 ```
 
 ### `@carte/orders-backend` (standard)
+
 ```typescript
-export default () => definePlugin({
-  id: "carte-orders-backend",
-  version: "0.1.0",
-  capabilities: ["content:read", "content:write", "email:send", "network:request"],
-  allowedHosts: ["api.stripe.com", "checkout.stripe.com"],
-  hooks: {
-    "content:afterSave": async (event, ctx) => {
-      if (event.collection !== "carte_orders") return;
-      // Order created in DB by webhook handler; nothing else to do here
+export default () =>
+  definePlugin({
+    id: "carte-orders-backend",
+    version: "0.1.0",
+    capabilities: ["content:read", "content:write", "email:send", "network:request"],
+    allowedHosts: ["api.stripe.com", "checkout.stripe.com"],
+    hooks: {
+      "content:afterSave": async (event, ctx) => {
+        if (event.collection !== "carte_orders") return;
+        // Order created in DB by webhook handler; nothing else to do here
+      },
     },
-  },
-  routes: [
-    "checkout",          // create Stripe Checkout session
-    "webhook-stripe",    // receive Stripe webhook
-    "refund",            // admin-authenticated refund
-    "admin",             // Block Kit admin (basic ops; full UI in orders-admin)
-  ],
-  storage: {
-    settings: {
-      stripePublicKey: "",
-      stripeSecretKey: "",         // marked secret in admin
-      stripeWebhookSecret: "",
-      currency: "USD",
-      cartHoldTtlSeconds: 600,
-      orderTypes: ["pickup", "delivery"],  // dine-in TBD v0.2
-      pickupLeadMinutes: 20,
-      deliveryLeadMinutes: 45,
+    routes: [
+      "checkout", // create Stripe Checkout session
+      "webhook-stripe", // receive Stripe webhook
+      "refund", // admin-authenticated refund
+      "admin", // Block Kit admin (basic ops; full UI in orders-admin)
+    ],
+    storage: {
+      settings: {
+        stripePublicKey: "",
+        stripeSecretKey: "", // marked secret in admin
+        stripeWebhookSecret: "",
+        currency: "USD",
+        cartHoldTtlSeconds: 600,
+        orderTypes: ["pickup", "delivery"], // dine-in TBD v0.2
+        pickupLeadMinutes: 20,
+        deliveryLeadMinutes: 45,
+      },
     },
-  },
-});
+  });
 ```
 
 ### `@carte/orders-admin` (native)
+
 ```typescript
-export default () => definePlugin({
-  id: "carte-orders-admin",
-  version: "0.1.0",
-  capabilities: ["content:read", "content:write"],
-  hooks: {},
-  routes: ["modifier-update", "order-state-change"],  // called by React admin
-  admin: {
-    entry: "admin/index.js",
-    pages: [
-      { path: "/carte-orders", label: "Orders", icon: "shopping-bag" },
-      { path: "/carte-orders/modifiers", label: "Modifiers", icon: "sliders" },
-    ],
-  },
-});
+export default () =>
+  definePlugin({
+    id: "carte-orders-admin",
+    version: "0.1.0",
+    capabilities: ["content:read", "content:write"],
+    hooks: {},
+    routes: ["modifier-update", "order-state-change"], // called by React admin
+    admin: {
+      entry: "admin/index.js",
+      pages: [
+        { path: "/carte-orders", label: "Orders", icon: "shopping-bag" },
+        { path: "/carte-orders/modifiers", label: "Modifiers", icon: "sliders" },
+      ],
+    },
+  });
 ```
 
 ### `@carte/ai` (native, paid)
+
 ```typescript
-export default () => definePlugin({
-  id: "carte-ai",
-  version: "0.1.0",
-  capabilities: ["content:read", "content:write", "network:request"],
-  allowedHosts: [
-    "api.anthropic.com",
-    "api.openai.com",
-    "generativelanguage.googleapis.com",
-    "license.carteplugin.dev",   // license validation + trial tracking
-  ],
-  hooks: {},
-  routes: ["chat-stream", "tool-call", "history", "license-check"],
-  storage: {
-    settings: {
-      provider: "anthropic",
-      model: "claude-opus-4-7",
-      apiKey: "",                  // BYO LLM key
-      licenseKey: "",
-      autoApproveTools: [],        // user-configurable list of tools to skip confirm
+export default () =>
+  definePlugin({
+    id: "carte-ai",
+    version: "0.1.0",
+    capabilities: ["content:read", "content:write", "network:request"],
+    allowedHosts: [
+      "api.anthropic.com",
+      "api.openai.com",
+      "generativelanguage.googleapis.com",
+      "license.carteplugin.dev", // license validation + trial tracking
+    ],
+    hooks: {},
+    routes: ["chat-stream", "tool-call", "history", "license-check"],
+    storage: {
+      settings: {
+        provider: "anthropic",
+        model: "claude-opus-4-7",
+        apiKey: "", // BYO LLM key
+        licenseKey: "",
+        autoApproveTools: [], // user-configurable list of tools to skip confirm
+      },
     },
-  },
-  admin: {
-    entry: "admin/index.js",
-    pages: [{ path: "/carte-ai", label: "Chat", icon: "sparkles" }],
-  },
-});
+    admin: {
+      entry: "admin/index.js",
+      pages: [{ path: "/carte-ai", label: "Chat", icon: "sparkles" }],
+    },
+  });
 ```
 
 ---
@@ -246,6 +258,7 @@ export default () => definePlugin({
 ## Data Model
 
 ### Collection: `carte_menu_items`
+
 ```ts
 {
   id: string,                          // ulid
@@ -290,6 +303,7 @@ type ModifierOption = {
 ```
 
 ### Collection: `carte_menu_sections`
+
 ```ts
 {
   id, slug, name,
@@ -304,6 +318,7 @@ type ModifierOption = {
 ```
 
 ### Collection: `carte_menus`
+
 ```ts
 {
   id, slug, name,                      // "Lunch Menu", "Dinner", "Wine List"
@@ -320,6 +335,7 @@ type ModifierOption = {
 ```
 
 ### Collection: `carte_restaurant` (singleton for v0.1)
+
 ```ts
 {
   id: "main",
@@ -376,6 +392,7 @@ type Closure = {
 ```
 
 ### Collection: `carte_reservations`
+
 ```ts
 {
   id,
@@ -402,6 +419,7 @@ type Closure = {
 ```
 
 ### Collection: `carte_reservation_blocks`
+
 ```ts
 {
   id,
@@ -413,6 +431,7 @@ type Closure = {
 ```
 
 ### Collection: `carte_orders`
+
 ```ts
 {
   id,
@@ -456,29 +475,31 @@ type OrderLineItem = {
 
 ### KV Storage (plugin-scoped automatically)
 
-| Plugin | Key pattern | Purpose | TTL |
-|---|---|---|---|
-| `@carte/core` | `menu-cache:{menuId}` | Pre-rendered menu fragment | 5 min |
-| `@carte/core` | `hours-status` | Computed open/closed | 5 min |
-| `@carte/core` | `schema-jsonld` | Generated JSON-LD blob | 30 min |
-| `@carte/reservations` | `capacity:{date}:{slot}` | Atomic counter | none (permanent) |
-| `@carte/reservations` | `hold:{holdId}` | 10-min reservation hold | 10 min |
-| `@carte/orders-backend` | `cart-hold:{cartId}` | Cart inventory hold | 10 min |
-| `@carte/orders-backend` | `idempotency:{stripeEventId}` | Webhook dedup | 7 days |
-| `@carte/orders-backend` | `order-counter` | Order number sequence | none |
-| `@carte/ai` | `chat:{userId}` | Chat history | 30 days |
-| `@carte/ai` | `trial:{workspaceId}` | Trial start date | 30 days |
-| `@carte/ai` | `license:{workspaceId}` | License validation cache | 24 hr |
+| Plugin                  | Key pattern                   | Purpose                    | TTL              |
+| ----------------------- | ----------------------------- | -------------------------- | ---------------- |
+| `@carte/core`           | `menu-cache:{menuId}`         | Pre-rendered menu fragment | 5 min            |
+| `@carte/core`           | `hours-status`                | Computed open/closed       | 5 min            |
+| `@carte/core`           | `schema-jsonld`               | Generated JSON-LD blob     | 30 min           |
+| `@carte/reservations`   | `capacity:{date}:{slot}`      | Atomic counter             | none (permanent) |
+| `@carte/reservations`   | `hold:{holdId}`               | 10-min reservation hold    | 10 min           |
+| `@carte/orders-backend` | `cart-hold:{cartId}`          | Cart inventory hold        | 10 min           |
+| `@carte/orders-backend` | `idempotency:{stripeEventId}` | Webhook dedup              | 7 days           |
+| `@carte/orders-backend` | `order-counter`               | Order number sequence      | none             |
+| `@carte/ai`             | `chat:{userId}`               | Chat history               | 30 days          |
+| `@carte/ai`             | `trial:{workspaceId}`         | Trial start date           | 30 days          |
+| `@carte/ai`             | `license:{workspaceId}`       | License validation cache   | 24 hr            |
 
 ---
 
 ## Hooks Used
 
 ### `@carte/core`
+
 - `content:beforeSave` — validate menu item prices/allergens, validate hours format, validate WeeklyHours structure
 - `content:afterSave` — invalidate menu cache, invalidate JSON-LD cache (via `ctx.waitUntil`)
 
 ### `@carte/reservations`
+
 - `content:afterSave` — when a reservation is created/updated:
   - On `pending` (new): send "received" email to guest + notification email to restaurant
   - On `confirmed`: send confirmation email to guest with cancellation link
@@ -486,6 +507,7 @@ type OrderLineItem = {
   - All wrapped in `ctx.waitUntil`
 
 ### `@carte/orders-backend`
+
 - `content:afterSave` — order state transitions trigger emails:
   - On `paid`: receipt + kitchen notification
   - On `ready`: "your order is ready" SMS-equivalent email (or push if PWA)
@@ -501,26 +523,31 @@ type OrderLineItem = {
 All mount at `/_emdash/api/plugins/<plugin-id>/<route>`.
 
 ### `@carte/core`
+
 - `GET .../menu-feed?menuId=...` — JSON menu (cached at edge)
 - `GET .../schema-jsonld` — full Restaurant + Menu JSON-LD (cached)
 - `POST .../admin/...` — Block Kit admin pages
 
 ### `@carte/reservations`
+
 - `POST .../submit` — public reservation submission (rate-limited per IP via KV)
 - `GET .../confirm?token=...` — guest confirmation link (when `autoConfirm: false`)
 - `GET .../cancel-by-token?token=...` — guest cancellation link
 - `POST .../admin/...` — Block Kit admin
 
 ### `@carte/orders-backend`
+
 - `POST .../checkout` — create Stripe Checkout session, return URL
 - `POST .../webhook-stripe` — Stripe webhook receiver (verifies signature, idempotent)
 - `POST .../refund` — admin-authenticated refund
 - `POST .../admin/...` — Block Kit fallback admin (for sandboxed-only environments)
 
 ### `@carte/orders-admin` (native)
+
 - React admin entry; calls REST routes for modifier ops, state changes
 
 ### `@carte/ai` (native)
+
 - `POST .../chat-stream` — proxies to declared LLM provider (SSE)
 - `POST .../tool-call` — executes Carte op after user confirmation
 - `GET .../history` — chat history for current user
@@ -560,6 +587,7 @@ const { entries: menus } = await getEmDashCollection("carte_menus", {
 ```
 
 Components:
+
 - `<RestaurantHero>` — name, tagline, hero image, key info
 - `<MenuDisplay>` — full menu rendering (sections + items)
 - `<MenuSection>`, `<MenuItem>` — composable
@@ -573,6 +601,7 @@ Components:
 Tailwind by default; headless variants for theme customization.
 
 ### Live Collections (Astro pattern)
+
 ```ts
 // src/live.config.ts
 import { defineLiveCollection } from "astro:content";
@@ -657,10 +686,10 @@ for each 30-min slot in restaurant hours for selected date:
     else: skip slot
   else:
     capacity = settings.defaultSlotCapacity
-  
+
   current_bookings = KV.get(`capacity:${date}:${slot}`) ?? 0
   remaining = capacity - current_bookings
-  
+
   if remaining > 0:
     slots.push({ time, remaining, fits: remaining >= partySize })
 
@@ -679,6 +708,7 @@ Fast, correct, edge-cacheable per (date, partySize).
 ### 86 button auto-restore
 
 When admin (or AI) marks an item 86:
+
 - `available: false`, `unavailableUntil: <next 6am local time>` (or user-specified)
 - A periodic check (next read of menu) sees `unavailableUntil < now` → auto-restore to `available: true`
 - Avoids needing scheduled cron entirely (uses lazy restore on read)
@@ -727,6 +757,7 @@ Carte ships with the **EU FIC 14 mandatory allergens** (cereals containing glute
 ### Multi-location prep (data model only in v0.1)
 
 Even though v0.1 ships single-location, the data model is multi-location-ready:
+
 - `carte_restaurant` has `isMultiLocation: false` flag
 - `carte_locations` collection exists but is empty/single-record in v0.1
 - All collections (`carte_menu_items`, `carte_reservations`, `carte_orders`) optionally reference `locationId`, defaulting to "main"
@@ -737,6 +768,7 @@ This means v0.3 doesn't require a data migration — multi-location is purely a 
 ### x402 micropayment integration
 
 EmDash core handles x402. Carte contributes:
+
 - Optional `x402Price` on menu items — used for premium/limited-edition items where AI agents might purchase content (e.g., "AI-purchasable cookbook recipes," "agent-accessible wine list with pairing notes")
 - Optional `x402Price` on `carte_restaurant.description` for premium restaurant listings
 - Niche use case in v0.1 (most restaurants won't use it), but it's a 30-line feature that costs nothing and demonstrates EmDash uniqueness
@@ -829,6 +861,7 @@ Persistent panel in EmDash admin (when `@carte/ai` installed):
 > User: bump the wagyu to $52 and the truffle pasta to $34
 >
 > Carte AI: Two price changes ready:
+>
 > - Wagyu Strip Loin: $48 → **$52**
 > - Truffle Pasta: $28 → **$34**
 >
@@ -837,6 +870,7 @@ Persistent panel in EmDash admin (when `@carte/ai` installed):
 > User: block tuesday for a private event, we're closed all day
 >
 > Carte AI: Tuesday Nov 4 will be marked closed (private event).
+>
 > - 0 reservations on file for that day, no cancellations needed.
 > - Online ordering will be disabled for that day.
 >
@@ -845,6 +879,7 @@ Persistent panel in EmDash admin (when `@carte/ai` installed):
 > User: swap the risotto for a new dish — lamb shank, $38, on the dinner menu in the mains section
 >
 > Carte AI: Two changes ready:
+>
 > 1. **86 "Mushroom Risotto"** indefinitely (mark hidden)
 > 2. **Create "Lamb Shank"** — $38, Dinner > Mains
 >    - Description needed. Want me to generate one?
@@ -854,6 +889,7 @@ Persistent panel in EmDash admin (when `@carte/ai` installed):
 > User: my friday lunch was packed, what time slots filled up?
 >
 > Carte AI: Friday Apr 24 lunch service:
+>
 > - 11:30am: 8/12 covers (66%)
 > - 12:00pm: 12/12 covers (100% — full)
 > - 12:30pm: 12/12 covers (100% — full)
@@ -865,6 +901,7 @@ Persistent panel in EmDash admin (when `@carte/ai` installed):
 ### Surface 3: Inline AI actions
 
 Per-field "✨ AI" buttons in the editor:
+
 - Menu item description: "Generate from name and ingredients"
 - Photo alt text: auto-generated from menu item context
 - Allergen tagging: "Tag this item with allergens based on description"
@@ -895,18 +932,19 @@ Per-field "✨ AI" buttons in the editor:
 
 ## External Dependencies
 
-| Plugin | External services | `allowedHosts` |
-|---|---|---|
-| `@carte/core` | none | (none) |
-| `@carte/reservations` | core mail pipeline | (uses `email:send`) |
-| `@carte/orders-backend` | Stripe | `api.stripe.com`, `checkout.stripe.com` |
-| `@carte/ai` | LLM provider + license server | `api.anthropic.com`, `api.openai.com`, `generativelanguage.googleapis.com`, `license.carteplugin.dev` |
+| Plugin                  | External services             | `allowedHosts`                                                                                        |
+| ----------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `@carte/core`           | none                          | (none)                                                                                                |
+| `@carte/reservations`   | core mail pipeline            | (uses `email:send`)                                                                                   |
+| `@carte/orders-backend` | Stripe                        | `api.stripe.com`, `checkout.stripe.com`                                                               |
+| `@carte/ai`             | LLM provider + license server | `api.anthropic.com`, `api.openai.com`, `generativelanguage.googleapis.com`, `license.carteplugin.dev` |
 
 ---
 
 ## Security Considerations
 
 What Carte plugins cannot do, by design:
+
 - No filesystem access
 - No raw SQL
 - No reaching arbitrary network hosts (only `allowedHosts`)
@@ -950,6 +988,7 @@ Detailed evidence-grounded teardowns of the three closest WordPress competitors 
 Carte's positioning context (the six chronic WordPress restaurant problems EmDash architecture solves) is in §"Problem Statement" above.
 
 Out of scope for v0.1:
+
 - Multi-location chains (5+ locations)
 - POS replacement (most restaurants keep Toast/Square)
 - KDS (kitchen display)
@@ -969,6 +1008,7 @@ Out of scope for v0.1:
 - `@carte/ai` (native, paid + trial) — chat panel + MCP tools + inline AI
 
 **12-week breakdown:**
+
 - Weeks 1-2: `@carte/core` (menus, items, hours, restaurant info, Block Kit admin)
 - Weeks 3-4: `@carte/views` (Astro components, theme integration with client site)
 - Weeks 5-6: `@carte/reservations` (booking flow, capacity, emails)
@@ -977,6 +1017,7 @@ Out of scope for v0.1:
 - Week 12: Hardening, schema.org validation, client launch
 
 ### v0.2 — Operations & UX (8 weeks after v0.1)
+
 - `@carte/floor-plan` (native) — visual table layout for reservations
 - Limited-quantity inventory (e.g., "only 12 of these per day")
 - Embedded Payment Element option (vs hosted Checkout)
@@ -984,12 +1025,14 @@ Out of scope for v0.1:
 - Advanced modifier engine (build-your-own combinatorics)
 
 ### v0.3 — Multi-location (8 weeks after v0.2)
+
 - `@carte/multi-location` — location switcher, per-location menus/hours/orders
 - `@carte/delivery` — delivery zones, fees, time slots
 - QR table ordering
 - POS integration (read-only sync from Toast/Square — menus, not orders)
 
 ### v1.0 — Stable (3 months after v0.3)
+
 - Hardening, security audit, full docs site, ecosystem launch
 - Showcase: 3+ production restaurants
 
@@ -998,6 +1041,7 @@ Out of scope for v0.1:
 ## Success Metrics
 
 **v0.1 (3 months):**
+
 - Your live restaurant client launches successfully
 - 50 EmDash sites with `@carte/core` installed
 - 10 paying customers on `@carte/ai` after trials convert
@@ -1006,6 +1050,7 @@ Out of scope for v0.1:
 - AI chat panel handles 86 / price update / block date / move reservation end-to-end
 
 **v1.0 (12 months):**
+
 - 1,000 EmDash sites with `@carte/core`
 - 200 paying customers on `@carte/ai`
 - $100K ARR
@@ -1018,7 +1063,10 @@ Out of scope for v0.1:
 
 1. **RESOLVED — Capability naming source of truth** — Carte standardizes on `content:read`, `content:write`, `media:read`, `media:write`, and `network:request`, following `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. All manifest examples and capability references in this PRD use those canonical resource:verb names.
 2. **RESOLVED — Custom MCP tool registration API** — EmDash 0.9.0 has no public plugin-defined MCP tool registration API yet (`github.com/emdash-cms/emdash/discussions/850`). Carte v0.1 ships plugin routes at `/_emdash/api/plugins/<id>/<route>` plus a standalone MCP wrapper Worker; see §"AI Layer" → "Surface 1: Operations as MCP tools".
-3. **DEFERRED to v0.2 — Order-tracking notifications** — v0.1 ships email-only notifications for receipts, confirmations, and status changes. SMS and push stay out of scope until v0.2 because they add third-party delivery and consent surface area that the first launch does not need; see §"Hooks Used" for the v0.1 email triggers.
+3. **DEFERRED to v0.2 / future `@carte/ops` — Order-tracking notifications** — v0.1 ships email-only notifications for receipts, confirmations, and status changes. SMS and push stay out of scope until the future `@carte/ops` add-on because they add third-party delivery and consent surface area that the first launch does not need; see §"Hooks Used" for the v0.1 email triggers.
+
+   **Rationale:** The v0.1 scope is intentionally email-first: competitive-analysis Pattern 7 recommends editable email templates now while leaving SMS/WhatsApp as later channel expansions (`docs/competitive-analysis/adoptable-patterns.md:55-61`), and the M3 validation contract requires OQ#3 to be closed as a deferral rather than implemented in `@carte/core` (`validation-contract.md:77-79`).
+
 4. **RESOLVED — Tax calculation** — Carte v0.1 uses Stripe Tax inside Stripe Checkout for US sales-tax calculation and supports a restaurant-configured manual VAT override when operators need a flat rate. Carte does not compute international tax itself; this decision is locked in §"Order checkout pattern (race-safe + Stripe-integrated)" and tracked for implementation under PRO-420.
 5. **RESOLVED** — `@carte/ai` enforces trials and paid licenses through the server-side `license.carteplugin.dev` Worker + D1 service, caching the last known result for 24 hours in plugin KV and degrading to that cached state on outages so restaurant operations never lock out; see §"Trial & licensing".
 6. **RESOLVED — GDPR / right-to-erasure** — export and erasure handlers for reservation and order guest data are required in v0.1 rather than deferred, because Carte stores guest PII from day one. The implementation work is already tracked as PRO-462, so the product decision is locked and no longer open.
@@ -1027,7 +1075,9 @@ Out of scope for v0.1:
 9. **RESOLVED — Photo handling** — Carte uses Cloudflare Images when the operator has it available so menu photos get responsive WebP/AVIF delivery automatically, and falls back to the EmDash media library when they do not. This delivery split is locked for the `@carte/views` storefront layer and was informed by the Milestone 0 competitive-analysis notes on image-heavy menu UX.
 10. **RESOLVED — Rate limiting on public reservation/order endpoints** — public `submit` and `checkout` surfaces will ship with KV-backed per-IP throttling as a v0.1 baseline rather than an optional hardening pass. The implementation is already tracked under PRO-463, so the open-question decision is closed here.
 11. **RESOLVED — Modifier complexity ceiling for v0.1** — Carte v0.1 keeps the current single-tier `ModifierGroup` shape and explicitly defers nested modifier trees to v0.2. `docs/competitive-analysis/orderable-pro.md` shows Orderable's mobile flow succeeds with flat field groups while its cart/order payloads stay single-layer, which is the right complexity ceiling for the first launch.
-12. **DEFERRED to v0.2 — Cancellation policy enforcement** — v0.1 stores and communicates the restaurant's cancellation policy, but it does not attempt automated Stripe charges for late cancellations. Charging penalties is deferred to v0.2 because it adds payment-auth timing, dispute, and consent complexity that is unnecessary for the first launch; see §"Roadmap" for the deferred operations work.
+12. **DEFERRED to v0.2 / future `@carte/ops` — Cancellation policy enforcement** — v0.1 stores and communicates the restaurant's cancellation policy, but it does not attempt automated Stripe charges for late cancellations. Charging penalties is deferred to the future `@carte/ops` add-on because it adds payment-auth timing, dispute, and consent complexity that is unnecessary for the first launch; see §"Roadmap" for the deferred operations work.
+
+    **Rationale:** v0.1 keeps booking/order operations focused on explicit records, confirmations, and cancellation state rather than penalty automation; the Linear acceptance criteria for PRO-423 call for OQ#12 to be marked DEFERRED, and the M3 validation contract requires a rationale paragraph plus closure evidence (`https://linear.app/projects-linear/issue/PRO-423/oq312-lock-notification-scope-cancellation-policy-for-v01`, `validation-contract.md:77-79`).
 
 ---
 

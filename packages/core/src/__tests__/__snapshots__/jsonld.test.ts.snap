@@ -1,0 +1,68 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`@carte/core schema.org JSON-LD > returns Restaurant JSON-LD with nested Menu, sections, items, offers, and diets 1`] = `
+{
+  "@context": "https://schema.org",
+  "@id": "https://carte.example#restaurant",
+  "@type": "Restaurant",
+  "acceptsReservations": true,
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "US",
+    "addressLocality": "Portland",
+    "addressRegion": "OR",
+    "postalCode": "97201",
+    "streetAddress": "1 Main Street",
+  },
+  "hasMenu": {
+    "@type": "Menu",
+    "description": "Evening menu",
+    "hasMenuSection": [
+      {
+        "@type": "MenuSection",
+        "description": "Entrees",
+        "hasMenuItem": [
+          {
+            "@type": "MenuItem",
+            "description": "Arborio rice with mushrooms",
+            "name": "Mushroom Risotto",
+            "offers": {
+              "@type": "Offer",
+              "price": "18.50",
+              "priceCurrency": "USD",
+            },
+            "suitableForDiet": [
+              "https://schema.org/VegetarianDiet",
+              "https://schema.org/GlutenFreeDiet",
+            ],
+          },
+        ],
+        "name": "Mains",
+      },
+    ],
+    "name": "Dinner",
+  },
+  "name": "Carte Bistro",
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "closes": "17:00",
+      "dayOfWeek": "https://schema.org/Monday",
+      "opens": "09:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "closes": "16:00",
+      "dayOfWeek": "https://schema.org/Tuesday",
+      "opens": "10:00",
+    },
+  ],
+  "priceRange": "$$",
+  "servesCuisine": [
+    "French",
+    "Pacific Northwest",
+  ],
+  "telephone": "+15035550100",
+  "url": "https://carte.example",
+}
+`;
