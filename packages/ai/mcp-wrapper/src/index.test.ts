@@ -76,6 +76,21 @@ describe("MCP wrapper Worker", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it("forwards the X-Workspace-Id header to the downstream tool-call route", async () => {
+    const fetcher = vi.fn(async () => Response.json({ ok: true }));
+    const request = jsonRpcRequest(
+      { method: "tools/call", params: { arguments: {}, name: "listMenuItems" } },
+      { workspaceId: "ws-7" },
+    );
+
+    await handleMcpRequest(request, env({ fetcher }));
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Workspace-Id"]).toBe("ws-7");
+  });
+
   it("isolates state by forwarding distinct workspace ids to the plugin route", async () => {
     const calls: string[] = [];
     const fetcher = vi.fn(async (_url: unknown, init: RequestInit) => {
