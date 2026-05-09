@@ -12,6 +12,7 @@
 # Future-proof for Milestone 2 (no harm pre-scaffold)
 node_modules/
 dist/
+.astro/
 .wrangler/
 .dev.vars
 coverage/

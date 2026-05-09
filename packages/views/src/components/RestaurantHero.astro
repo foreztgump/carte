@@ -1,0 +1,40 @@
+---
+import { safeJsonForScript } from "../safe-json.js";
+import { restaurantJsonLdFor } from "../schema.js";
+import { heroClassesFor } from "../styles.js";
+import type { RestaurantHeroProps } from "../types.js";
+
+const props = Astro.props as RestaurantHeroProps;
+const { restaurant, variant = "default" } = props;
+const heroClass = heroClassesFor(variant);
+const detailParts = [restaurant.cuisine?.join(" · "), restaurant.priceRange].filter(Boolean);
+const jsonLd = safeJsonForScript(restaurantJsonLdFor(restaurant));
+---
+
+<section class={heroClass} data-carte-variant={variant}>
+  {
+    restaurant.heroImage ? (
+      <img
+        alt={restaurant.heroImage.alt}
+        class={variant === "headless" ? undefined : "h-56 w-full object-cover opacity-80"}
+        src={restaurant.heroImage.src}
+      />
+    ) : null
+  }
+  <div class={variant === "headless" ? undefined : "px-6 py-8 sm:px-10"}>
+    <p class={variant === "headless" ? undefined : "text-sm font-semibold uppercase tracking-wide text-amber-300"}>
+      {detailParts.join(" · ")}
+    </p>
+    <h1 class={variant === "headless" ? undefined : "mt-2 text-4xl font-bold tracking-tight"}>
+      {restaurant.name}
+    </h1>
+    {
+      restaurant.tagline ? (
+        <p class={variant === "headless" ? undefined : "mt-3 max-w-2xl text-lg leading-8 text-stone-200"}>
+          {restaurant.tagline}
+        </p>
+      ) : null
+    }
+  </div>
+</section>
+<script is:inline type="application/ld+json" set:html={jsonLd} />

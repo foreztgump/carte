@@ -1,0 +1,68 @@
+---
+import { formatCurrency } from "../format.js";
+import { orderingCartClassesFor } from "../styles.js";
+import type { OrderingCartProps } from "../types.js";
+
+const props = Astro.props as OrderingCartProps;
+const { cart, heading = "Your order", variant = "default" } = props;
+const cartClass = orderingCartClassesFor(variant);
+const rowClass = variant === "headless" ? undefined : "flex items-start justify-between gap-4";
+const mutedClass = variant === "headless" ? undefined : "text-sm text-stone-600";
+const totalRows = [
+  ["Subtotal", cart.totals.subtotal],
+  ["Tax", cart.totals.tax],
+  ["Service fee", cart.totals.serviceFee],
+  ["Tip", cart.totals.tip],
+].filter((row): row is [string, number] => typeof row[1] === "number");
+---
+
+<section aria-labelledby={`${cart.id}-heading`} class={cartClass} data-carte-ordering-cart data-carte-variant={variant}>
+  <h2 class={variant === "headless" ? undefined : "text-xl font-semibold text-stone-950"} id={`${cart.id}-heading`}>
+    {heading}
+  </h2>
+  <ul class={variant === "headless" ? undefined : "mt-4 divide-y divide-stone-200"}>
+    {
+      cart.lineItems.map((item) => (
+        <li class={variant === "headless" ? undefined : "py-4"} data-carte-order-line-item>
+          <div class={rowClass}>
+            <div>
+              <p class={variant === "headless" ? undefined : "font-medium text-stone-950"}>
+                {item.quantity} × {item.name}
+              </p>
+              {item.modifiers.length > 0 ? (
+                <ul class={variant === "headless" ? undefined : "mt-1 space-y-1"}>
+                  {item.modifiers.map((modifier) => (
+                    <li class={mutedClass}>
+                      {modifier.name}
+                      {modifier.price > 0 ? ` +${formatCurrency(modifier.price, cart.currency)}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <p class={variant === "headless" ? undefined : "font-medium text-stone-950"}>
+              {formatCurrency(
+                item.quantity * (item.unitPrice + item.modifiers.reduce((sum, modifier) => sum + modifier.price, 0)),
+                cart.currency,
+              )}
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+  <dl class={variant === "headless" ? undefined : "mt-4 space-y-2 border-t border-stone-200 pt-4"}>
+    {
+      totalRows.map(([label, amount]) => (
+        <div class={rowClass}>
+          <dt class={mutedClass}>{label}</dt>
+          <dd>{formatCurrency(amount, cart.currency)}</dd>
+        </div>
+      ))
+    }
+    <div class={variant === "headless" ? undefined : "flex items-center justify-between gap-4 text-lg font-semibold"}>
+      <dt>Total</dt>
+      <dd>{formatCurrency(cart.totals.total, cart.currency)}</dd>
+    </div>
+  </dl>
+</section>

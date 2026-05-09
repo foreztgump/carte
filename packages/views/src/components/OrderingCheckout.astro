@@ -1,0 +1,104 @@
+---
+import OrderingCart from "./OrderingCart.astro";
+import { formatCurrency } from "../format.js";
+import { safeJsonForScript } from "../safe-json.js";
+import { orderingCheckoutClassesFor } from "../styles.js";
+import type { OrderingCheckoutProps } from "../types.js";
+
+const props = Astro.props as OrderingCheckoutProps;
+const { action, cart, heading = "Checkout", variant = "default" } = props;
+const checkoutClass = orderingCheckoutClassesFor(variant);
+const fieldClass =
+  variant === "headless"
+    ? undefined
+    : "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const labelClass = variant === "headless" ? undefined : "text-sm font-medium text-stone-950";
+const payload = safeJsonForScript({ cart });
+---
+
+<section aria-labelledby={`${cart.id}-checkout-heading`} class={checkoutClass} data-carte-variant={variant}>
+  <div class={variant === "headless" ? undefined : "flex items-center justify-between gap-4"}>
+    <h2
+      class={variant === "headless" ? undefined : "text-xl font-semibold text-stone-950"}
+      id={`${cart.id}-checkout-heading`}
+    >
+      {heading}
+    </h2>
+    <p class={variant === "headless" ? undefined : "font-semibold text-stone-950"}>
+      {formatCurrency(cart.totals.total, cart.currency)}
+    </p>
+  </div>
+
+  <button
+    aria-controls={`${cart.id}-checkout-summary`}
+    aria-expanded="false"
+    class={variant === "headless" ? undefined : "mt-4 flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-stone-950 ring-1 ring-amber-200"}
+    data-carte-summary-toggle
+    type="button"
+  >
+    <span>Order summary</span>
+    <span>{formatCurrency(cart.totals.total, cart.currency)}</span>
+  </button>
+
+  <div data-testid="ordering-checkout-summary" hidden id={`${cart.id}-checkout-summary`}>
+    <div class={variant === "headless" ? undefined : "mt-4"}>
+      <OrderingCart cart={cart} heading="Order summary" variant={variant} />
+    </div>
+  </div>
+
+  <!--
+    Checkout submission pattern (SG7-compliant):
+    Component is prop-driven and never fetches. Submission is a standard
+    form POST to the host-supplied `action` endpoint. The host page is
+    responsible for handling the response (typically a 303 redirect to
+    the validated Stripe Checkout URL — see OrderingCheckout consumer
+    docs for the open-redirect allowlist requirement).
+  -->
+  <form
+    action={action}
+    class={variant === "headless" ? undefined : "mt-5 grid gap-4"}
+    data-carte-checkout-form
+    method="post"
+  >
+    <label class={labelClass}>
+      Checkout name
+      <input autocomplete="name" class={fieldClass} name="name" required type="text" />
+    </label>
+    <label class={labelClass}>
+      Checkout email
+      <input autocomplete="email" class={fieldClass} name="email" required type="email" />
+    </label>
+    <label class={labelClass}>
+      Pickup notes
+      <textarea class={fieldClass} name="notes" rows="3"></textarea>
+    </label>
+    <input name="cart" type="hidden" value={payload} />
+    <button
+      class={variant === "headless" ? undefined : "rounded-full bg-amber-700 px-5 py-3 text-sm font-semibold text-white"}
+      type="submit"
+    >
+      Continue to secure payment
+    </button>
+    <p aria-live="polite" data-carte-checkout-status role="status"></p>
+    <p data-carte-checkout-error hidden role="alert"></p>
+  </form>
+</section>
+
+<script is:inline>
+  const storageKey = "carte:ordering-checkout:summary-expanded";
+  const toggles = document.querySelectorAll("[data-carte-summary-toggle]");
+  const setSummaryState = (toggle, expanded) => {
+    const targetId = toggle.getAttribute("aria-controls");
+    const target = targetId ? document.getElementById(targetId) : null;
+    toggle.setAttribute("aria-expanded", String(expanded));
+    if (target) target.hidden = !expanded;
+    globalThis.localStorage?.setItem(storageKey, String(expanded));
+  };
+  toggles.forEach((toggle) => {
+    const persisted = globalThis.localStorage?.getItem(storageKey) === "true";
+    setSummaryState(toggle, persisted);
+    toggle.addEventListener("click", () => {
+      setSummaryState(toggle, toggle.getAttribute("aria-expanded") !== "true");
+    });
+  });
+</script>

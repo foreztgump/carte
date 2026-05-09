@@ -1,0 +1,63 @@
+---
+import { formatDate, formatTime } from "../format.js";
+import { recordStatusClassesFor } from "../styles.js";
+import type { ReservationRecordStatusProps } from "../types.js";
+
+const props = Astro.props as ReservationRecordStatusProps;
+const { reservation, heading = "Reservation requested", variant = "default" } = props;
+const recordClass = recordStatusClassesFor(variant);
+const mutedClass = variant === "headless" ? undefined : "text-sm text-stone-600";
+const statusLabel = reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1);
+const partyLabel = `Party of ${reservation.partySize}`;
+---
+
+<section
+  aria-labelledby={`${reservation.token}-record-heading`}
+  class={recordClass}
+  data-carte-reservation-record-status
+  data-carte-variant={variant}
+>
+  <div class={variant === "headless" ? undefined : "flex flex-wrap items-start justify-between gap-4"}>
+    <div>
+      <p
+        class={variant === "headless" ? undefined : "text-sm font-medium text-amber-700"}
+        data-carte-reservation-record-label
+      >
+        Reservation {reservation.token}
+      </p>
+      <h1 class={variant === "headless" ? undefined : "mt-1 text-2xl font-semibold text-stone-950"} id={`${reservation.token}-record-heading`}>
+        {heading}
+      </h1>
+    </div>
+    <p class={variant === "headless" ? undefined : "rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900"}>
+      {statusLabel}
+    </p>
+  </div>
+
+  <dl class={variant === "headless" ? undefined : "mt-6 grid gap-4 sm:grid-cols-2"}>
+    <div>
+      <dt class={mutedClass}>Guest</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>{reservation.guestName}</dd>
+    </div>
+    <div>
+      <dt class={mutedClass}>Party size</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>{partyLabel}</dd>
+    </div>
+    <div>
+      <dt class={mutedClass}>Date</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>{formatDate(reservation.date)}</dd>
+    </div>
+    <div>
+      <dt class={mutedClass}>Time</dt>
+      <dd class={variant === "headless" ? undefined : "font-medium text-stone-950"}>{formatTime(reservation.time)}</dd>
+    </div>
+  </dl>
+
+  {
+    reservation.notes ? (
+      <p class={variant === "headless" ? undefined : "mt-6 rounded-2xl bg-stone-50 p-4 text-sm text-stone-700"}>
+        {reservation.notes}
+      </p>
+    ) : null
+  }
+</section>

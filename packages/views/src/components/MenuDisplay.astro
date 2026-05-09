@@ -1,0 +1,29 @@
+---
+import MenuSection from "./MenuSection.astro";
+import { safeJsonForScript } from "../safe-json.js";
+import { menuJsonLdFor } from "../schema.js";
+import { menuClassesFor } from "../styles.js";
+import type { MenuDisplayProps } from "../types.js";
+
+const props = Astro.props as MenuDisplayProps;
+const { menu, variant = "default" } = props;
+const menuClass = menuClassesFor(variant);
+const jsonLd = safeJsonForScript(menuJsonLdFor(menu));
+---
+
+<section aria-labelledby={`${menu.id}-heading`} class={menuClass} data-carte-variant={variant} id={menu.id}>
+  <header>
+    <h2 class={variant === "headless" ? undefined : "text-3xl font-bold tracking-tight text-stone-950"} id={`${menu.id}-heading`}>
+      {menu.name}
+    </h2>
+    {
+      menu.description ? (
+        <p class={variant === "headless" ? undefined : "mt-3 max-w-2xl text-base leading-7 text-stone-700"}>
+          {menu.description}
+        </p>
+      ) : null
+    }
+  </header>
+  {menu.sections.map((section) => <MenuSection section={section} variant={variant} />)}
+</section>
+<script is:inline type="application/ld+json" set:html={jsonLd} />

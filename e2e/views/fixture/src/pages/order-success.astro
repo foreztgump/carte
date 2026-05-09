@@ -1,0 +1,57 @@
+---
+import OrderRecordStatus from "@carte/views/components/OrderRecordStatus.astro";
+
+const orderId = Astro.url.searchParams.get("orderId") ?? "unknown-order";
+const order = {
+  id: orderId,
+  status: "preparing",
+  currency: "USD",
+  fulfillment: {
+    label: "Pickup window",
+    startsAt: "18:30",
+    endsAt: "18:45",
+  },
+  lineItems: [
+    {
+      id: "line-broccolini",
+      menuItemId: "broccolini",
+      name: "Charred Broccolini",
+      quantity: 2,
+      unitPrice: 1400,
+      modifiers: [{ id: "extra-almonds", name: "Extra almond crunch", price: 200 }],
+    },
+    {
+      id: "line-salad",
+      menuItemId: "salad",
+      name: "Citrus Salad",
+      quantity: 1,
+      unitPrice: 1200,
+      modifiers: [],
+    },
+  ],
+  totals: {
+    subtotal: 4400,
+    tax: 396,
+    serviceFee: 250,
+    total: 5046,
+  },
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Carte Order Success Fixture</title>
+  </head>
+  <body>
+    <main>
+      <OrderRecordStatus order={order} />
+    </main>
+    <script is:inline>
+      const orderId = new URL(globalThis.location.href).searchParams.get("orderId");
+      const label = document.querySelector("[data-carte-order-record-label]");
+      if (orderId && label) label.textContent = `Order ${orderId}`;
+    </script>
+  </body>
+</html>

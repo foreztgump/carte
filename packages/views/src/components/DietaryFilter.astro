@@ -1,0 +1,51 @@
+---
+import { allergenLabelFor } from "@carte/core/taxonomy";
+import { filterClassesFor } from "../styles.js";
+import type { DietaryFilterProps } from "../types.js";
+
+const props = Astro.props as DietaryFilterProps;
+const { allergens, targetMenuId, variant = "default" } = props;
+const filterClass = filterClassesFor(variant);
+const filterLegend = `Filter ${targetMenuId} by allergen`;
+---
+
+<form class={filterClass} data-carte-dietary-filter={targetMenuId} data-carte-variant={variant}>
+  <fieldset class={variant === "headless" ? undefined : "space-y-3"}>
+    <legend class={variant === "headless" ? undefined : "text-sm font-semibold text-stone-950"}>
+      Dietary filters
+    </legend>
+    <p class={variant === "headless" ? undefined : "text-sm text-stone-700"}>{filterLegend}</p>
+    <div class={variant === "headless" ? undefined : "flex flex-wrap gap-3"}>
+      {
+        allergens.map((allergen) => (
+          <label class={variant === "headless" ? undefined : "inline-flex items-center gap-2 text-sm"}>
+            <input
+              class={variant === "headless" ? undefined : "h-4 w-4 rounded border-stone-300 text-amber-700"}
+              data-carte-filter-for={targetMenuId}
+              type="checkbox"
+              value={allergen}
+            />
+            Hide {allergenLabelFor(allergen).toLowerCase()}
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+</form>
+
+<script define:vars={{ targetMenuId }} is:inline>
+  const inputs = document.querySelectorAll(`[data-carte-filter-for="${targetMenuId}"]`);
+  const selectedAllergens = () =>
+    Array.from(inputs)
+      .filter((input) => input instanceof HTMLInputElement && input.checked)
+      .map((input) => input.value);
+  const applyFilters = () => {
+    const menu = document.getElementById(targetMenuId);
+    const selected = selectedAllergens();
+    menu?.querySelectorAll("[data-carte-menu-item]").forEach((item) => {
+      const allergens = item.getAttribute("data-allergens")?.split(" ") ?? [];
+      item.hidden = selected.some((allergen) => allergens.includes(allergen));
+    });
+  };
+  inputs.forEach((input) => input.addEventListener("change", applyFilters));
+</script>

@@ -1,0 +1,123 @@
+---
+import DietaryFilter from "@carte/views/components/DietaryFilter.astro";
+import HoursWidget from "@carte/views/components/HoursWidget.astro";
+import MenuDisplay from "@carte/views/components/MenuDisplay.astro";
+import OrderingCart from "@carte/views/components/OrderingCart.astro";
+import OrderingCheckout from "@carte/views/components/OrderingCheckout.astro";
+import ReservationForm from "@carte/views/components/ReservationForm.astro";
+import RestaurantHero from "@carte/views/components/RestaurantHero.astro";
+import RestaurantInfo from "@carte/views/components/RestaurantInfo.astro";
+
+const restaurant = {
+  name: "Juniper Table",
+  tagline: "Seasonal Cal-Mediterranean plates",
+  heroImage: {
+    alt: "Colorful plates on a restaurant table",
+    src: "/hero.jpg",
+  },
+  cuisine: ["California", "Mediterranean"],
+  priceRange: "$$",
+};
+
+const info = {
+  addressLines: ["123 Market Street", "Harbor City, CA"],
+  phone: "(555) 010-4141",
+  email: "hello@junipertable.example",
+};
+
+const menu = {
+  id: "dinner",
+  name: "Dinner",
+  sections: [
+    {
+      id: "starters",
+      name: "Starters",
+      description: "Bright first plates for the table.",
+      items: [
+        {
+          id: "broccolini",
+          name: "Charred Broccolini",
+          description: "Lemon tahini, almond crunch, preserved chile.",
+          price: 1400,
+          currency: "USD",
+          allergens: ["tree_nuts"],
+          dietaryTags: ["vegan", "gluten_free"],
+        },
+        {
+          id: "salad",
+          name: "Citrus Salad",
+          description: "Cara cara orange, fennel, mint, olive oil.",
+          price: 1200,
+          currency: "USD",
+          allergens: [],
+          dietaryTags: ["vegan", "gluten_free"],
+        },
+      ],
+    },
+  ],
+};
+
+const hours = [
+  { day: "monday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "tuesday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "wednesday", opensAt: "17:00", closesAt: "22:00" },
+  { day: "thursday", opensAt: "17:00", closesAt: "23:00" },
+  { day: "friday", opensAt: "17:00", closesAt: "23:00" },
+  { day: "saturday", opensAt: "16:00", closesAt: "23:00" },
+  { day: "sunday", closed: true },
+];
+
+const orderingCart = {
+  id: "cart-fixture",
+  currency: "USD",
+  lineItems: [
+    {
+      id: "line-broccolini",
+      menuItemId: "broccolini",
+      name: "Charred Broccolini",
+      quantity: 2,
+      unitPrice: 1400,
+      modifiers: [{ id: "extra-almonds", name: "Extra almond crunch", price: 200 }],
+    },
+    {
+      id: "line-salad",
+      menuItemId: "salad",
+      name: "Citrus Salad",
+      quantity: 1,
+      unitPrice: 1200,
+      modifiers: [],
+    },
+  ],
+  totals: {
+    subtotal: 4400,
+    tax: 396,
+    serviceFee: 250,
+    total: 5046,
+  },
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Carte Views Menu Fixture</title>
+  </head>
+  <body>
+    <main>
+      <RestaurantHero restaurant={restaurant} />
+      <RestaurantInfo info={info} />
+      <HoursWidget hours={hours} today="thursday" />
+      <DietaryFilter allergens={["tree_nuts"]} targetMenuId={menu.id} />
+      <MenuDisplay menu={menu} />
+      <OrderingCart cart={orderingCart} />
+      <OrderingCheckout action="/_emdash/api/plugins/carte-orders-backend/checkout" cart={orderingCart} />
+      <ReservationForm
+        action="/_emdash/api/plugins/carte-reservations/submit"
+        defaultDate="2026-05-14"
+        defaultTime="19:00"
+        partySizeOptions={[2, 4, 6]}
+      />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+---
+import { shellClassesFor } from "../styles.js";
+import type { CarteShellProps } from "../types.js";
+
+const props = Astro.props as CarteShellProps;
+const { description, eyebrow, heading, variant = "default" } = props;
+const shellClass = shellClassesFor(variant);
+---
+
+<section class={shellClass} data-carte-variant={variant}>
+  {
+    eyebrow ? (
+      <p class={variant === "headless" ? undefined : "text-sm font-semibold uppercase tracking-wide text-amber-700"}>
+        {eyebrow}
+      </p>
+    ) : null
+  }
+  <h2 class={variant === "headless" ? undefined : "mt-2 text-3xl font-bold tracking-tight text-stone-950"}>
+    {heading}
+  </h2>
+  {
+    description ? (
+      <p class={variant === "headless" ? undefined : "mt-3 max-w-2xl text-base leading-7 text-stone-700"}>
+        {description}
+      </p>
+    ) : null
+  }
+  <div class={variant === "headless" ? undefined : "mt-6"}>
+    <slot />
+  </div>
+</section>

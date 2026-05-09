@@ -1,0 +1,15 @@
+{
+  "name": "@carte/views-menu-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1 --port 4327"
+  },
+  "dependencies": {
+    "@carte/core": "workspace:*",
+    "@carte/views": "workspace:*"
+  },
+  "devDependencies": {
+    "astro": "6.3.1"
+  }
+}
