@@ -17,6 +17,7 @@
     "test:e2e": "node scripts/run-playwright.mjs",
     "e2e:ui": "playwright test --ui",
     "verify:rich-results": "tsx scripts/verify-rich-results.ts",
+    "audit:sandbox-budget": "tsx scripts/audit-sandbox-budget.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

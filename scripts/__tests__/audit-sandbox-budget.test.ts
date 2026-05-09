@@ -2,8 +2,11 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 type RunResult = {
   exitCode: number | null;
@@ -66,8 +69,8 @@ const createFixture = async (source: string): Promise<string> => {
 
 const runAuditor = async (...args: string[]): Promise<RunResult> =>
   new Promise((resolve, reject) => {
-    const child = spawn("pnpm", ["exec", "tsx", "scripts/audit-sandbox-budget.ts", ...args], {
-      cwd: process.cwd(),
+    const child = spawn("pnpm", ["run", "audit:sandbox-budget", ...args], {
+      cwd: REPO_ROOT,
       stdio: ["ignore", "pipe", "pipe"],
     });
     const chunks: Buffer[] = [];

@@ -1,8 +1,12 @@
 import { createServer, type Server } from "node:http";
 import { once } from "node:events";
 import { spawn } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 const VALID_JSON_LD = {
   "@context": "https://schema.org",
@@ -119,8 +123,8 @@ describe("verify-rich-results script", () => {
 
 const runVerifier = async (url: string): Promise<RunResult> =>
   new Promise((resolve, reject) => {
-    const child = spawn("pnpm", ["exec", "tsx", "scripts/verify-rich-results.ts", "--url", url], {
-      cwd: process.cwd(),
+    const child = spawn("pnpm", ["run", "verify:rich-results", "--url", url], {
+      cwd: REPO_ROOT,
       stdio: ["ignore", "pipe", "pipe"],
     });
     const chunks: Buffer[] = [];
