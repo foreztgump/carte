@@ -5,6 +5,10 @@
   "description": "Carte core — menus, restaurant settings, hours, schema.org JSON-LD. Sandboxed EmDash plugin.",
   "type": "module",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/contracts.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",

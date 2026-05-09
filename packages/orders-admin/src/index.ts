@@ -9,6 +9,9 @@ import { definePlugin } from "emdash";
 
 import type { RouteContext } from "emdash";
 
+export { OrdersAdminApp, getInitialOrdersAdminRoute } from "./admin/App.js";
+export { mountOrdersAdmin } from "./admin/index.js";
+
 const PLUGIN_ID = "carte-orders-admin";
 const PLUGIN_VERSION = "0.1.0";
 
