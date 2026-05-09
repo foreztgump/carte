@@ -1,4 +1,4 @@
-import { CORE_ALLERGEN_TAGS } from "@carte/core/taxonomy/allergens";
+import { ALLERGEN_TAGS, type AllergenTag } from "@carte/core/taxonomy/allergens";
 
 import { prepareLlmTurn, redactPii } from "./pii-boundary.js";
 import type { ContentApi, DiffPreview, MutationResult, ToolRegistry } from "./tool-call.js";
@@ -105,16 +105,16 @@ function prepareTranslatePrompt(input: MenuItemAiInput): string {
   );
 }
 
-function suggestAllergens(input: MenuItemAiInput): string[] {
+function suggestAllergens(input: MenuItemAiInput): AllergenTag[] {
   const text = `${input.name} ${input.description ?? ""} ${input.ingredients?.join(" ") ?? ""}`;
   const normalized = text.toLowerCase();
-  return CORE_ALLERGEN_TAGS.filter((tag) =>
+  return ALLERGEN_TAGS.filter((tag) =>
     allergenNeedles(tag).some((needle) => normalized.includes(needle)),
   );
 }
 
 function allergenNeedles(tag: string): string[] {
-  const words = tag.split("-");
+  const words = tag.split("-").filter((word) => word.length > 3);
   return [tag, ...words, ...extraNeedles(tag)].map((word) => word.replace("soybeans", "soy"));
 }
 
