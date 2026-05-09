@@ -7,4 +7,5 @@ export default defineWorkspace([
   "packages/orders-admin",
   "packages/views",
   "packages/ai",
+  "scripts",
 ]);
