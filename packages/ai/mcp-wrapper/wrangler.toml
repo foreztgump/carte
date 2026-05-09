@@ -1,0 +1,6 @@
+name = "carte-ai-mcp-wrapper"
+main = "src/index.ts"
+compatibility_date = "2026-05-08"
+
+[vars]
+EM_DASH_PLUGIN_BASE_URL = "http://localhost:8787/_emdash/api/plugins/carte-ai"

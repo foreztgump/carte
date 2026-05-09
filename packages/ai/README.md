@@ -16,3 +16,10 @@ The Carte AI plugin will own:
 Execution model: **native** (locally registered, trusted). Capabilities
 declared: `content:read`, `content:write`, `network:request`. `allowedHosts`
 restricted to the LLM provider domains plus the license server.
+
+## MCP interim wrapper
+
+EmDash 0.9.0 has no public plugin-defined MCP registration API yet, so Carte
+v0.1 exposes AI tools through plugin routes and ships a standalone wrapper
+Worker in [`mcp-wrapper/`](./mcp-wrapper/). The wrapper README includes the
+`claude_desktop_config.json` snippet for pointing an MCP client at the Worker.

@@ -12,9 +12,14 @@
 import { definePlugin } from "emdash";
 
 import type { RouteContext } from "emdash";
+import { checkLicense } from "./license.js";
+import type { LicenseKv, LicenseRecord } from "./license.js";
+import { chatStreamRoute, historyRoute } from "./routes/chat.js";
+import { toolCallRoute } from "./tool-call.js";
 
 const PLUGIN_ID = "carte-ai";
 const PLUGIN_VERSION = "0.1.0";
+const LICENSE_ENDPOINT = "https://license.carteplugin.dev/v1/license";
 
 const stubRoute =
   (route: string) =>
@@ -22,6 +27,25 @@ const stubRoute =
     void ctx;
     return { ok: true, plugin: PLUGIN_ID, route };
   };
+
+export interface LicenseCheckRouteDeps {
+  fetchLicense?: (workspaceId: string) => Promise<LicenseRecord>;
+  now?: Date;
+}
+
+export const licenseCheckRoute = async (
+  ctx: RouteContext,
+  deps: LicenseCheckRouteDeps = {},
+): Promise<unknown> => {
+  const workspaceId = requireWorkspaceId(ctx);
+  const resolveLicense = deps.fetchLicense ?? fetchLicense;
+  return checkLicense({
+    workspaceId,
+    kv: ctx.kv as LicenseKv,
+    now: deps.now ?? new Date(),
+    fetchLicense: () => resolveLicense(workspaceId),
+  });
+};
 
 const factory = () =>
   definePlugin({
@@ -37,15 +61,50 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: stubRoute("admin") },
-      "chat-stream": { handler: stubRoute("chat-stream") },
-      "tool-call": { handler: stubRoute("tool-call") },
-      history: { handler: stubRoute("history") },
-      "license-check": { handler: stubRoute("license-check") },
+      "chat-stream": { handler: chatStreamRoute },
+      "tool-call": { handler: toolCallRoute },
+      history: { handler: historyRoute },
+      "license-check": { handler: licenseCheckRoute },
     },
     admin: {
       entry: "admin/index.js",
+      settingsSchema: {
+        anthropicApiKey: {
+          type: "secret",
+          label: "Anthropic API key",
+          description: "Workspace-scoped BYO LLM key stored as a plugin secret.",
+        },
+        openaiApiKey: {
+          type: "secret",
+          label: "OpenAI API key",
+          description: "Workspace-scoped BYO LLM key stored as a plugin secret.",
+        },
+        geminiApiKey: {
+          type: "secret",
+          label: "Gemini API key",
+          description: "Workspace-scoped BYO LLM key stored as a plugin secret.",
+        },
+      },
       pages: [{ path: "/carte-ai", label: "Chat", icon: "sparkles" }],
     },
   });
 
 export default factory;
+
+async function fetchLicense(workspaceId: string): Promise<LicenseRecord> {
+  const response = await fetch(
+    `${LICENSE_ENDPOINT}?workspaceId=${encodeURIComponent(workspaceId)}`,
+  );
+  if (!response.ok) {
+    throw new Error("License server returned an unsuccessful response.");
+  }
+  return (await response.json()) as LicenseRecord;
+}
+
+function requireWorkspaceId(ctx: RouteContext): string {
+  const header = ctx.request?.headers?.get("X-Workspace-Id") ?? null;
+  if (header !== null && header.trim() !== "") {
+    return header;
+  }
+  throw new Error("X-Workspace-Id header is required for license-check.");
+}

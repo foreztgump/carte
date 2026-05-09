@@ -1,0 +1,48 @@
+export const CHAT_RETENTION_SECONDS = 2_592_000;
+
+export type ChatRole = "user" | "assistant";
+
+export interface ChatMessage {
+  role: ChatRole;
+  content: string;
+}
+
+export interface ChatKv {
+  get<T>(key: string): Promise<T | null>;
+  put?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
+  set?: (key: string, value: unknown) => Promise<void>;
+}
+
+const chatKey = (workspaceId: string, userId: string) => `chat:${workspaceId}:${userId}`;
+
+export async function readChatHistory(
+  kv: ChatKv,
+  workspaceId: string,
+  userId: string,
+): Promise<ChatMessage[]> {
+  return (await kv.get<ChatMessage[]>(chatKey(workspaceId, userId))) ?? [];
+}
+
+export async function appendChatMessages(
+  kv: ChatKv,
+  workspaceId: string,
+  userId: string,
+  newMessages: ChatMessage[],
+): Promise<ChatMessage[]> {
+  const messages = [...(await readChatHistory(kv, workspaceId, userId)), ...newMessages];
+  await writeKv(kv, chatKey(workspaceId, userId), messages, CHAT_RETENTION_SECONDS);
+  return messages;
+}
+
+async function writeKv(
+  kv: ChatKv,
+  key: string,
+  value: unknown,
+  expirationTtl: number,
+): Promise<void> {
+  if (kv.put !== undefined) {
+    await kv.put(key, value, { expirationTtl });
+    return;
+  }
+  await kv.set?.(key, value);
+}
