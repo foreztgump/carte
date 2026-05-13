@@ -217,7 +217,7 @@ describe("@carte/orders-backend manifest", () => {
     expect(manifest.version).toBe("0.1.0");
   });
 
-  it("uses canonical capability names only and pins allowed Stripe hosts", () => {
+  it("uses canonical capability names and keeps Stripe hosts out of the allowlist", () => {
     const manifest = factory();
     for (const cap of manifest.capabilities) {
       expect(CANONICAL_CAPABILITIES.has(cap)).toBe(true);
@@ -228,7 +228,9 @@ describe("@carte/orders-backend manifest", () => {
       "email:send",
       "network:request",
     ]);
-    expect(manifest.allowedHosts).toEqual(["api.stripe.com", "checkout.stripe.com"]);
+    expect(manifest.allowedHosts).toEqual(["license.carteplugin.dev"]);
+    expect(manifest.allowedHosts).not.toContain("api.stripe.com");
+    expect(manifest.allowedHosts).not.toContain("checkout.stripe.com");
     expect(manifest.capabilities).not.toContain("network:request:unrestricted");
   });
 
