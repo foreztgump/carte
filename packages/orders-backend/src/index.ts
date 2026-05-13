@@ -1,13 +1,11 @@
 // @carte/orders-backend — sandboxed EmDash plugin skeleton.
 //
-// v0.1 scope (later mission): Stripe Checkout creation, idempotent
-// webhook receiver, refund. Stripe Checkout handles all payment-card
-// details; Carte infrastructure receives only Stripe tokens. The webhook is
-// idempotent via `ctx.kv` `idempotency:{stripeEventId}` with 7-day TTL.
+// v0.2 scope: Tender hosted-checkout creation and refund reconciliation.
+// Tender owns payment-card details and the provider webhook; Carte receives
+// only Tender payment references through backend routes and future hooks.
 //
 // Sandbox budget: each handler must fit inside 50ms CPU + 10 subrequests
-// + 30s wall-time + ~128MB memory. The future webhook is expected to use
-// ~7 of 10 subrequests; stay within budget.
+// + 30s wall-time + ~128MB memory. Stay within the 10-subrequest budget.
 
 import { definePlugin } from "emdash";
 
@@ -16,7 +14,6 @@ import { NETWORK_ALLOWED_HOSTS } from "./manifest-constants.js";
 import { adminRoute } from "./routes/admin.js";
 import { checkoutRoute } from "./routes/checkout.js";
 import { refundRoute } from "./routes/refund.js";
-import { webhookStripeRoute } from "./routes/webhook-stripe.js";
 
 import type { RouteContext } from "emdash";
 
@@ -232,7 +229,6 @@ const factory = () =>
     routes: {
       admin: { handler: adminRouteWithMigrationWarning },
       checkout: { handler: rateLimitedCheckoutRoute, public: true },
-      "webhook-stripe": { handler: webhookStripeRoute, public: true },
       refund: { handler: refundRoute },
     },
     admin: {
