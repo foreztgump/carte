@@ -234,8 +234,9 @@ describe("@carte/orders-backend manifest", () => {
 
   it("declares Tender and order settings without legacy Stripe secrets", () => {
     const manifest = factory();
+    const settings = manifest.admin.settingsSchema as Record<string, { options?: unknown }>;
 
-    expect(manifest.admin.settingsSchema).toMatchObject({
+    expect(settings).toMatchObject({
       tenderBaseUrl: { type: "string" },
       tenderPluginToken: { type: "secret", secret: true },
       tenderProvider: { type: "select", default: "stripe" },
@@ -247,10 +248,10 @@ describe("@carte/orders-backend manifest", () => {
       taxMode: { type: "select" },
       manualVatPercent: { type: "number" },
     });
-    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripePublicKey");
-    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripeSecretKey");
-    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripeWebhookSecret");
-    expect(manifest.admin.settingsSchema.tenderProvider.options).toEqual([
+    expect(settings).not.toHaveProperty("stripePublicKey");
+    expect(settings).not.toHaveProperty("stripeSecretKey");
+    expect(settings).not.toHaveProperty("stripeWebhookSecret");
+    expect(settings.tenderProvider?.options).toEqual([
       { value: "stripe", label: "Stripe via Tender" },
     ]);
   });
@@ -267,6 +268,10 @@ describe("@carte/orders-backend manifest", () => {
         },
         async set(key: string, value: unknown, options?: Record<string, unknown>) {
           seenKeys.add(key);
+          if (options === undefined) {
+            writes.push({ key, value });
+            return;
+          }
           writes.push({ key, value, options });
         },
       },

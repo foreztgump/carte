@@ -22,6 +22,8 @@ import type { RouteContext } from "emdash";
 const PLUGIN_ID = "carte-orders-backend";
 const PLUGIN_VERSION = "0.1.0";
 const CART_HOLD_TTL_SECONDS = 600;
+const STALE_STRIPE_WARNING_KEY = "migration:stripe-secret-warning-shown";
+const STALE_STRIPE_WARNING_TTL_SECONDS = 31_536_000;
 
 interface SettingFieldWithSecretMarker {
   type: "string" | "number" | "select" | "secret";
@@ -48,6 +50,30 @@ interface SourceOrderLineItem {
   modifiers: SourceModifierSelection[];
 }
 
+interface RuntimeSettings {
+  settings?: {
+    stripeSecretKey?: unknown;
+  };
+}
+
+interface RuntimeKv {
+  kv?: {
+    get<T = unknown>(key: string): Promise<T | null>;
+    set(key: string, value: unknown, options?: { expirationTtl: number }): Promise<void>;
+  };
+}
+
+interface BlockKitSection {
+  type: "section";
+  label: string;
+  text: string;
+}
+
+interface BlockKitPage {
+  type: "page";
+  blocks: unknown[];
+}
+
 export interface OrderLineItemSnapshot {
   menuItemId: string;
   itemName: string;
@@ -57,22 +83,23 @@ export interface OrderLineItemSnapshot {
 }
 
 const settingsSchema = {
-  stripePublicKey: {
+  tenderBaseUrl: {
     type: "string",
-    label: "Stripe publishable key",
-    description: "Publishable key used to initialize Stripe Checkout.",
+    label: "Tender base URL",
+    description: "Base URL for the Tender plugin routes, for example https://restaurant.example/.",
   },
-  stripeSecretKey: {
+  tenderPluginToken: {
     type: "secret",
-    label: "Stripe secret key",
-    description: "Secret API key used for server-side Stripe requests.",
+    label: "Tender plugin token",
+    description: "Plugin token issued by Tender for this Carte consumer.",
     secret: true,
   },
-  stripeWebhookSecret: {
-    type: "secret",
-    label: "Stripe webhook signing secret",
-    description: "Secret used to verify incoming Stripe webhook events.",
-    secret: true,
+  tenderProvider: {
+    type: "select",
+    label: "Tender provider",
+    description: "Payment provider identifier for downstream Tender signalling.",
+    default: "stripe",
+    options: [{ value: "stripe", label: "Stripe via Tender" }],
   },
   currency: {
     type: "select",
@@ -147,10 +174,45 @@ export const createOrderLineItemSnapshot = (
   })),
 });
 
+export const createStaleStripeSettingsWarning = async (
+  ctx: RouteContext,
+): Promise<BlockKitSection | null> => {
+  const runtime = ctx as RouteContext & RuntimeSettings & RuntimeKv;
+  const hasLegacySecret = typeof runtime.settings?.stripeSecretKey === "string";
+  if (!hasLegacySecret || runtime.kv === undefined) return null;
+
+  try {
+    const alreadyShown = await runtime.kv.get<string>(STALE_STRIPE_WARNING_KEY);
+    if (alreadyShown === "shown") return null;
+
+    await runtime.kv.set(STALE_STRIPE_WARNING_KEY, "shown", {
+      expirationTtl: STALE_STRIPE_WARNING_TTL_SECONDS,
+    });
+  } catch {
+    return null;
+  }
+
+  return {
+    type: "section",
+    label: "Tender migration notice",
+    text: "Move the legacy Stripe secret to @tender/stripe settings, then remove it from Carte orders backend settings.",
+  };
+};
+
 const rateLimitedCheckoutRoute = async (ctx: RouteContext): Promise<unknown> => {
   const limit = await enforceRateLimit(ctx, "checkout");
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
   return checkoutRoute(ctx);
+};
+
+const adminRouteWithMigrationWarning = async (ctx: RouteContext): Promise<unknown> => {
+  const [page, warning] = await Promise.all([
+    adminRoute(ctx),
+    createStaleStripeSettingsWarning(ctx).catch(() => null),
+  ]);
+  if (warning === null) return page;
+  const blockPage = page as BlockKitPage;
+  return { ...blockPage, blocks: [warning, ...blockPage.blocks] };
 };
 
 const factory = () =>
@@ -167,7 +229,7 @@ const factory = () =>
     },
     hooks: {},
     routes: {
-      admin: { handler: adminRoute },
+      admin: { handler: adminRouteWithMigrationWarning },
       checkout: { handler: rateLimitedCheckoutRoute, public: true },
       "webhook-stripe": { handler: webhookStripeRoute, public: true },
       refund: { handler: refundRoute },
