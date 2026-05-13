@@ -12,6 +12,7 @@
 import { definePlugin } from "emdash";
 
 import { enforceRateLimit, rateLimitResponse } from "./rate-limit.js";
+import { NETWORK_ALLOWED_HOSTS } from "./manifest-constants.js";
 import { adminRoute } from "./routes/admin.js";
 import { checkoutRoute } from "./routes/checkout.js";
 import { refundRoute } from "./routes/refund.js";
@@ -220,7 +221,7 @@ const factory = () =>
     id: PLUGIN_ID,
     version: PLUGIN_VERSION,
     capabilities: ["content:read", "content:write", "email:send", "network:request"],
-    allowedHosts: ["api.stripe.com", "checkout.stripe.com"],
+    allowedHosts: [...NETWORK_ALLOWED_HOSTS],
     storage: {
       carte_orders: {
         indexes: ["status", "orderType", "email", "createdAt", "stripeCheckoutSessionId"],
