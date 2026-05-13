@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RouteContext } from "emdash";
 
 import { NETWORK_ALLOWED_HOSTS } from "./manifest-constants.js";
-import { tenderPaymentSucceededHook } from "./index.js";
+import { TENDER_EVENT_PROCESSED_VALUE, tenderPaymentSucceededHook } from "./index.js";
 
 const STRIPE_API_URL = "https://api.stripe.com/v1/checkout/sessions";
 
@@ -41,7 +41,7 @@ describe("@carte/orders-backend Workers network allowlist", () => {
     const ctx = {
       kv: {
         async get(key: string) {
-          return processedKeys.has(key) ? "processed" : null;
+          return processedKeys.has(key) ? TENDER_EVENT_PROCESSED_VALUE : null;
         },
         async set(key: string) {
           processedKeys.add(key);

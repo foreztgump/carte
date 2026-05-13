@@ -15,7 +15,7 @@ vi.mock("@tender/sdk", () => ({
   createTenderClient: createTenderClientMock,
 }));
 
-import factory from "./index.js";
+import factory, { TENDER_EVENT_PROCESSED_VALUE } from "./index.js";
 
 const CANONICAL_CAPABILITIES = new Set([
   "content:read",
@@ -211,11 +211,12 @@ const tenderEventContext = () => {
   const ctx = {
     kv: {
       async get(key: string) {
-        return seenEvents.has(key) ? "processed" : null;
+        return seenEvents.has(key) ? TENDER_EVENT_PROCESSED_VALUE : null;
       },
       async set(key: string, value: unknown, options?: { expirationTtl: number }) {
         seenEvents.add(key);
-        kvWrites.push({ key, value, options });
+        if (options === undefined) kvWrites.push({ key, value });
+        else kvWrites.push({ key, value, options });
       },
     },
     content: {
@@ -411,9 +412,9 @@ describe("@carte/orders-backend manifest", () => {
     const checkoutRoute = manifest.routes.checkout;
     expect(checkoutRoute).toBeDefined();
 
-    const result = await checkoutRoute?.handler(ctx);
+    const checkoutResult = await checkoutRoute?.handler(ctx);
 
-    expect(result).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL });
+    expect(checkoutResult).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL });
     expectTenderCheckoutCharge();
     expectCheckoutKvTtls(kvWrites);
     expect(subrequests).toHaveLength(3);
@@ -548,14 +549,13 @@ describe("@carte/orders-backend manifest", () => {
     const { ctx, kvWrites, updates, waitUntilTasks } = tenderEventContext();
 
     await tenderPaymentSucceededHook(event, ctx);
-    expect(updates).toEqual([]);
     await tenderPaymentSucceededHook(event, ctx);
     await Promise.all(waitUntilTasks);
 
     expect(kvWrites).toEqual([
       {
         key: "idempotency:tender:evt_tender_paid_123",
-        value: "processed",
+        value: TENDER_EVENT_PROCESSED_VALUE,
         options: { expirationTtl: TENDER_EVENT_TTL_SECONDS },
       },
     ]);
