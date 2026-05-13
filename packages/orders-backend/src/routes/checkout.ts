@@ -1,8 +1,11 @@
+import { createTenderClient } from "@tender/sdk";
 import type { RouteContext } from "emdash";
 
-// Subrequest audit: 1 KV set for cart hold + 1 Stripe Checkout fetch = 2/10,
-// which stays below the feature cap of 4/10 for the sandboxed route.
-const STRIPE_CHECKOUT_SESSIONS_URL = "https://api.stripe.com/v1/checkout/sessions";
+// Subrequest audit: public checkout uses 1 KV get + 1 KV set for rate
+// limiting, 1 KV set for the cart hold, and normally 1 Tender charge fetch.
+// The Tender SDK may retry transient 502/503/504 responses up to 3 attempts,
+// so the worst-case retry path is 6/10 and remains under the sandbox cap.
+const ORIGINATING_PLUGIN_ID = "carte-orders-backend";
 const CART_HOLD_TTL_SECONDS = 600;
 
 interface CheckoutLineItemInput {
@@ -13,6 +16,7 @@ interface CheckoutLineItemInput {
 
 interface CheckoutInput {
   cartId: string;
+  orderId?: string;
   customerEmail?: string;
   successUrl: string;
   cancelUrl: string;
@@ -21,24 +25,14 @@ interface CheckoutInput {
 
 interface RuntimeSettings {
   settings?: {
-    stripeSecretKey?: string;
+    tenderBaseUrl?: string;
+    tenderPluginToken?: string;
     currency?: string;
   };
 }
 
 interface KvWithTtl {
   set(key: string, value: unknown, options: { expirationTtl: number }): Promise<void>;
-}
-
-interface StripeCheckoutResponse {
-  url?: unknown;
-}
-
-interface StripeLineItemParams {
-  body: URLSearchParams;
-  currency: string;
-  item: CheckoutLineItemInput;
-  index: number;
 }
 
 export interface CheckoutRouteResponse {
@@ -48,9 +42,9 @@ export interface CheckoutRouteResponse {
 export const checkoutRoute = async (ctx: RouteContext): Promise<CheckoutRouteResponse> => {
   const input = validateCheckoutInput(ctx.input);
   await persistCartHold(ctx, input);
-  const stripeResponse = await createStripeCheckoutSession(ctx, input);
+  const tenderResponse = await createTenderCharge(ctx, input);
 
-  return { checkoutUrl: stripeResponse.url };
+  return { checkoutUrl: tenderResponse.checkoutUrl };
 };
 
 const validateCheckoutInput = (input: unknown): CheckoutInput => {
@@ -100,17 +94,23 @@ const persistCartHold = async (ctx: RouteContext, input: CheckoutInput): Promise
   });
 };
 
-const createStripeCheckoutSession = async (
+const createTenderCharge = async (
   ctx: RouteContext,
   input: CheckoutInput,
-): Promise<{ url: string }> => {
-  const response = await requireHttp(ctx).fetch(STRIPE_CHECKOUT_SESSIONS_URL, {
-    method: "POST",
-    headers: stripeHeaders(requireStripeSecret(ctx)),
-    body: stripeBody(input, readCurrency(ctx)),
+): Promise<{ checkoutUrl: string }> => {
+  const response = await tenderClient(ctx).charge({
+    flow: "hosted",
+    amount: checkoutAmount(input),
+    currency: readCurrency(ctx),
+    customerEmail: input.customerEmail ?? "",
+    returnUrl: input.successUrl,
+    cancelUrl: input.cancelUrl,
+    description: checkoutDescription(input),
+    metadata: tenderMetadata(input),
+    originatingPluginId: ORIGINATING_PLUGIN_ID,
   });
 
-  return parseStripeCheckoutResponse(response);
+  return parseTenderChargeResponse(response.checkoutUrl);
 };
 
 const requireHttp = (ctx: RouteContext) => {
@@ -121,60 +121,41 @@ const requireHttp = (ctx: RouteContext) => {
   return ctx.http;
 };
 
-const requireStripeSecret = (ctx: RouteContext): string => {
-  const secret = (ctx as RouteContext & RuntimeSettings).settings?.stripeSecretKey;
-  if (!secret) {
-    throw new Error("Checkout requires Stripe secret setting.");
+const tenderClient = (ctx: RouteContext) => {
+  const settings = (ctx as RouteContext & RuntimeSettings).settings;
+  const baseUrl = settings?.tenderBaseUrl;
+  const pluginToken = settings?.tenderPluginToken;
+  if (!baseUrl || !pluginToken) {
+    throw new Error("Checkout requires Tender base URL and plugin token settings.");
   }
 
-  return secret;
+  return createTenderClient({
+    baseUrl,
+    pluginToken,
+    fetch: requireHttp(ctx).fetch as typeof fetch,
+  });
 };
 
 const readCurrency = (ctx: RouteContext): string =>
   (ctx as RouteContext & RuntimeSettings).settings?.currency ?? "usd";
 
-const stripeHeaders = (secret: string): HeadersInit => ({
-  Authorization: `Bearer ${secret}`,
-  "Content-Type": "application/x-www-form-urlencoded",
+const checkoutAmount = (input: CheckoutInput): number =>
+  input.lineItems.reduce((total, item) => total + item.unitAmount * item.quantity, 0);
+
+const checkoutDescription = (input: CheckoutInput): string =>
+  input.lineItems.map((item) => `${item.name} x${item.quantity}`).join(", ");
+
+const tenderMetadata = (
+  input: CheckoutInput,
+): { carte_order_id: string; carte_cart_id: string } => ({
+  carte_order_id: input.orderId ?? input.cartId,
+  carte_cart_id: input.cartId,
 });
 
-const stripeBody = (input: CheckoutInput, currency: string): string => {
-  const body = new URLSearchParams({
-    mode: "payment",
-    success_url: input.successUrl,
-    cancel_url: input.cancelUrl,
-    "metadata[cartId]": input.cartId,
-  });
-
-  appendCustomerEmail(body, input);
-  input.lineItems.forEach((item, index) => appendLineItem({ body, currency, item, index }));
-
-  return body.toString();
-};
-
-const appendCustomerEmail = (body: URLSearchParams, input: CheckoutInput): void => {
-  if (input.customerEmail) {
-    body.set("customer_email", input.customerEmail);
-  }
-};
-
-const appendLineItem = ({ body, currency, item, index }: StripeLineItemParams): void => {
-  const prefix = `line_items[${index}]`;
-  body.set(`${prefix}[price_data][currency]`, currency);
-  body.set(`${prefix}[price_data][unit_amount]`, String(item.unitAmount));
-  body.set(`${prefix}[price_data][product_data][name]`, item.name);
-  body.set(`${prefix}[quantity]`, String(item.quantity));
-};
-
-const parseStripeCheckoutResponse = async (response: Response): Promise<{ url: string }> => {
-  if (!response.ok) {
-    throw new Error(`Stripe Checkout failed with status ${response.status}.`);
+const parseTenderChargeResponse = (checkoutUrl: string | undefined) => {
+  if (!checkoutUrl) {
+    throw new Error("Tender charge response did not include a checkout URL.");
   }
 
-  const payload = (await response.json()) as StripeCheckoutResponse;
-  if (typeof payload.url !== "string" || payload.url.length === 0) {
-    throw new Error("Stripe Checkout response did not include a URL.");
-  }
-
-  return { url: payload.url };
+  return { checkoutUrl };
 };
