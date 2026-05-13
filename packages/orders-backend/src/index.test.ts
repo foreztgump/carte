@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RouteContext } from "emdash";
 
 const tenderChargeMock = vi.hoisted(() => vi.fn());
+const tenderRefundMock = vi.hoisted(() => vi.fn());
 const createTenderClientMock = vi.hoisted(() =>
   vi.fn(() => ({
     charge: tenderChargeMock,
+    refund: tenderRefundMock,
   })),
 );
 
@@ -370,32 +372,27 @@ describe("@carte/orders-backend manifest", () => {
     expect(subrequests.length).toBeLessThanOrEqual(7);
   });
 
-  it("refunds paid orders with deterministic Stripe idempotency and metadata", async () => {
+  it("refunds paid orders through Tender with mapped reason text", async () => {
     const manifest = factory();
-    const stripeRequests: RequestInit[] = [];
     const updates: Array<{ collection: string; id: string; value: unknown }> = [];
     const waitUntilTasks: Promise<unknown>[] = [];
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_123",
+      transactionId: "txn_123",
+      status: "succeeded",
+      providerRefundId: "re_123",
+    });
     const ctx = {
       input: {
         orderId: "order_123",
-        paymentIntentId: "pi_123",
+        transactionId: "txn_123",
         amount: 1295,
-        reason: "requested_by_customer",
+        reason: "Customer changed their mind",
       },
       auth: { scopes: ["admin"] },
       http: {
-        async fetch(url: string, init: RequestInit) {
-          expect(url).toBe("https://api.stripe.com/v1/refunds");
-          stripeRequests.push(init);
-          return new Response(
-            JSON.stringify({
-              id: "re_123",
-              payment_intent: "pi_123",
-              amount: 1295,
-              status: "succeeded",
-              created: 1_700_000_000,
-            }),
-          );
+        async fetch() {
+          throw new Error("Refund route must use Tender SDK instead of direct fetch.");
         },
       },
       content: {
@@ -403,7 +400,10 @@ describe("@carte/orders-backend manifest", () => {
           updates.push({ collection, id, value });
         },
       },
-      settings: { stripeSecretKey: "sk_test_orders" },
+      settings: {
+        tenderBaseUrl: "https://restaurant.example",
+        tenderPluginToken: "tender_plugin_token",
+      },
       waitUntil(task: Promise<unknown>) {
         waitUntilTasks.push(task);
       },
@@ -411,14 +411,22 @@ describe("@carte/orders-backend manifest", () => {
 
     await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
       ok: true,
-      refundId: "re_123",
+      refundId: "rf_123",
       status: "succeeded",
     });
     await Promise.all(waitUntilTasks);
 
-    expect(stripeRequests).toHaveLength(1);
-    expect(stripeRequests[0]?.headers).toMatchObject({
-      "Idempotency-Key": "refund-order_123",
+    expect(createTenderClientMock).toHaveBeenCalledWith({
+      baseUrl: "https://restaurant.example",
+      pluginToken: "tender_plugin_token",
+      fetch: expect.any(Function),
+    });
+    expect(tenderRefundMock).toHaveBeenCalledWith({
+      transactionId: "txn_123",
+      amount: 1295,
+      reason: "requested-by-customer",
+      reasonNote: "Customer changed their mind",
+      idempotencyKey: "refund-order_123",
     });
     expect(updates).toEqual([
       {
@@ -427,11 +435,11 @@ describe("@carte/orders-backend manifest", () => {
         value: {
           status: "refunded",
           refund: {
-            id: "re_123",
-            paymentIntentId: "pi_123",
+            id: "rf_123",
+            transactionId: "txn_123",
             amount: 1295,
             status: "succeeded",
-            createdAt: "2023-11-14T22:13:20.000Z",
+            createdAt: expect.any(String),
           },
         },
       },
