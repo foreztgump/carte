@@ -1,12 +1,14 @@
 # Project Guidelines
 
 ## Code Quality
+
 Mandatory: SRP, no magic values, descriptive names, error handling on boundaries,
 max 40 lines / 3 params / 3 nesting, no duplication, YAGNI, Law of Demeter, AAA tests.
 Prefer: KISS (simplest solution wins), deep modules, composition over inheritance,
 strategic programming. See CODE_PRINCIPLES.md for full details.
 
 ## Behavioral Rules
+
 - Never guess versions, APIs, or config syntax from training knowledge — always research first (see Tool Workflow below).
 - When a task feels too complex or requires touching many files, stop and ask before proceeding. Over-engineering is the most common failure mode.
 - When encountering an unfamiliar pattern in the codebase, use LSP (`goToDefinition`, `findReferences`) to understand it before modifying it. Don't assume based on naming alone.
@@ -16,9 +18,11 @@ strategic programming. See CODE_PRINCIPLES.md for full details.
 - Always request local code review before committing. Fix Critical and Important issues before proceeding. Never push unreviewed code.
 
 # Append project-specific gotchas below — silent footguns, API traps, conversion
+
 # boundaries, fallback values, platform constraints. Pull from audit_findings.
 
 ## EmDash Plugin Constraints
+
 Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constraints below are non-negotiable; violating any one is grounds for blocking review.
 
 - **Sandboxed runtime budget is HARD**: 50ms CPU + 10 subrequests + 30s wall time + ~128MB memory per invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
@@ -35,33 +39,37 @@ Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constra
 - **Schema.org JSON-LD**: validate against Google Rich Results Test before shipping any storefront component.
 
 ## Plugin Inventory (v0.1)
-| Plugin | License | Execution |
-|---|---|---|
-| `@carte/core` | MIT | Sandboxed |
-| `@carte/reservations` | MIT | Sandboxed |
-| `@carte/orders-backend` | MIT | Sandboxed |
-| `@carte/orders-admin` | MIT | Native React |
-| `@carte/views` | MIT (npm peer-dep) | Astro components |
-| `@carte/ai` | Commercial $99/yr (14-day trial) | Native React |
+
+| Plugin                  | License                          | Execution        |
+| ----------------------- | -------------------------------- | ---------------- |
+| `@carte/core`           | MIT                              | Sandboxed        |
+| `@carte/reservations`   | MIT                              | Sandboxed        |
+| `@carte/orders-backend` | MIT                              | Sandboxed        |
+| `@carte/orders-admin`   | MIT                              | Native React     |
+| `@carte/views`          | MIT (npm peer-dep)               | Astro components |
+| `@carte/ai`             | Commercial $99/yr (14-day trial) | Native React     |
 
 ## Stack Pins (locked 2026-05-06)
+
 - EmDash plugin SDK: pinned to `^0.9.0` (released 2026-05-01). Avoid `emdash@1.0.0` — it is on npm but not `latest`-tagged, and it removes `locals.emdash.invalidateManifest`, which Carte may rely on.
 
 Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
 
 ## Existing Conventions
-[Document what was found, not what we wish existed]
-- Commits: only one initial commit so far (`chore: initial commit`) — establish conventional-commit pattern going forward (`type(scope): desc`)
-- Branches: only `main` so far — feature/fix branches to follow Linear convention below once PREFIX is locked
-- Code style: TBD — TypeScript strict + ESLint + Prettier expected; not yet configured. Lock these in the first scaffolding change.
+
+- Commits: conventional commits with `[PRO-XXX]` trailer (locked; see CONTRIBUTING.md).
+- Branches: `feature/PRO-XXX-desc` / `fix/PRO-XXX-desc` (locked).
+- Code style: TypeScript strict (`noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`), ESLint flat config v9, Prettier, husky pre-commit + lint-staged (locked at v0.1).
 
 ## Linear Integration
+
 - **Repo Label**: `repo:carte` — all issues MUST have this label
 - **Project**: `CART` (working project assumption only; if the Linear team key is ever renamed in future, revisit this separately)
 - **Branch**: `feature/PRO-XXX-desc` or `fix/PRO-XXX-desc`
 - **Commit**: `type(scope): desc [PRO-XXX]`
 
 ## Tool Workflow
+
 - **Research**: Context7 (`resolve-library-id` → `query-docs`) → Tavily (`tavily_search`, `tavily_extract`, `tavily_research`, `tavily_crawl`, `tavily_map`) → OpenMemory (`openmemory query`). Never use built-in WebSearch or WebFetch.
 - **Linear**: Update status on start/complete. All issues need `repo:carte` label.
 - **Spec**: `/opsx:new` → `/opsx:ff` → review → implement → `/opsx:verify` → `/opsx:archive`
@@ -71,25 +79,30 @@ Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dy
 - **Test**: Playwright for E2E and visual validation.
 
 ## OpenMemory Checkpoints
+
 Mandatory at every workflow phase boundary. Run `openmemory query` before starting, `openmemory store` after completing.
 See `skills/openmemory_checkpoints` for the full checkpoint schedule.
 
 ## Workflows
+
 - `/work PRO-XXX` — Linear issue to PR
 - `/work-local '<description>'` — standalone workflow
 - `/resume` — continue where you left off
 - `/fix '<bug>'` — debug and fix
 
 ## Session Strategy
+
 - **New session** for: new features, unrelated bugs, fresh context needed
 - **Resume** (`/resume`) for: continuing in-progress work, returning after a break
 - Run `/compact` proactively at natural phase boundaries (after research, after planning, after implementation)
 - If a session exceeds ~200k tokens, start fresh and use OpenMemory + WRAP_UP.md to restore context
 
 ## Documentation Updates
+
 After every implementation, check and update: README.md, CHANGELOG.md, API docs, AGENTS.md, OpenSpec specs.
 
 ## Reference Documents
+
 - `PRD.md` — full v0.1 product requirements (~1040 lines, exhaustive spec for all 6 plugins)
 - `research/` — supporting research notes (EmDash SDK behavior, Cloudflare Workers limits, Stripe integration patterns)
 - **Open Questions**: PRD §"Open Questions" lists 12 items that MUST be resolved before code lock — including MCP tool registration API surface and free-trial enforcement strategy for `@carte/ai`. Follow the locked canonical capability names from the EmDash SKILL.md source of truth rather than any deprecated aliases.
