@@ -1,35 +1,41 @@
+import { createTenderClient } from "@tender/sdk";
+import type { TenderRefundRecordReason } from "@tender/sdk";
 import type { RouteContext } from "emdash";
 
-// Subrequest audit: 1 Stripe Refund fetch on the request path + 1 content
+// Subrequest audit: 1 Tender refund fetch on the request path + 1 content
 // update inside ctx.waitUntil = 2/10. Unauthorized callers return before
-// external side effects, using 0/10. The content store update runs after
-// the Stripe refund succeeds and is wrapped in waitUntil so it cannot
-// undo or block the refund response. If the content update fails, an
-// audit record is logged so an operator can reconcile the order state
-// manually (Stripe is the source of truth for refund settlement).
-const STRIPE_REFUNDS_URL = "https://api.stripe.com/v1/refunds";
+// external side effects, using 0/10. Tender owns payment settlement and
+// remains the source of truth if the deferred content update fails.
 const ADMIN_SCOPE = "admin";
 const AUDIT_PREFIX = "[carte-orders-backend][refund-reconcile]";
+const ORDER_STATUS_REFUNDED = "refunded";
 
 interface RuntimeSettings {
   settings?: {
-    stripeSecretKey?: string;
+    tenderBaseUrl?: string;
+    tenderPluginToken?: string;
   };
 }
 
 interface RefundInput {
   orderId: string;
-  paymentIntentId: string;
+  transactionId: string;
   amount?: number;
   reason?: string;
 }
 
-interface StripeRefundResponse {
-  id?: unknown;
-  payment_intent?: unknown;
-  amount?: unknown;
-  status?: unknown;
-  created?: unknown;
+interface TenderRefundResponse {
+  refundId: string;
+  transactionId: string;
+  status: string;
+}
+
+interface TenderRefundRequest {
+  transactionId: string;
+  amount: number;
+  reason: TenderRefundRecordReason;
+  reasonNote?: string;
+  idempotencyKey: string;
 }
 
 interface ContentStore {
@@ -38,7 +44,7 @@ interface ContentStore {
 
 interface RefundMetadata {
   id: string;
-  paymentIntentId: string;
+  transactionId: string;
   amount: number;
   status: string;
   createdAt: string;
@@ -53,8 +59,8 @@ export interface RefundRouteResponse {
 export const refundRoute = async (ctx: RouteContext): Promise<RefundRouteResponse> => {
   requireAdminScope(ctx);
   const input = validateRefundInput(ctx.input);
-  const refund = await createStripeRefund(ctx, input);
-  const metadata = refundMetadata(refund);
+  const refund = await createTenderRefund(ctx, input);
+  const metadata = refundMetadata(refund, input.amount);
 
   waitUntil(ctx, reconcileOrderState(ctx, input.orderId, metadata));
 
@@ -68,11 +74,11 @@ const reconcileOrderState = async (
 ): Promise<void> => {
   try {
     await contentStore(ctx).update("carte_orders", orderId, {
-      status: "refunded",
+      status: ORDER_STATUS_REFUNDED,
       refund: metadata,
     });
   } catch (error) {
-    // Stripe is the source of truth for refund settlement; surface a
+    // Tender is the source of truth for refund settlement; surface a
     // structured audit record so an operator can reconcile the order
     // record by hand instead of letting the failure escape silently.
     console.error(`${AUDIT_PREFIX} content update failed`, {
@@ -105,8 +111,8 @@ const validateRefundInput = (input: unknown): RefundInput => {
     throw new Error("Refund request shape is invalid.");
   }
 
-  if (!input.orderId || !input.paymentIntentId) {
-    throw new Error("Refund requires orderId and paymentIntentId.");
+  if (!input.orderId || !input.transactionId) {
+    throw new Error("Refund requires orderId and transactionId.");
   }
 
   return input;
@@ -118,20 +124,22 @@ const isRefundInput = (input: unknown): input is RefundInput => {
   }
 
   const candidate = input as Partial<RefundInput>;
-  return typeof candidate.orderId === "string" && typeof candidate.paymentIntentId === "string";
+  return typeof candidate.orderId === "string" && typeof candidate.transactionId === "string";
 };
 
-const createStripeRefund = async (
+const createTenderRefund = async (
   ctx: RouteContext,
   input: RefundInput,
-): Promise<StripeRefundResponse> => {
-  const response = await requireHttp(ctx).fetch(STRIPE_REFUNDS_URL, {
-    method: "POST",
-    headers: stripeHeaders(ctx, input.orderId),
-    body: stripeBody(input),
-  });
+): Promise<TenderRefundResponse> => {
+  const request: TenderRefundRequest = {
+    transactionId: input.transactionId,
+    amount: input.amount ?? 0,
+    reason: mapRefundReason(input.reason),
+    idempotencyKey: `refund-${input.orderId}`,
+  };
+  if (input.reason) request.reasonNote = input.reason;
 
-  return parseStripeRefund(response);
+  return tenderClient(ctx).refund(request);
 };
 
 const requireHttp = (ctx: RouteContext) => {
@@ -142,66 +150,38 @@ const requireHttp = (ctx: RouteContext) => {
   return ctx.http;
 };
 
-const stripeHeaders = (ctx: RouteContext, orderId: string): HeadersInit => ({
-  Authorization: `Bearer ${requireStripeSecret(ctx)}`,
-  "Content-Type": "application/x-www-form-urlencoded",
-  "Idempotency-Key": `refund-${orderId}`,
-});
-
-const requireStripeSecret = (ctx: RouteContext): string => {
-  const secret = (ctx as RouteContext & RuntimeSettings).settings?.stripeSecretKey;
-  if (!secret) {
-    throw new Error("Refund requires Stripe secret setting.");
+const tenderClient = (ctx: RouteContext) => {
+  const settings = (ctx as RouteContext & RuntimeSettings).settings;
+  const baseUrl = settings?.tenderBaseUrl;
+  const pluginToken = settings?.tenderPluginToken;
+  if (!baseUrl || !pluginToken) {
+    throw new Error("Refund requires Tender base URL and plugin token settings.");
   }
 
-  return secret;
-};
-
-const stripeBody = (input: RefundInput): string => {
-  const body = new URLSearchParams({
-    payment_intent: input.paymentIntentId,
-    "metadata[orderId]": input.orderId,
+  return createTenderClient({
+    baseUrl,
+    pluginToken,
+    fetch: requireHttp(ctx).fetch as typeof fetch,
   });
-
-  appendOptionalNumber(body, "amount", input.amount);
-  appendOptionalString(body, "reason", input.reason);
-  return body.toString();
 };
 
-const appendOptionalNumber = (body: URLSearchParams, key: string, value?: number): void => {
-  if (typeof value === "number") {
-    body.set(key, String(value));
+const mapRefundReason = (reason: string | undefined): TenderRefundRecordReason => {
+  const normalized = reason?.toLowerCase().replace(/[_-]/g, " ") ?? "";
+  if (normalized.includes("duplicate")) return "duplicate";
+  if (normalized.includes("fraud")) return "fraudulent";
+  if (normalized.includes("request") || normalized.includes("customer")) {
+    return "requested-by-customer";
   }
+  return "other";
 };
 
-const appendOptionalString = (body: URLSearchParams, key: string, value?: string): void => {
-  if (value) {
-    body.set(key, value);
-  }
-};
-
-const parseStripeRefund = async (response: Response): Promise<StripeRefundResponse> => {
-  if (!response.ok) {
-    throw new Error(`Stripe refund failed with status ${response.status}.`);
-  }
-
-  return (await response.json()) as StripeRefundResponse;
-};
-
-const refundMetadata = (refund: StripeRefundResponse): RefundMetadata => ({
-  id: stringValue(refund.id),
-  paymentIntentId: stringValue(refund.payment_intent),
-  amount: numberValue(refund.amount),
-  status: stringValue(refund.status),
-  createdAt: createdAtIso(refund.created),
+const refundMetadata = (refund: TenderRefundResponse, amount?: number): RefundMetadata => ({
+  id: refund.refundId,
+  transactionId: refund.transactionId,
+  amount: amount ?? 0,
+  status: refund.status,
+  createdAt: new Date().toISOString(),
 });
-
-const createdAtIso = (created: unknown): string =>
-  typeof created === "number" ? new Date(created * 1000).toISOString() : new Date().toISOString();
 
 const contentStore = (ctx: RouteContext): ContentStore =>
   (ctx as RouteContext & { content: ContentStore }).content;
-
-const stringValue = (value: unknown): string => (typeof value === "string" ? value : "");
-
-const numberValue = (value: unknown): number => (typeof value === "number" ? value : 0);

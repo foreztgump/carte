@@ -100,6 +100,50 @@ const tenderCheckoutInput = () => ({
   lineItems: [{ name: "Margherita Pizza", unitAmount: 1295, quantity: 2 }],
 });
 
+interface TenderRefundContextOptions {
+  input?: {
+    orderId: string;
+    transactionId: string;
+    amount?: number;
+    reason?: string;
+  };
+  update?: (collection: string, id: string, value: unknown) => Promise<void>;
+}
+
+const tenderRefundContext = (options: TenderRefundContextOptions = {}) => {
+  const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+  const waitUntilTasks: Promise<unknown>[] = [];
+  const ctx = {
+    input: options.input ?? {
+      orderId: "order_123",
+      transactionId: "txn_123",
+      amount: 1295,
+      reason: "Customer changed their mind",
+    },
+    auth: { scopes: ["admin"] },
+    http: {
+      async fetch() {
+        throw new Error("Refund route must use Tender SDK instead of direct fetch.");
+      },
+    },
+    content: {
+      async update(collection: string, id: string, value: unknown) {
+        if (options.update) return options.update(collection, id, value);
+        updates.push({ collection, id, value });
+      },
+    },
+    settings: {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
+    },
+    waitUntil(task: Promise<unknown>) {
+      waitUntilTasks.push(task);
+    },
+  } as unknown as RouteContext;
+
+  return { ctx, updates, waitUntilTasks };
+};
+
 const expectTenderCheckoutCharge = (): void => {
   expect(createTenderClientMock).toHaveBeenCalledWith({
     baseUrl: "https://restaurant.example",
@@ -374,40 +418,13 @@ describe("@carte/orders-backend manifest", () => {
 
   it("refunds paid orders through Tender with mapped reason text", async () => {
     const manifest = factory();
-    const updates: Array<{ collection: string; id: string; value: unknown }> = [];
-    const waitUntilTasks: Promise<unknown>[] = [];
+    const { ctx, updates, waitUntilTasks } = tenderRefundContext();
     tenderRefundMock.mockResolvedValueOnce({
       refundId: "rf_123",
       transactionId: "txn_123",
       status: "succeeded",
       providerRefundId: "re_123",
     });
-    const ctx = {
-      input: {
-        orderId: "order_123",
-        transactionId: "txn_123",
-        amount: 1295,
-        reason: "Customer changed their mind",
-      },
-      auth: { scopes: ["admin"] },
-      http: {
-        async fetch() {
-          throw new Error("Refund route must use Tender SDK instead of direct fetch.");
-        },
-      },
-      content: {
-        async update(collection: string, id: string, value: unknown) {
-          updates.push({ collection, id, value });
-        },
-      },
-      settings: {
-        tenderBaseUrl: "https://restaurant.example",
-        tenderPluginToken: "tender_plugin_token",
-      },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
 
     await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
       ok: true,
@@ -448,38 +465,23 @@ describe("@carte/orders-backend manifest", () => {
 
   it("logs an audit record when post-refund content store update fails", async () => {
     const manifest = factory();
-    const waitUntilTasks: Promise<unknown>[] = [];
     const errorLog: unknown[][] = [];
     const originalConsoleError = console.error;
+    const { ctx, waitUntilTasks } = tenderRefundContext({
+      input: { orderId: "order_456", transactionId: "txn_456" },
+      update: async () => {
+        throw new Error("Content store unavailable.");
+      },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "re_456",
+      transactionId: "txn_456",
+      status: "succeeded",
+      providerRefundId: "re_provider_456",
+    });
     console.error = (...args: unknown[]) => {
       errorLog.push(args);
     };
-    const ctx = {
-      input: { orderId: "order_456", paymentIntentId: "pi_456" },
-      auth: { scopes: ["admin"] },
-      http: {
-        async fetch() {
-          return new Response(
-            JSON.stringify({
-              id: "re_456",
-              payment_intent: "pi_456",
-              amount: 0,
-              status: "succeeded",
-              created: 1_700_000_000,
-            }),
-          );
-        },
-      },
-      content: {
-        async update() {
-          throw new Error("Content store unavailable.");
-        },
-      },
-      settings: { stripeSecretKey: "sk_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
 
     try {
       await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
@@ -665,7 +667,7 @@ describe("@carte/orders-backend manifest", () => {
     const manifest = factory();
     const sideEffects: string[] = [];
     const ctx = {
-      input: { orderId: "order_123", paymentIntentId: "pi_123" },
+      input: { orderId: "order_123", transactionId: "txn_123" },
       auth: { scopes: ["content:read"] },
       http: {
         async fetch() {
