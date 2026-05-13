@@ -1,17 +1,23 @@
 # `@carte/ai`
 
-Status: **skeleton (v0.1, paid SKU)** — no business logic yet.
+Status: **v0.1 shipped** (paid SKU).
 
-The Carte AI plugin will own:
+Shipped surfaces:
 
-- BYO-LLM chat (Anthropic / OpenAI / Google) with tool-call streaming
-- Read-by-default, write-on-confirm contract — PII never leaves to the
-  LLM without explicit user consent. Enforced at the tool-call boundary,
-  not in prompts.
-- Server-side license check at `license.carteplugin.dev` with a 24-hour
-  KV cache and **graceful degrade on outage** — never lock out the
-  restaurant.
-- 14-day free trial, then $99/yr via Lemon Squeezy.
+- License + trial state machine (`license.ts`) — server-side check at
+  `license.carteplugin.dev` with 24-hour KV cache and graceful degrade on
+  outage; 14-day trial, then $99/yr via Lemon Squeezy.
+- BYO-LLM SSE chat route (`routes/chat.ts`) with chat history persistence
+  (`chat-history.ts`).
+- PII boundary enforcement at the tool-call layer (`pii-boundary.ts`) —
+  PII never leaves to the LLM without explicit user consent.
+- Write-on-confirm tool calls (`tool-call.ts`) with diff preview, audit
+  log, and 10-minute undo window.
+- Native React admin (`components/ChatPanel.tsx`,
+  `components/InlineAiActions.tsx`) with inline action buttons.
+- Rate limiting on chat routes (`rate-limit.ts`).
+- Workspace-scoped secrets (`workspace-secrets.ts`) and PII KV egress
+  discipline tests.
 
 Execution model: **native** (locally registered, trusted). Capabilities
 declared: `content:read`, `content:write`, `network:request`. `allowedHosts`

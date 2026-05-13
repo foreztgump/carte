@@ -1,13 +1,16 @@
 # `@carte/core`
 
-Status: **skeleton (v0.1)** — no business logic yet.
+Status: **v0.1 shipped**.
 
-The Carte core plugin will own:
+Shipped surfaces:
 
-- Menu items, sections, and menus
-- Restaurant settings (currency, locale, timezone, address)
-- Hours of operation
-- Schema.org JSON-LD output for menus and the restaurant entity
+- Menu, menu section, and menu item collections with Portable Text descriptions.
+- Restaurant settings (currency, locale, timezone, address) and hours of operation.
+- Schema.org `Restaurant` + `Menu` JSON-LD output via a public route (`jsonld.ts`).
+- Allergen / dietary taxonomy (`taxonomy/allergens.ts`) with canonical tag list.
+- 86 button on menu items with timezone-aware auto-restore via scheduled hooks.
+- Block Kit admin pages for menus, sections, items, hours, and restaurant info.
+- Audit-log writer for admin mutations (`audit/log.ts`).
 
 Execution model: **sandboxed** (Cloudflare Worker per invocation). Capabilities declared:
 `content:read`, `content:write`, `media:read`. No outbound network, no email.

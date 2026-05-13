@@ -1,17 +1,25 @@
 # `@carte/views`
 
-Status: **skeleton (v0.1)** — no business logic yet.
+Status: **v0.1 shipped**.
 
 This is a **peer-dep npm library — NOT an EmDash plugin.** It ships
-Astro components and React building blocks that consumers drop into
-their own storefront (their own Astro site, their own React app). No
-sandbox, no manifest, no `definePlugin()` call.
+Astro components that consumers drop into their own storefront (their
+own Astro site). No sandbox, no manifest, no `definePlugin()` call.
 
-The future v0.1 surface (later mission):
+Shipped components (under `src/components/`):
 
-- `MenuItem`, `MenuSection`, `Menu` — server components rendering
-  schema.org JSON-LD inline.
-- `ReservationForm`, `OrderCart` — client islands wiring up
-  `@carte/reservations` and `@carte/orders-backend` plugin routes.
-- Validate JSON-LD output against Google Rich Results Test before
-  shipping any storefront component.
+- `RestaurantHero`, `RestaurantInfo`, `HoursWidget` — storefront chrome.
+- `MenuDisplay`, `MenuSection`, `MenuItem` — menu rendering with inline
+  schema.org JSON-LD.
+- `DietaryFilter` — client-side dietary/allergen filter.
+- `ReservationForm` — client island wired to `@carte/reservations`.
+- `OrderingCart`, `OrderingCheckout` — client islands wired to
+  `@carte/orders-backend`.
+- `OrderRecordStatus`, `ReservationRecordStatus` — public confirmation
+  / status pages.
+- `CarteShell` — shared layout wrapper.
+
+JSON-LD output is validated against Google Rich Results Test before
+shipping. Known v0.1 issue: `DietaryFilter` crashes on unknown allergen
+tags
+([PRO-638](https://linear.app/projects-linear/issue/PRO-638/carteviews-dietaryfilter-crashes-on-unknown-allergen-tag-tolowercase)).

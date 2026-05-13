@@ -1,13 +1,17 @@
 # `@carte/orders-backend`
 
-Status: **skeleton (v0.1)** — no business logic yet.
+Status: **v0.1 shipped**.
 
-The Carte orders backend will own:
+Shipped surfaces:
 
-- Stripe Checkout session creation
-- Stripe webhook receiver (idempotent via `ctx.kv` `idempotency:{stripeEventId}` 7-day TTL)
-- Admin-authenticated refund route
-- Block Kit admin route for basic order ops
+- Stripe Checkout session creation (`routes/checkout.ts`) — Carte never sees
+  raw PAN/CVC.
+- Idempotent Stripe webhook (`routes/webhook-stripe.ts`) — dedupe via KV
+  `idempotency:{stripeEventId}` with 7-day TTL per AGENTS.md.
+- Admin-authenticated refund route (`routes/refund.ts`) with order snapshot
+  updates.
+- Order snapshots at checkout time (line items, pricing, customer contact).
+- Sandboxed Block Kit admin route (`routes/admin.ts`) for basic order ops.
 
 Execution model: **sandboxed**. Capabilities declared:
 `content:read`, `content:write`, `email:send`, `network:request` — `allowedHosts`
