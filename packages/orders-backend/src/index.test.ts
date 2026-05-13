@@ -2,6 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RouteContext } from "emdash";
 
+const tenderChargeMock = vi.hoisted(() => vi.fn());
+const createTenderClientMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    charge: tenderChargeMock,
+  })),
+);
+
+vi.mock("@tender/sdk", () => ({
+  createTenderClient: createTenderClientMock,
+}));
+
 import factory from "./index.js";
 
 const CANONICAL_CAPABILITIES = new Set([
@@ -41,6 +52,82 @@ type RateLimitCounters = {
   get: number;
   set: number;
   setOptions: Array<Record<string, unknown> | undefined>;
+};
+
+const TENDER_CHECKOUT_URL =
+  "https://restaurant.example/_emdash/api/plugins/tender-core/checkout/txn_123";
+
+const tenderCheckoutContext = () => {
+  const subrequests: string[] = [];
+  const kvWrites: Array<{ key: string; options?: { expirationTtl: number } }> = [];
+  const ctx = {
+    input: tenderCheckoutInput(),
+    request: new Request("https://example.test/checkout"),
+    requestMeta: { ip: "203.0.113.44", userAgent: null, referer: null, geo: null },
+    kv: {
+      async get() {
+        subrequests.push("kv.get");
+        return null;
+      },
+      async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
+        subrequests.push("kv.set");
+        if (options) kvWrites.push({ key, options });
+      },
+    },
+    http: {
+      async fetch(url: string, init: RequestInit) {
+        subrequests.push("http.fetch");
+        return new Response(JSON.stringify({ url, init }));
+      },
+    },
+    settings: {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
+      currency: "usd",
+    },
+  } as unknown as RouteContext;
+  return { ctx, kvWrites, subrequests };
+};
+
+const tenderCheckoutInput = () => ({
+  cartId: "cart_123",
+  orderId: "order_123",
+  customerEmail: "guest@example.com",
+  successUrl: "https://restaurant.example/orders/success",
+  cancelUrl: "https://restaurant.example/orders/cancel",
+  lineItems: [{ name: "Margherita Pizza", unitAmount: 1295, quantity: 2 }],
+});
+
+const expectTenderCheckoutCharge = (): void => {
+  expect(createTenderClientMock).toHaveBeenCalledWith({
+    baseUrl: "https://restaurant.example",
+    pluginToken: "tender_plugin_token",
+    fetch: expect.any(Function),
+  });
+  expect(tenderChargeMock).toHaveBeenCalledWith({
+    flow: "hosted",
+    amount: 2590,
+    currency: "usd",
+    customerEmail: "guest@example.com",
+    returnUrl: "https://restaurant.example/orders/success",
+    cancelUrl: "https://restaurant.example/orders/cancel",
+    description: "Margherita Pizza x2",
+    metadata: { carte_order_id: "order_123", carte_cart_id: "cart_123" },
+    originatingPluginId: "carte-orders-backend",
+  });
+};
+
+const expectCheckoutKvTtls = (
+  kvWrites: Array<{ key: string; options?: { expirationTtl: number } }>,
+): void => {
+  expect(kvWrites).toContainEqual({
+    key: "cart-hold:cart_123",
+    options: { expirationTtl: 600 },
+  });
+  expect(kvWrites).toContainEqual({
+    key: "rate-limit:checkout:203.0.113.44",
+    options: { expirationTtl: 120 },
+  });
 };
 
 const rateLimitContext = (ip: string | null, counters: RateLimitCounters): RouteContext => {
@@ -172,65 +259,24 @@ describe("@carte/orders-backend manifest", () => {
     });
   });
 
-  it("creates Stripe Checkout sessions and stores cart holds for 600 seconds", async () => {
+  it("creates hosted Tender charges and stores cart holds for 600 seconds", async () => {
     const manifest = factory();
-    const subrequests: string[] = [];
-    const kvWrites: Array<{ key: string; options?: { expirationTtl: number } }> = [];
-    const ctx = {
-      input: {
-        cartId: "cart_123",
-        customerEmail: "guest@example.com",
-        successUrl: "https://restaurant.example/orders/success",
-        cancelUrl: "https://restaurant.example/orders/cancel",
-        lineItems: [
-          {
-            name: "Margherita Pizza",
-            unitAmount: 1295,
-            quantity: 2,
-          },
-        ],
-      },
-      request: new Request("https://example.test/checkout"),
-      requestMeta: { ip: "203.0.113.44", userAgent: null, referer: null, geo: null },
-      kv: {
-        async get() {
-          subrequests.push("kv.get");
-          return null;
-        },
-        async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
-          subrequests.push("kv.set");
-          if (options) {
-            kvWrites.push({ key, options });
-          }
-        },
-      },
-      http: {
-        async fetch(url: string, init: RequestInit) {
-          subrequests.push("http.fetch");
-          expect(url).toBe("https://api.stripe.com/v1/checkout/sessions");
-          expect(init.method).toBe("POST");
-          return new Response(JSON.stringify({ url: "https://checkout.stripe.com/c/pay_123" }));
-        },
-      },
-      settings: { stripeSecretKey: "sk_test_orders", currency: "usd" },
-    } as unknown as RouteContext;
+    const { ctx, kvWrites, subrequests } = tenderCheckoutContext();
+    tenderChargeMock.mockResolvedValueOnce({
+      transactionId: "txn_123",
+      status: "requires-action",
+      checkoutUrl: TENDER_CHECKOUT_URL,
+    });
 
     const checkoutRoute = manifest.routes.checkout;
     expect(checkoutRoute).toBeDefined();
 
     const result = await checkoutRoute?.handler(ctx);
 
-    expect(result).toEqual({ checkoutUrl: "https://checkout.stripe.com/c/pay_123" });
-    expect(kvWrites).toContainEqual({
-      key: "cart-hold:cart_123",
-      options: { expirationTtl: 600 },
-    });
-    expect(kvWrites).toContainEqual({
-      key: "rate-limit:checkout:203.0.113.44",
-      options: { expirationTtl: 120 },
-    });
-    expect(subrequests).toHaveLength(4);
-    expect(subrequests.length).toBeLessThanOrEqual(4);
+    expect(result).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL });
+    expectTenderCheckoutCharge();
+    expectCheckoutKvTtls(kvWrites);
+    expect(subrequests).toHaveLength(3);
   });
 
   it("rejects Stripe webhooks with an invalid signature before state reads", async () => {
