@@ -232,13 +232,13 @@ describe("@carte/orders-backend manifest", () => {
     expect(manifest.capabilities).not.toContain("network:request:unrestricted");
   });
 
-  it("declares Stripe and order settings with secret fields protected", () => {
+  it("declares Tender and order settings without legacy Stripe secrets", () => {
     const manifest = factory();
 
     expect(manifest.admin.settingsSchema).toMatchObject({
-      stripePublicKey: { type: "string" },
-      stripeSecretKey: { type: "secret", secret: true },
-      stripeWebhookSecret: { type: "secret", secret: true },
+      tenderBaseUrl: { type: "string" },
+      tenderPluginToken: { type: "secret", secret: true },
+      tenderProvider: { type: "select", default: "stripe" },
       currency: { type: "select", default: "usd" },
       cartHoldTtlSeconds: { type: "number", default: 600 },
       orderTypes: { type: "select", default: "pickup,delivery" },
@@ -247,6 +247,49 @@ describe("@carte/orders-backend manifest", () => {
       taxMode: { type: "select" },
       manualVatPercent: { type: "number" },
     });
+    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripePublicKey");
+    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripeSecretKey");
+    expect(manifest.admin.settingsSchema).not.toHaveProperty("stripeWebhookSecret");
+    expect(manifest.admin.settingsSchema.tenderProvider.options).toEqual([
+      { value: "stripe", label: "Stripe via Tender" },
+    ]);
+  });
+
+  it("shows the stale Stripe secret migration warning exactly once without leaking the key", async () => {
+    const { createStaleStripeSettingsWarning } = await import("./index.js");
+    const writes: Array<{ key: string; value: unknown; options?: Record<string, unknown> }> = [];
+    const seenKeys = new Set<string>();
+    const ctx = {
+      settings: { stripeSecretKey: "sk_live_should_never_leak" },
+      kv: {
+        async get(key: string) {
+          return seenKeys.has(key) ? "shown" : null;
+        },
+        async set(key: string, value: unknown, options?: Record<string, unknown>) {
+          seenKeys.add(key);
+          writes.push({ key, value, options });
+        },
+      },
+    } as unknown as RouteContext;
+
+    const firstWarning = await createStaleStripeSettingsWarning(ctx);
+    const secondWarning = await createStaleStripeSettingsWarning(ctx);
+
+    expect(firstWarning).toMatchObject({
+      type: "section",
+      label: "Tender migration notice",
+      text: expect.stringContaining("Move the legacy Stripe secret to @tender/stripe settings"),
+    });
+    expect(secondWarning).toBeNull();
+    expect(writes).toEqual([
+      {
+        key: "migration:stripe-secret-warning-shown",
+        value: "shown",
+        options: { expirationTtl: 31_536_000 },
+      },
+    ]);
+    expect(JSON.stringify(firstWarning)).not.toContain("sk_live_should_never_leak");
+    expectNoForbiddenBlockKitFields(firstWarning);
   });
 
   it("declares the orders collection for line item snapshot writes", () => {
