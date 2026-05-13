@@ -58,6 +58,7 @@ type RateLimitCounters = {
 
 const TENDER_CHECKOUT_URL =
   "https://restaurant.example/_emdash/api/plugins/tender-core/checkout/txn_123";
+const TENDER_EVENT_TTL_SECONDS = 604_800;
 
 const tenderCheckoutContext = () => {
   const subrequests: string[] = [];
@@ -202,6 +203,34 @@ const checkoutHandler = () => {
   return handler;
 };
 
+const tenderEventContext = () => {
+  const seenEvents = new Set<string>();
+  const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+  const waitUntilTasks: Promise<unknown>[] = [];
+  const kvWrites: Array<{ key: string; value: unknown; options?: { expirationTtl: number } }> = [];
+  const ctx = {
+    kv: {
+      async get(key: string) {
+        return seenEvents.has(key) ? "processed" : null;
+      },
+      async set(key: string, value: unknown, options?: { expirationTtl: number }) {
+        seenEvents.add(key);
+        kvWrites.push({ key, value, options });
+      },
+    },
+    content: {
+      async update(collection: string, id: string, value: unknown) {
+        updates.push({ collection, id, value });
+      },
+    },
+    waitUntil(task: Promise<unknown>) {
+      waitUntilTasks.push(task);
+    },
+  } as unknown as RouteContext;
+
+  return { ctx, kvWrites, updates, waitUntilTasks };
+};
+
 const callCheckout = async (ctx: RouteContext): Promise<unknown> => {
   try {
     return await checkoutHandler()(ctx);
@@ -239,6 +268,14 @@ describe("@carte/orders-backend manifest", () => {
     const legacyStripeWebhookRoute = ["webhook", "stripe"].join("-");
 
     expect(manifest.routes).not.toHaveProperty(legacyStripeWebhookRoute);
+  });
+
+  it("declares placeholder Tender payment hooks for EmDash 0.10 namespace dispatch", () => {
+    const manifest = factory();
+    const hooks = manifest.hooks as Record<string, unknown>;
+
+    expect(hooks).toHaveProperty("tender:payment.succeeded");
+    expect(hooks).toHaveProperty("tender:payment.refunded");
   });
 
   it("declares Tender and order settings without legacy Stripe secrets", () => {
@@ -500,6 +537,53 @@ describe("@carte/orders-backend manifest", () => {
       "Refund route requires admin scope.",
     );
     expect(sideEffects).toEqual([]);
+  });
+
+  it("exports a Tender payment-succeeded hook that idempotently marks orders paid", async () => {
+    const { tenderPaymentSucceededHook } = await import("./index.js");
+    const event = {
+      id: "evt_tender_paid_123",
+      metadata: { carte_order_id: "order_123" },
+    };
+    const { ctx, kvWrites, updates, waitUntilTasks } = tenderEventContext();
+
+    await tenderPaymentSucceededHook(event, ctx);
+    expect(updates).toEqual([]);
+    await tenderPaymentSucceededHook(event, ctx);
+    await Promise.all(waitUntilTasks);
+
+    expect(kvWrites).toEqual([
+      {
+        key: "idempotency:tender:evt_tender_paid_123",
+        value: "processed",
+        options: { expirationTtl: TENDER_EVENT_TTL_SECONDS },
+      },
+    ]);
+    expect(waitUntilTasks).toHaveLength(1);
+    expect(updates).toEqual([
+      {
+        collection: "carte_orders",
+        id: "order_123",
+        value: {
+          status: "paid",
+          payment: {
+            tenderEventId: "evt_tender_paid_123",
+            paidAt: expect.any(String),
+          },
+        },
+      },
+    ]);
+  });
+
+  it("exports a Tender payment-refunded hook that ignores events without Carte metadata", async () => {
+    const { tenderPaymentRefundedHook } = await import("./index.js");
+    const { ctx, kvWrites, updates, waitUntilTasks } = tenderEventContext();
+
+    await tenderPaymentRefundedHook({ id: "evt_without_order", metadata: {} }, ctx);
+
+    expect(kvWrites).toEqual([]);
+    expect(waitUntilTasks).toEqual([]);
+    expect(updates).toEqual([]);
   });
 });
 
