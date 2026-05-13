@@ -12,9 +12,11 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
-    "emdash": "^0.9.0"
+    "emdash": "^0.9.0",
+    "@tender/sdk": "^0.1.0"
   },
   "devDependencies": {
+    "@tender/sdk": "workspace:*",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }
