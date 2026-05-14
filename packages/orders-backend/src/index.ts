@@ -226,8 +226,8 @@ const factory = () =>
     allowedHosts: [...NETWORK_ALLOWED_HOSTS],
     storage: {
       carte_orders: {
-        indexes: ["status", "orderType", "email", "createdAt", "stripeCheckoutSessionId"],
-        uniqueIndexes: ["orderNumber", "stripeCheckoutSessionId"],
+        indexes: ["status", "orderType", "email", "createdAt"],
+        uniqueIndexes: ["orderNumber"],
       },
     },
     hooks: {
