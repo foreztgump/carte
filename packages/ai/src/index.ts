@@ -15,7 +15,7 @@ import type { RouteContext } from "emdash";
 import { checkLicense } from "./license.js";
 import type { LicenseKv, LicenseRecord } from "./license.js";
 import { chatStreamRoute, historyRoute } from "./routes/chat.js";
-import { toolCallRoute } from "./tool-call.js";
+import { auditListRoute, confirmCallRoute, toolCallRoute, undoCallRoute } from "./tool-call.js";
 
 const PLUGIN_ID = "carte-ai";
 const PLUGIN_VERSION = "0.1.0";
@@ -61,10 +61,13 @@ const factory = () =>
     hooks: {},
     routes: {
       admin: { handler: stubRoute("admin") },
+      "audit-list": { handler: auditListRoute },
       "chat-stream": { handler: chatStreamRoute },
+      "confirm-call": { handler: confirmCallRoute },
       "tool-call": { handler: toolCallRoute },
       history: { handler: historyRoute },
       "license-check": { handler: licenseCheckRoute },
+      "undo-call": { handler: undoCallRoute },
     },
     admin: {
       entry: "admin/index.js",

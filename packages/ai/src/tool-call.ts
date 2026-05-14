@@ -3,6 +3,7 @@ export const TOOL_UNDO_TTL_SECONDS = 600;
 
 export interface ToolCallKv {
   get<T>(key: string): Promise<T | null>;
+  list?: (prefix?: string) => Promise<Array<{ key: string; value: unknown }>>;
   put?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
   set?: (key: string, value: unknown) => Promise<void>;
   delete?: (key: string) => Promise<boolean | void>;
@@ -93,6 +94,20 @@ const MENU_ITEMS_COLLECTION = "carte_menu_items";
 const TOOL_CALL_REDACTED_VALUE = "[REDACTED]";
 const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 const PHONE_PATTERN = /(?:\+?\d|\(\d{3}\))[\d\s().-]{6,}\d/g;
+const HTTP_URL_PROTOCOLS = new Set(["http:", "https:"]);
+const LOCALHOST_NAMES = new Set(["localhost", "0.0.0.0"]);
+
+/**
+ * Documented KV key prefixes for tool-call state. Keep each prefix unique so
+ * undo, audit, and pending-confirmation records never collide in plugin KV.
+ */
+export const TOOL_CALL_KV_KEY_PREFIXES = {
+  audit: "audit",
+  autoApprove: "tool-auto-approve",
+  pendingConfirmation: "tool-confirm",
+  undo: "tool-undo",
+  undoStatus: "tool-undo-status",
+} as const;
 
 /**
  * Tool-call KV redaction must preserve routing/audit metadata that is not PII.
@@ -148,6 +163,42 @@ export async function toolCallRoute(
     return executeRead(tool, ctx, input);
   }
   return handleMutation(ctx, tool, input, options);
+}
+
+export async function confirmCallRoute(
+  ctx: ToolCallContext,
+  tools: ToolRegistry = defaultTools(),
+  options: ToolCallOptions = {},
+): Promise<Record<string, unknown>> {
+  return toolCallRoute(ctx, tools, options);
+}
+
+export async function undoCallRoute(
+  ctx: ToolCallContext,
+  tools: ToolRegistry = defaultTools(),
+  options: ToolCallOptions = {},
+): Promise<Record<string, unknown>> {
+  return toolCallRoute(ctx, tools, options);
+}
+
+export async function auditListRoute(ctx: ToolCallContext): Promise<Record<string, unknown>> {
+  const workspaceId = requireWorkspaceId(ctx.request);
+  const entries = await readAuditEntries(ctx.kv, auditPrefix(workspaceId));
+  return { ok: true, result: { entries }, status: "listed" };
+}
+
+/**
+ * Defensive SSRF guard for future tools that accept caller-supplied URLs.
+ * Only HTTP(S) URLs whose hostname exactly matches an explicit allow-list entry
+ * pass; localhost and private IPv4 targets are always rejected.
+ */
+export function isAllowedToolUrl(url: string, allowedHosts: readonly string[]): boolean {
+  const parsed = parseUrl(url);
+  if (parsed === null || !HTTP_URL_PROTOCOLS.has(parsed.protocol)) {
+    return false;
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  return allowedHosts.includes(hostname) && !isLocalOrPrivateHost(hostname);
 }
 
 function defaultTools(): ToolRegistry {
@@ -327,7 +378,7 @@ async function writeAudit(
   undoToken: string,
   now: Date,
 ): Promise<void> {
-  await writeKv(kv, `audit:${input.workspaceId}:${now.toISOString()}:${undoToken}`, {
+  await writeKv(kv, auditKey(input.workspaceId, now.toISOString(), undoToken), {
     actorId: input.actorId,
     after: redactToolCallKvRecord(mutation.after),
     before: redactToolCallKvRecord(mutation.before),
@@ -467,7 +518,15 @@ function tokenFrom(options: ToolCallOptions, prefix: string): string {
 }
 
 function autoApproveKey(workspaceId: string, toolName: string): string {
-  return `tool-auto-approve:${workspaceId}:${toolName}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.autoApprove}:${workspaceId}:${toolName}`;
+}
+
+async function readAuditEntries(kv: ToolCallKv, prefix: string): Promise<unknown[]> {
+  const listing = await kv.list?.(prefix);
+  if (listing === undefined) {
+    return [];
+  }
+  return listing.map((entry) => entry.value);
 }
 
 async function missingUndoResponse(
@@ -513,15 +572,23 @@ function undoExpiredResponse(expiredAt: string): Record<string, unknown> {
 }
 
 function confirmKey(workspaceId: string, token: string): string {
-  return `tool-confirm:${workspaceId}:${token}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.pendingConfirmation}:${workspaceId}:${token}`;
 }
 
 function undoKey(workspaceId: string, token: string): string {
-  return `tool-undo:${workspaceId}:${token}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.undo}:${workspaceId}:${token}`;
 }
 
 function undoStatusKey(workspaceId: string, token: string): string {
-  return `tool-undo-status:${workspaceId}:${token}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.undoStatus}:${workspaceId}:${token}`;
+}
+
+function auditKey(workspaceId: string, timestamp: string, undoToken: string): string {
+  return `${auditPrefix(workspaceId)}${timestamp}:${undoToken}`;
+}
+
+function auditPrefix(workspaceId: string): string {
+  return `${TOOL_CALL_KV_KEY_PREFIXES.audit}:${workspaceId}:`;
 }
 
 function recordFrom(value: unknown): Record<string, unknown> {
@@ -555,6 +622,33 @@ function numberFrom(value: unknown, name: string): number {
     return value;
   }
   throw new Error(`Tool-call input requires numeric ${name}.`);
+}
+
+function parseUrl(url: string): URL | null {
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
+function isLocalOrPrivateHost(hostname: string): boolean {
+  return (
+    LOCALHOST_NAMES.has(hostname) ||
+    hostname.startsWith("127.") ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") ||
+    isPrivate172Host(hostname)
+  );
+}
+
+function isPrivate172Host(hostname: string): boolean {
+  const match = /^172\.(\d{1,3})\./.exec(hostname);
+  if (match === null) {
+    return false;
+  }
+  const secondOctet = Number(match[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
 }
 
 async function currentMenuItemPrice(
