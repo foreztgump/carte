@@ -356,8 +356,8 @@ describe("@carte/orders-backend manifest", () => {
 
     expect(manifest.storage).toEqual({
       carte_orders: {
-        indexes: ["status", "orderType", "email", "createdAt", "stripeCheckoutSessionId"],
-        uniqueIndexes: ["orderNumber", "stripeCheckoutSessionId"],
+        indexes: ["status", "orderType", "email", "createdAt"],
+        uniqueIndexes: ["orderNumber"],
       },
     });
   });
