@@ -1,11 +1,12 @@
 export const TOOL_CONFIRMATION_TTL_SECONDS = 600;
 export const TOOL_UNDO_TTL_SECONDS = 600;
+export const TOOL_UNDO_STATUS_TTL_SECONDS = 900;
 
 export interface ToolCallKv {
   get<T>(key: string): Promise<T | null>;
   list?: (prefix?: string) => Promise<Array<{ key: string; value: unknown }>>;
   put?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
-  set?: (key: string, value: unknown) => Promise<void>;
+  set?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
   delete?: (key: string) => Promise<boolean | void>;
 }
 
@@ -50,6 +51,13 @@ interface UndoStatusMutation {
 
 interface ExpiringUndoStatusMutation extends UndoStatusMutation {
   expiredAt: string;
+}
+
+interface UndoStatusWrite {
+  kv: ToolCallKv;
+  status: UndoStatusRecord;
+  undoToken: string;
+  workspaceId: string;
 }
 
 export interface ToolExecutorContext {
@@ -365,10 +373,15 @@ async function writeUndo(
     },
     { expirationTtl: TOOL_UNDO_TTL_SECONDS },
   );
-  await writeKv(kv, undoStatusKey(input.workspaceId, undoToken), {
-    expiredAt: expiresAt,
-    status: "pending",
-  } satisfies UndoStatusRecord);
+  await writeUndoStatus({
+    kv,
+    status: {
+      expiredAt: expiresAt,
+      status: "pending",
+    },
+    undoToken,
+    workspaceId: input.workspaceId,
+  });
 }
 
 async function writeAudit(
@@ -434,7 +447,7 @@ async function writeKv(
     await kv.put(key, value, options);
     return;
   }
-  await kv.set?.(key, value);
+  await kv.set?.(key, value, options);
 }
 
 async function isAutoApproved(
@@ -549,18 +562,34 @@ async function markUndoCompleted(mutation: UndoStatusMutation): Promise<void> {
   if (mutation.expiredAt === undefined) {
     return;
   }
-  await writeKv(mutation.kv, undoStatusKey(mutation.workspaceId, mutation.undoToken), {
-    expiredAt: mutation.expiredAt,
-    status: "undone",
-  } satisfies UndoStatusRecord);
+  await writeUndoStatus({
+    kv: mutation.kv,
+    status: {
+      expiredAt: mutation.expiredAt,
+      status: "undone",
+    },
+    undoToken: mutation.undoToken,
+    workspaceId: mutation.workspaceId,
+  });
 }
 
 async function markUndoExpired(mutation: ExpiringUndoStatusMutation): Promise<void> {
   await mutation.kv.delete?.(undoKey(mutation.workspaceId, mutation.undoToken));
-  await writeKv(mutation.kv, undoStatusKey(mutation.workspaceId, mutation.undoToken), {
-    expiredAt: mutation.expiredAt,
-    status: "pending",
-  } satisfies UndoStatusRecord);
+  await writeUndoStatus({
+    kv: mutation.kv,
+    status: {
+      expiredAt: mutation.expiredAt,
+      status: "pending",
+    },
+    undoToken: mutation.undoToken,
+    workspaceId: mutation.workspaceId,
+  });
+}
+
+async function writeUndoStatus(write: UndoStatusWrite): Promise<void> {
+  await writeKv(write.kv, undoStatusKey(write.workspaceId, write.undoToken), write.status, {
+    expirationTtl: TOOL_UNDO_STATUS_TTL_SECONDS,
+  });
 }
 
 function isExpired(expiresAt: string | undefined, now: Date): expiresAt is string {
