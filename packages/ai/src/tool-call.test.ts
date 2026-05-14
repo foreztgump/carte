@@ -65,6 +65,27 @@ function piiEchoTool(mutation: { after: unknown; before: unknown }): ToolDefinit
   };
 }
 
+function multiFieldTool(state: Record<string, unknown>): ToolDefinition {
+  return {
+    kind: "mutation",
+    async preview(input: unknown) {
+      const patch = input as Record<string, unknown>;
+      return { before: pickPatchFields(state, patch), after: patch };
+    },
+    async execute(input: unknown) {
+      const patch = input as Record<string, unknown>;
+      const before = pickPatchFields(state, patch);
+      Object.assign(state, patch);
+      return { before, after: patch };
+    },
+    async undo(_input: unknown, context: ToolExecutorContext) {
+      const before = context.undoRecord.before as Record<string, unknown>;
+      Object.assign(state, before);
+      return { restored: before };
+    },
+  };
+}
+
 describe("toolCallRoute", () => {
   it("executes read tools without asking for confirmation", async () => {
     const response = await toolCallRoute(
@@ -357,6 +378,79 @@ describe("toolCallRoute", () => {
     expect(kv.entries.get("tool-undo:workspace-1:undo-1")).toBeUndefined();
   });
 
+  it("undoes each changed field independently for multi-field writes", async () => {
+    const kv = new MemoryKv();
+    const menuItem = { category: "mains", price: 12, title: "Risotto" };
+    const tools = { updateMenuItem: multiFieldTool(menuItem) };
+
+    await kv.put("tool-auto-approve:workspace-1:updateMenuItem", true);
+    await toolCallRoute(
+      ctx({
+        arguments: { category: "specials", price: 14, title: "Spring Risotto" },
+        kv,
+        toolName: "updateMenuItem",
+      }),
+      tools,
+      { tokenFactory: () => "undo-multi" },
+    );
+
+    const response = await toolCallRoute(ctx({ kv, undoToken: "undo-multi" }), tools);
+
+    expect(response).toEqual({
+      ok: true,
+      result: { restored: { category: "mains", price: 12, title: "Risotto" } },
+      status: "undone",
+    });
+    expect(menuItem).toEqual({ category: "mains", price: 12, title: "Risotto" });
+  });
+
+  it("treats a repeated successful undo request as an idempotent no-op", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await kv.put("tool-auto-approve:workspace-1:updateMenuItemPrice", true);
+    await toolCallRoute(
+      ctx({ arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      { tokenFactory: () => "undo-repeat" },
+    );
+
+    const first = await toolCallRoute(ctx({ kv, undoToken: "undo-repeat" }), tools);
+    const second = await toolCallRoute(ctx({ kv, undoToken: "undo-repeat" }), tools);
+
+    expect(first).toEqual({ ok: true, result: { restored: { price: 12 } }, status: "undone" });
+    expect(second).toEqual({ ok: true, result: null, status: "undone" });
+    expect(state.price).toBe(12);
+  });
+
+  it("returns structured undo_expired errors with expiredAt after the undo TTL", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await kv.put("tool-auto-approve:workspace-1:updateMenuItemPrice", true);
+    await toolCallRoute(
+      ctx({ arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      {
+        now: () => new Date("2026-05-08T12:00:00.000Z"),
+        tokenFactory: () => "undo-expired",
+      },
+    );
+
+    const response = await toolCallRoute(ctx({ kv, undoToken: "undo-expired" }), tools, {
+      now: () => new Date("2026-05-08T12:11:00.000Z"),
+    });
+
+    expect(response).toEqual({
+      error: "undo_expired",
+      expiredAt: "2026-05-08T12:10:00.000Z",
+      ok: false,
+    });
+    expect(state.price).toBe(14);
+  });
+
   it("rejects undo when the registered tool has no undo implementation", async () => {
     const kv = new MemoryKv();
     const tools = {
@@ -518,4 +612,11 @@ function ctx(input: {
     }),
   };
   return input.content === undefined ? context : { ...context, content: input.content };
+}
+
+function pickPatchFields(
+  source: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(Object.keys(patch).map((key) => [key, source[key]]));
 }
