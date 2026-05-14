@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { toolCallRoute, validateMutationTools } from "./tool-call.js";
+import {
+  auditListRoute,
+  isAllowedToolUrl,
+  TOOL_CALL_KV_KEY_PREFIXES,
+  toolCallRoute,
+  validateMutationTools,
+} from "./tool-call.js";
 import type { ContentApi, ToolCallKv, ToolDefinition, ToolExecutorContext } from "./tool-call.js";
 
 interface StoredValue {
@@ -21,6 +27,12 @@ class MemoryKv implements ToolCallKv {
 
   async delete(key: string): Promise<void> {
     this.entries.delete(key);
+  }
+
+  async list(prefix?: string): Promise<Array<{ key: string; value: unknown }>> {
+    return Array.from(this.entries.entries())
+      .filter(([key]) => prefix === undefined || key.startsWith(prefix))
+      .map(([key, entry]) => ({ key, value: entry.value }));
   }
 }
 
@@ -87,6 +99,59 @@ function multiFieldTool(state: Record<string, unknown>): ToolDefinition {
 }
 
 describe("toolCallRoute", () => {
+  it("allows only explicitly allow-listed HTTP(S) tool URLs", () => {
+    const allowedHosts = ["images.carte.test", "menu.carte.test"];
+
+    expect(isAllowedToolUrl("https://images.carte.test/photo.jpg", allowedHosts)).toBe(true);
+    expect(isAllowedToolUrl("http://menu.carte.test/menu.json", allowedHosts)).toBe(true);
+    expect(isAllowedToolUrl("https://evil.test/photo.jpg", allowedHosts)).toBe(false);
+    expect(isAllowedToolUrl("file:///etc/passwd", allowedHosts)).toBe(false);
+    expect(isAllowedToolUrl("http://127.0.0.1:8787/debug", allowedHosts)).toBe(false);
+    expect(isAllowedToolUrl("http://localhost:8787/debug", allowedHosts)).toBe(false);
+  });
+
+  it("keeps documented KV key prefixes unique for pending calls, undo, and audit", () => {
+    expect(new Set(Object.values(TOOL_CALL_KV_KEY_PREFIXES)).size).toBe(
+      Object.values(TOOL_CALL_KV_KEY_PREFIXES).length,
+    );
+    expect(TOOL_CALL_KV_KEY_PREFIXES.pendingConfirmation).toBe("tool-confirm");
+    expect(TOOL_CALL_KV_KEY_PREFIXES.undo).toBe("tool-undo");
+    expect(TOOL_CALL_KV_KEY_PREFIXES.audit).toBe("audit");
+  });
+
+  it("emits a consistent ok/status envelope for confirm-call, undo-call, and audit-list", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await toolCallRoute(
+      ctx({ arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      { tokenFactory: () => "confirm-1" },
+    );
+
+    const confirmCall = await toolCallRoute(
+      ctx({
+        arguments: { price: 14 },
+        confirmToken: "confirm-1",
+        kv,
+        toolName: "updateMenuItemPrice",
+      }),
+      tools,
+      { now: () => new Date("2026-05-08T12:00:00.000Z"), tokenFactory: () => "undo-1" },
+    );
+    const undoCall = await toolCallRoute(ctx({ kv, undoToken: "undo-1" }), tools, {
+      now: () => new Date("2026-05-08T12:01:00.000Z"),
+    });
+    const auditList = await auditListRoute(ctx({ kv }));
+
+    for (const response of [confirmCall, undoCall, auditList]) {
+      expect(response).toHaveProperty("ok", true);
+      expect(response).toHaveProperty("status");
+      expect(response).not.toHaveProperty("error");
+    }
+  });
+
   it("executes read tools without asking for confirmation", async () => {
     const response = await toolCallRoute(
       ctx({ toolName: "listMenuItems" }),
