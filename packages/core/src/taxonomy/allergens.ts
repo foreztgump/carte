@@ -71,7 +71,8 @@ export const DIETARY_LABELS = {
 
 const ALLERGEN_TAG_SET = new Set<string>(ALLERGEN_TAGS);
 
-export const allergenLabelFor = (tag: AllergenTag): string => ALLERGEN_LABELS[tag];
+export const allergenLabelFor = (tag: string): string =>
+  ALLERGEN_LABELS[tag as AllergenTag] ?? tag.replace(/-/g, " ");
 
 export const dietaryLabelFor = (tag: DietaryTag): string => DIETARY_LABELS[tag];
 
