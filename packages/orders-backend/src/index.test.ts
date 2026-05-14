@@ -467,6 +467,55 @@ describe("@carte/orders-backend manifest", () => {
     ]);
   });
 
+  it("omits Tender refund amount for full refunds", async () => {
+    const manifest = factory();
+    const { ctx, waitUntilTasks } = tenderRefundContext({
+      input: {
+        orderId: "order_full",
+        transactionId: "txn_full",
+        reason: "Operator requested full refund",
+      },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_full",
+      transactionId: "txn_full",
+      status: "succeeded",
+    });
+
+    await expect(manifest.routes.refund?.handler(ctx)).resolves.toMatchObject({
+      ok: true,
+      refundId: "rf_full",
+    });
+    await Promise.all(waitUntilTasks);
+
+    const fullRefundRequest = tenderRefundMock.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(fullRefundRequest).not.toHaveProperty("amount");
+  });
+
+  it("forwards explicit zero Tender refund amounts", async () => {
+    const manifest = factory();
+    const { ctx, waitUntilTasks } = tenderRefundContext({
+      input: { orderId: "order_zero", transactionId: "txn_zero", amount: 0 },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_zero",
+      transactionId: "txn_zero",
+      status: "succeeded",
+    });
+
+    await expect(manifest.routes.refund?.handler(ctx)).resolves.toMatchObject({
+      ok: true,
+      refundId: "rf_zero",
+    });
+    await Promise.all(waitUntilTasks);
+
+    expect(tenderRefundMock.mock.calls.at(-1)?.[0]).toMatchObject({
+      transactionId: "txn_zero",
+      amount: 0,
+      idempotencyKey: "refund-order_zero",
+    });
+  });
+
   it("logs an audit record when post-refund content store update fails", async () => {
     const manifest = factory();
     const errorLog: unknown[][] = [];
