@@ -76,9 +76,10 @@ and the decision note:
 The actual `@carte/orders-backend@0.2.0-rc.1` publish is HITL-blocked until
 `@tender/sdk@^0.1.0`, `tender-core`, and `tender-stripe` are available from the
 registry. This is tracked under
-[PRO-737](https://linear.app/projects-linear/issue/PRO-737/publish-carteorders-backend020-rc-and-tag-release)
-by the future Tender publish-prereq sub-issue: "External prereq: Tender team
-publishes `@tender/sdk@0.1.0` + `tender-core` + `tender-stripe` to npm."
+[PRO-766](https://linear.app/projects-linear/issue/PRO-766/external-prereq-tender-team-publishes-tendersdk010-tender-core-tender):
+"External prereq: Tender team publishes `@tender/sdk@0.1.0` + `tender-core` +
+`tender-stripe` to npm." The sub-issue sits under
+[PRO-737](https://linear.app/projects-linear/issue/PRO-737/publish-carteorders-backend020-rc-and-tag-release).
 
 ## Rollback
 
