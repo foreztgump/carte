@@ -489,6 +489,33 @@ describe("toolCallRoute", () => {
     expect(state.price).toBe(12);
   });
 
+  it("bounds completed undo status records with a fifteen-minute TTL", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await kv.put("tool-auto-approve:workspace-1:updateMenuItemPrice", true);
+    await toolCallRoute(
+      ctx({ arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      {
+        now: () => new Date("2026-05-08T12:00:00.000Z"),
+        tokenFactory: () => "undo-status-complete",
+      },
+    );
+    await toolCallRoute(ctx({ kv, undoToken: "undo-status-complete" }), tools, {
+      now: () => new Date("2026-05-08T12:01:00.000Z"),
+    });
+
+    expect(kv.entries.get("tool-undo-status:workspace-1:undo-status-complete")).toMatchObject({
+      expirationTtl: 900,
+      value: {
+        expiredAt: "2026-05-08T12:10:00.000Z",
+        status: "undone",
+      },
+    });
+  });
+
   it("returns structured undo_expired errors with expiredAt after the undo TTL", async () => {
     const kv = new MemoryKv();
     const state = { price: 12 };
@@ -514,6 +541,33 @@ describe("toolCallRoute", () => {
       ok: false,
     });
     expect(state.price).toBe(14);
+  });
+
+  it("bounds expired undo status records with a fifteen-minute TTL", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await kv.put("tool-auto-approve:workspace-1:updateMenuItemPrice", true);
+    await toolCallRoute(
+      ctx({ arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      {
+        now: () => new Date("2026-05-08T12:00:00.000Z"),
+        tokenFactory: () => "undo-status-expired",
+      },
+    );
+    await toolCallRoute(ctx({ kv, undoToken: "undo-status-expired" }), tools, {
+      now: () => new Date("2026-05-08T12:11:00.000Z"),
+    });
+
+    expect(kv.entries.get("tool-undo-status:workspace-1:undo-status-expired")).toMatchObject({
+      expirationTtl: 900,
+      value: {
+        expiredAt: "2026-05-08T12:10:00.000Z",
+        status: "pending",
+      },
+    });
   });
 
   it("rejects undo when the registered tool has no undo implementation", async () => {
