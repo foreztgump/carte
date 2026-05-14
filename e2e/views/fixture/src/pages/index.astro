@@ -40,7 +40,7 @@ const menu = {
           description: "Lemon tahini, almond crunch, preserved chile.",
           price: 1400,
           currency: "USD",
-          allergens: ["tree_nuts"],
+          allergens: ["undeclared-tree-nuts"],
           dietaryTags: ["vegan", "gluten_free"],
         },
         {
@@ -108,7 +108,8 @@ const orderingCart = {
       <RestaurantHero restaurant={restaurant} />
       <RestaurantInfo info={info} />
       <HoursWidget hours={hours} today="thursday" />
-      <DietaryFilter allergens={["tree_nuts"]} targetMenuId={menu.id} />
+      <!-- Intentionally unknown allergen tag to exercise @carte/core's humanized fallback path. -->
+      <DietaryFilter allergens={["undeclared-tree-nuts"]} targetMenuId={menu.id} />
       <MenuDisplay menu={menu} />
       <OrderingCart cart={orderingCart} />
       <OrderingCheckout action="/_emdash/api/plugins/carte-orders-backend/checkout" cart={orderingCart} />

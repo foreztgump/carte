@@ -6,6 +6,7 @@ import {
   DIETARY_TAG_TO_SCHEMA_URI,
   EU_FIC_14_ALLERGENS,
   US_ALLERGEN_EXTENSIONS,
+  allergenLabelFor,
 } from "../allergens.js";
 
 import type { PluginContext } from "emdash";
@@ -48,6 +49,10 @@ describe("@carte/core allergen taxonomy", () => {
     for (const uri of Object.values(DIETARY_TAG_TO_SCHEMA_URI)) {
       expect(uri).toMatch(/^https:\/\/schema\.org\/[A-Za-z]+Diet$/);
     }
+  });
+
+  it("returns a non-empty humanized fallback for unknown allergen tags", () => {
+    expect(allergenLabelFor("black-walnut-oil")).toBe("black walnut oil");
   });
 });
 

@@ -61,7 +61,7 @@ test("@carte/views menu components render fixture data", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Dinner", level: 2 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Charred Broccolini", level: 3 })).toBeVisible();
   await expect(page.getByText("$14.00")).toBeVisible();
-  await expect(page.getByText("Contains: Tree nuts")).toBeVisible();
+  await expect(page.getByText("Contains: undeclared tree nuts")).toBeVisible();
   await expect(page.getByText("123 Market Street")).toBeVisible();
 });
 
@@ -192,10 +192,12 @@ test("@carte/views reservation success page renders explicit reservation record"
   await expect(page.getByText("Party of 4")).toBeVisible();
 });
 
-test("@carte/views DietaryFilter filters by core allergen taxonomy", async ({ page }) => {
+test("@carte/views DietaryFilter renders unknown allergen fallback and filters by it", async ({
+  page,
+}) => {
   await page.goto(fixtureUrl);
 
-  await page.getByRole("checkbox", { name: "Hide tree nuts" }).check();
+  await page.getByRole("checkbox", { name: "Hide undeclared tree nuts" }).check();
 
   await expect(page.getByRole("heading", { name: "Charred Broccolini", level: 3 })).toBeHidden();
   await expect(page.getByRole("heading", { name: "Citrus Salad", level: 3 })).toBeVisible();
