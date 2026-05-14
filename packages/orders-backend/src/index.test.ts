@@ -59,6 +59,7 @@ type RateLimitCounters = {
 const TENDER_CHECKOUT_URL =
   "https://restaurant.example/_emdash/api/plugins/tender-core/checkout/txn_123";
 const TENDER_EVENT_TTL_SECONDS = 604_800;
+const TENDER_EVENT_IN_PROGRESS_TTL_SECONDS = 300;
 
 const tenderCheckoutContext = () => {
   const subrequests: string[] = [];
@@ -203,25 +204,31 @@ const checkoutHandler = () => {
   return handler;
 };
 
-const tenderEventContext = () => {
-  const seenEvents = new Set<string>();
+type TenderEventUpdate = (collection: string, id: string, value: unknown) => Promise<void>;
+
+const tenderEventContext = (options: { update?: TenderEventUpdate } = {}) => {
+  const seenEvents = new Map<string, unknown>();
   const updates: Array<{ collection: string; id: string; value: unknown }> = [];
   const waitUntilTasks: Promise<unknown>[] = [];
   const kvWrites: Array<{ key: string; value: unknown; options?: { expirationTtl: number } }> = [];
   const ctx = {
     kv: {
       async get(key: string) {
-        return seenEvents.has(key) ? TENDER_EVENT_PROCESSED_VALUE : null;
+        return seenEvents.get(key) ?? null;
       },
       async set(key: string, value: unknown, options?: { expirationTtl: number }) {
-        seenEvents.add(key);
+        seenEvents.set(key, value);
         if (options === undefined) kvWrites.push({ key, value });
         else kvWrites.push({ key, value, options });
       },
     },
     content: {
       async update(collection: string, id: string, value: unknown) {
-        updates.push({ collection, id, value });
+        if (options.update === undefined) {
+          updates.push({ collection, id, value });
+          return;
+        }
+        await options.update(collection, id, value);
       },
     },
     waitUntil(task: Promise<unknown>) {
@@ -604,13 +611,17 @@ describe("@carte/orders-backend manifest", () => {
     await tenderPaymentSucceededHook(event, ctx);
     await Promise.all(waitUntilTasks);
 
-    expect(kvWrites).toEqual([
-      {
-        key: "idempotency:tender:evt_tender_paid_123",
-        value: TENDER_EVENT_PROCESSED_VALUE,
-        options: { expirationTtl: TENDER_EVENT_TTL_SECONDS },
-      },
-    ]);
+    expect(kvWrites).toHaveLength(2);
+    expect(kvWrites[0]).toMatchObject({
+      key: "idempotency:tender:evt_tender_paid_123",
+      value: expect.stringMatching(/^in-progress:/),
+      options: { expirationTtl: TENDER_EVENT_IN_PROGRESS_TTL_SECONDS },
+    });
+    expect(kvWrites[1]).toEqual({
+      key: "idempotency:tender:evt_tender_paid_123",
+      value: TENDER_EVENT_PROCESSED_VALUE,
+      options: { expirationTtl: TENDER_EVENT_TTL_SECONDS },
+    });
     expect(waitUntilTasks).toHaveLength(1);
     expect(updates).toEqual([
       {
@@ -624,6 +635,41 @@ describe("@carte/orders-backend manifest", () => {
           },
         },
       },
+    ]);
+  });
+
+  it("logs Tender payment hook update failures from waitUntil work", async () => {
+    const { tenderPaymentSucceededHook } = await import("./index.js");
+    const errorLog: unknown[][] = [];
+    const originalConsoleError = console.error;
+    const { ctx, waitUntilTasks } = tenderEventContext({
+      update: async () => {
+        throw new Error("Content store unavailable.");
+      },
+    });
+    console.error = (...args: unknown[]) => {
+      errorLog.push(args);
+    };
+
+    try {
+      await tenderPaymentSucceededHook(
+        { id: "evt_tender_paid_failure", metadata: { carte_order_id: "order_failure" } },
+        ctx,
+      );
+      await expect(Promise.all(waitUntilTasks)).resolves.toEqual([undefined]);
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    expect(errorLog).toEqual([
+      [
+        "[carte-orders-backend][tender-event-reconcile]",
+        expect.objectContaining({
+          eventId: "evt_tender_paid_failure",
+          orderId: "order_failure",
+          status: "paid",
+        }),
+      ],
     ]);
   });
 

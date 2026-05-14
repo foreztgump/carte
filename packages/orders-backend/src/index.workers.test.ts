@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RouteContext } from "emdash";
 
 import { NETWORK_ALLOWED_HOSTS } from "./manifest-constants.js";
-import { TENDER_EVENT_PROCESSED_VALUE, tenderPaymentSucceededHook } from "./events.js";
+import { tenderPaymentSucceededHook } from "./events.js";
 
 const STRIPE_API_URL = "https://api.stripe.com/v1/checkout/sessions";
 
@@ -35,16 +35,16 @@ describe("@carte/orders-backend Workers network allowlist", () => {
   });
 
   it("dedupes duplicate Tender payment events before scheduling order updates", async () => {
-    const processedKeys = new Set<string>();
+    const processedKeys = new Map<string, unknown>();
     const updates: Array<{ collection: string; id: string; value: unknown }> = [];
     const waitUntilTasks: Promise<unknown>[] = [];
     const ctx = {
       kv: {
         async get(key: string) {
-          return processedKeys.has(key) ? TENDER_EVENT_PROCESSED_VALUE : null;
+          return processedKeys.get(key) ?? null;
         },
-        async set(key: string) {
-          processedKeys.add(key);
+        async set(key: string, value: unknown) {
+          processedKeys.set(key, value);
         },
       },
       content: {
@@ -70,6 +70,48 @@ describe("@carte/orders-backend Workers network allowlist", () => {
     expect(updates[0]).toMatchObject({
       collection: "carte_orders",
       id: "order_workers_123",
+      value: { status: "paid" },
+    });
+  });
+
+  it("schedules one order update for concurrent duplicate Tender payment events", async () => {
+    const processedKeys = new Map<string, unknown>();
+    const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+    const waitUntilTasks: Promise<unknown>[] = [];
+    const ctx = {
+      kv: {
+        async get(key: string) {
+          return processedKeys.get(key) ?? null;
+        },
+        async set(key: string, value: unknown) {
+          processedKeys.set(key, value);
+        },
+      },
+      content: {
+        async update(collection: string, id: string, value: unknown) {
+          updates.push({ collection, id, value });
+        },
+      },
+      waitUntil(task: Promise<unknown>) {
+        waitUntilTasks.push(task);
+      },
+    } as unknown as RouteContext;
+    const event = {
+      id: "evt_workers_concurrent_duplicate",
+      metadata: { carte_order_id: "order_workers_concurrent" },
+    };
+
+    await Promise.all([
+      tenderPaymentSucceededHook(event, ctx),
+      tenderPaymentSucceededHook(event, ctx),
+    ]);
+    await Promise.all(waitUntilTasks);
+
+    expect(waitUntilTasks).toHaveLength(1);
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({
+      collection: "carte_orders",
+      id: "order_workers_concurrent",
       value: { status: "paid" },
     });
   });
