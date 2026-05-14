@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RouteContext } from "emdash";
 
 import { NETWORK_ALLOWED_HOSTS } from "./manifest-constants.js";
-import { TENDER_EVENT_PROCESSED_VALUE, tenderPaymentSucceededHook } from "./index.js";
+import { TENDER_EVENT_PROCESSED_VALUE, tenderPaymentSucceededHook } from "./events.js";
 
 const STRIPE_API_URL = "https://api.stripe.com/v1/checkout/sessions";
 
