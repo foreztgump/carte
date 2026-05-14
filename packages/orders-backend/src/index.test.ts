@@ -469,7 +469,7 @@ describe("@carte/orders-backend manifest", () => {
 
   it("omits Tender refund amount for full refunds", async () => {
     const manifest = factory();
-    const { ctx, waitUntilTasks } = tenderRefundContext({
+    const { ctx, updates, waitUntilTasks } = tenderRefundContext({
       input: {
         orderId: "order_full",
         transactionId: "txn_full",
@@ -490,6 +490,9 @@ describe("@carte/orders-backend manifest", () => {
 
     const fullRefundRequest = tenderRefundMock.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(fullRefundRequest).not.toHaveProperty("amount");
+    expect(updates[0]?.value).toMatchObject({
+      refund: expect.not.objectContaining({ amount: expect.any(Number) }),
+    });
   });
 
   it("forwards explicit zero Tender refund amounts", async () => {

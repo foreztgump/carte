@@ -9,6 +9,7 @@ import type { RouteContext } from "emdash";
 const ADMIN_SCOPE = "admin";
 const AUDIT_PREFIX = "[carte-orders-backend][refund-reconcile]";
 const ORDER_STATUS_REFUNDED = "refunded";
+const REFUND_IDEMPOTENCY_PREFIX = "refund";
 
 interface RuntimeSettings {
   settings?: {
@@ -32,10 +33,14 @@ interface TenderRefundResponse {
 
 interface TenderRefundRequest {
   transactionId: string;
-  amount: number;
+  amount?: number;
   reason: TenderRefundRecordReason;
   reasonNote?: string;
   idempotencyKey: string;
+}
+
+interface TenderRefundClient {
+  refund(input: TenderRefundRequest): Promise<TenderRefundResponse>;
 }
 
 interface ContentStore {
@@ -45,7 +50,7 @@ interface ContentStore {
 interface RefundMetadata {
   id: string;
   transactionId: string;
-  amount: number;
+  amount?: number;
   status: string;
   createdAt: string;
 }
@@ -133,13 +138,13 @@ const createTenderRefund = async (
 ): Promise<TenderRefundResponse> => {
   const request: TenderRefundRequest = {
     transactionId: input.transactionId,
-    amount: input.amount ?? 0,
+    ...(input.amount !== undefined ? { amount: input.amount } : {}),
     reason: mapRefundReason(input.reason),
-    idempotencyKey: `refund-${input.orderId}`,
+    ...(input.reason ? { reasonNote: input.reason } : {}),
+    idempotencyKey: `${REFUND_IDEMPOTENCY_PREFIX}-${input.orderId}`,
   };
-  if (input.reason) request.reasonNote = input.reason;
 
-  return tenderClient(ctx).refund(request);
+  return (tenderClient(ctx) as unknown as TenderRefundClient).refund(request);
 };
 
 const requireHttp = (ctx: RouteContext) => {
@@ -175,13 +180,15 @@ const mapRefundReason = (reason: string | undefined): TenderRefundRecordReason =
   return "other";
 };
 
-const refundMetadata = (refund: TenderRefundResponse, amount?: number): RefundMetadata => ({
-  id: refund.refundId,
-  transactionId: refund.transactionId,
-  amount: amount ?? 0,
-  status: refund.status,
-  createdAt: new Date().toISOString(),
-});
+const refundMetadata = (refund: TenderRefundResponse, amount?: number): RefundMetadata => {
+  return {
+    id: refund.refundId,
+    transactionId: refund.transactionId,
+    ...(amount !== undefined ? { amount } : {}),
+    status: refund.status,
+    createdAt: new Date().toISOString(),
+  };
+};
 
 const contentStore = (ctx: RouteContext): ContentStore =>
   (ctx as RouteContext & { content: ContentStore }).content;
