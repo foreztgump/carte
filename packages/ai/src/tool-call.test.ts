@@ -380,7 +380,7 @@ function ctx(input: {
   workspaceId?: string;
 }) {
   const workspaceId = input.workspaceId ?? "workspace-1";
-  return {
+  const context = {
     input: {
       arguments: input.arguments,
       actorId: input.actorId ?? "user-1",
@@ -388,11 +388,11 @@ function ctx(input: {
       toolName: input.toolName,
       undoToken: input.undoToken,
     },
-    content: input.content,
     kv: input.kv ?? new MemoryKv(),
     request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
       headers: { "X-Workspace-Id": workspaceId },
       method: "POST",
     }),
   };
+  return input.content === undefined ? context : { ...context, content: input.content };
 }

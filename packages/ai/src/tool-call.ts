@@ -71,6 +71,8 @@ interface PendingConfirmation {
 }
 
 const DEFAULT_ACTOR_ID = "unknown";
+const FORBIDDEN_STATUS = 403;
+const MENU_ITEMS_COLLECTION = "carte_menu_items";
 
 export async function toolCallRoute(
   ctx: ToolCallContext,
@@ -210,6 +212,9 @@ function assertSamePendingCall(
   if (pendingConfirmation.workspaceId !== input.workspaceId) {
     throw new Error("Confirm token does not match the workspace.");
   }
+  if (pendingConfirmation.actorId !== input.actorId) {
+    throw new ToolCallHttpError("Confirm token does not match the actor.", FORBIDDEN_STATUS);
+  }
 }
 
 async function previewFor(
@@ -316,8 +321,9 @@ async function updateMenuItemPrice(
   const record = recordFrom(input);
   const id = requireValue(optionalString(record.id), "id");
   const price = numberFrom(record.price, "price");
-  const result = await content?.update?.("carte_menu_items", id, { price });
-  return { ...priceDiff(input), result };
+  const before = await currentMenuItemPrice(content, id);
+  const result = await content?.update?.(MENU_ITEMS_COLLECTION, id, { price });
+  return { after: { price }, before, result };
 }
 
 function priceDiff(input: unknown): DiffPreview {
@@ -384,4 +390,36 @@ function numberFrom(value: unknown, name: string): number {
     return value;
   }
   throw new Error(`Tool-call input requires numeric ${name}.`);
+}
+
+async function currentMenuItemPrice(
+  content: ContentApi | undefined,
+  id: string,
+): Promise<{ price: number } | null> {
+  const items = await content?.list?.(MENU_ITEMS_COLLECTION);
+  if (!Array.isArray(items)) {
+    return null;
+  }
+  const item = items.find((candidate) => {
+    const record = optionalRecordFrom(candidate);
+    return record?.id === id;
+  });
+  const record = optionalRecordFrom(item);
+  return typeof record?.price === "number" && Number.isFinite(record.price)
+    ? { price: record.price }
+    : null;
+}
+
+function optionalRecordFrom(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+class ToolCallHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ToolCallHttpError";
+    this.status = status;
+  }
 }
