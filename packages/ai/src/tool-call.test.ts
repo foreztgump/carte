@@ -50,6 +50,21 @@ function priceTool(state: { price: number }): ToolDefinition {
   };
 }
 
+function piiEchoTool(mutation: { after: unknown; before: unknown }): ToolDefinition {
+  return {
+    kind: "mutation",
+    async preview() {
+      return mutation;
+    },
+    async execute() {
+      return mutation;
+    },
+    async undo() {
+      return { ok: true };
+    },
+  };
+}
+
 describe("toolCallRoute", () => {
   it("executes read tools without asking for confirmation", async () => {
     const response = await toolCallRoute(
@@ -121,6 +136,96 @@ describe("toolCallRoute", () => {
       after: { price: 14 },
       before: { price: 12 },
       toolName: "updateMenuItemPrice",
+    });
+  });
+
+  it("redacts PII in persisted undo and audit tool I/O while preserving safe fields", async () => {
+    const kv = new MemoryKv();
+    const tools = {
+      updateGuestProfile: piiEchoTool({
+        after: {
+          address: "123 Main St",
+          email: "guest@example.com",
+          itemId: "item-1",
+          name: "Guest Person",
+          phone: "555-123-4567",
+        },
+        before: {
+          address: "1 Old St",
+          email: "old@example.com",
+          itemId: "item-1",
+          name: "Old Name",
+          phone: "555-000-1111",
+        },
+      }),
+    };
+
+    await kv.put("tool-auto-approve:workspace-1:updateGuestProfile", true);
+    await toolCallRoute(
+      ctx({
+        arguments: {
+          address: "123 Main St",
+          email: "guest@example.com",
+          itemId: "item-1",
+          name: "Guest Person",
+          phone: "555-123-4567",
+        },
+        kv,
+        toolName: "updateGuestProfile",
+      }),
+      tools,
+      { now: () => new Date("2026-05-08T12:00:00.000Z"), tokenFactory: () => "undo-pii" },
+    );
+
+    expect(kv.entries.get("tool-undo:workspace-1:undo-pii")?.value).toMatchObject({
+      after: {
+        address: "[REDACTED]",
+        email: "[REDACTED]",
+        itemId: "item-1",
+        name: "[REDACTED]",
+        phone: "[REDACTED]",
+      },
+      before: {
+        address: "[REDACTED]",
+        email: "[REDACTED]",
+        itemId: "item-1",
+        name: "[REDACTED]",
+        phone: "[REDACTED]",
+      },
+      input: {
+        address: "[REDACTED]",
+        email: "[REDACTED]",
+        itemId: "item-1",
+        name: "[REDACTED]",
+        phone: "[REDACTED]",
+      },
+    });
+    expect(
+      kv.entries.get("audit:workspace-1:2026-05-08T12:00:00.000Z:undo-pii")?.value,
+    ).toMatchObject({
+      after: {
+        address: "[REDACTED]",
+        email: "[REDACTED]",
+        itemId: "item-1",
+        name: "[REDACTED]",
+        phone: "[REDACTED]",
+      },
+      before: {
+        address: "[REDACTED]",
+        email: "[REDACTED]",
+        itemId: "item-1",
+        name: "[REDACTED]",
+        phone: "[REDACTED]",
+      },
+      input: {
+        arguments: {
+          address: "[REDACTED]",
+          email: "[REDACTED]",
+          itemId: "item-1",
+          name: "[REDACTED]",
+          phone: "[REDACTED]",
+        },
+      },
     });
   });
 
