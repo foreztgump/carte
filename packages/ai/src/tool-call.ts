@@ -73,6 +73,48 @@ interface PendingConfirmation {
 const DEFAULT_ACTOR_ID = "unknown";
 const FORBIDDEN_STATUS = 403;
 const MENU_ITEMS_COLLECTION = "carte_menu_items";
+const TOOL_CALL_REDACTED_VALUE = "[REDACTED]";
+const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+const PHONE_PATTERN = /(?:\+?\d|\(\d{3}\))[\d\s().-]{6,}\d/g;
+
+/**
+ * Tool-call KV redaction must preserve routing/audit metadata that is not PII.
+ * Any field outside this allow-list still flows through value/key PII checks
+ * before being persisted to undo or audit records.
+ */
+export const TOOL_CALL_PII_REDACTION_EXEMPT_FIELDS = [
+  "actorId",
+  "after",
+  "before",
+  "currency",
+  "id",
+  "input",
+  "itemId",
+  "price",
+  "result",
+  "status",
+  "timestamp",
+  "toolName",
+] as const;
+
+const TOOL_CALL_PII_FIELD_NAMES = new Set([
+  "address",
+  "customeraddress",
+  "customeremail",
+  "customername",
+  "customerphone",
+  "email",
+  "guestaddress",
+  "guestemail",
+  "guestname",
+  "guestphone",
+  "name",
+  "phone",
+  "postaladdress",
+]);
+const TOOL_CALL_PII_REDACTION_EXEMPT_FIELD_SET = new Set<string>(
+  TOOL_CALL_PII_REDACTION_EXEMPT_FIELDS.map((field) => field.toLowerCase()),
+);
 
 export async function toolCallRoute(
   ctx: ToolCallContext,
@@ -234,10 +276,15 @@ async function writeUndo(
   mutation: MutationResult,
   undoToken: string,
 ): Promise<void> {
+  const persistedMutation = redactToolCallKvRecord(mutation) as MutationResult;
   await writeKv(
     kv,
     undoKey(input.workspaceId, undoToken),
-    { ...mutation, input: input.arguments, toolName: input.toolName },
+    {
+      ...persistedMutation,
+      input: redactToolCallKvRecord(input.arguments),
+      toolName: input.toolName,
+    },
     { expirationTtl: TOOL_UNDO_TTL_SECONDS },
   );
 }
@@ -251,11 +298,48 @@ async function writeAudit(
 ): Promise<void> {
   await writeKv(kv, `audit:${input.workspaceId}:${now.toISOString()}:${undoToken}`, {
     actorId: input.actorId,
-    after: mutation.after,
-    before: mutation.before,
+    after: redactToolCallKvRecord(mutation.after),
+    before: redactToolCallKvRecord(mutation.before),
+    input: { arguments: redactToolCallKvRecord(input.arguments) },
     timestamp: now.toISOString(),
     toolName: input.toolName,
   });
+}
+
+function redactToolCallKvRecord(value: unknown): unknown {
+  if (typeof value === "string") {
+    return redactPiiInString(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => redactToolCallKvRecord(item));
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => [key, redactToolCallEntry(key, child)]),
+  );
+}
+
+function redactToolCallEntry(key: string, value: unknown): unknown {
+  if (isToolCallPiiField(key)) {
+    return TOOL_CALL_REDACTED_VALUE;
+  }
+  return redactToolCallKvRecord(value);
+}
+
+function isToolCallPiiField(key: string): boolean {
+  const normalized = key.toLowerCase();
+  if (TOOL_CALL_PII_REDACTION_EXEMPT_FIELD_SET.has(normalized)) {
+    return false;
+  }
+  return TOOL_CALL_PII_FIELD_NAMES.has(normalized);
+}
+
+function redactPiiInString(value: string): string {
+  return value
+    .replace(EMAIL_PATTERN, TOOL_CALL_REDACTED_VALUE)
+    .replace(PHONE_PATTERN, TOOL_CALL_REDACTED_VALUE);
 }
 
 async function writeKv(
@@ -368,6 +452,10 @@ function recordFrom(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   throw new Error("Tool-call input must be an object.");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function optionalString(value: unknown): string | undefined {

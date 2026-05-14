@@ -145,16 +145,20 @@ describe("toolCallRoute", () => {
       updateGuestProfile: piiEchoTool({
         after: {
           address: "123 Main St",
+          customer: { email: "nested@example.com", name: "Nested Guest" },
           email: "guest@example.com",
           itemId: "item-1",
           name: "Guest Person",
+          notes: "Email nested@example.com or call (555) 123-4567",
           phone: "555-123-4567",
         },
         before: {
           address: "1 Old St",
+          customer: { email: "old-nested@example.com", name: "Old Nested" },
           email: "old@example.com",
           itemId: "item-1",
           name: "Old Name",
+          notes: "Previous phone was (555) 000-1111",
           phone: "555-000-1111",
         },
       }),
@@ -165,9 +169,11 @@ describe("toolCallRoute", () => {
       ctx({
         arguments: {
           address: "123 Main St",
+          customer: { email: "nested@example.com", name: "Nested Guest" },
           email: "guest@example.com",
           itemId: "item-1",
           name: "Guest Person",
+          notes: "Email nested@example.com or call (555) 123-4567",
           phone: "555-123-4567",
         },
         kv,
@@ -180,23 +186,29 @@ describe("toolCallRoute", () => {
     expect(kv.entries.get("tool-undo:workspace-1:undo-pii")?.value).toMatchObject({
       after: {
         address: "[REDACTED]",
+        customer: { email: "[REDACTED]", name: "[REDACTED]" },
         email: "[REDACTED]",
         itemId: "item-1",
         name: "[REDACTED]",
+        notes: "Email [REDACTED] or call [REDACTED]",
         phone: "[REDACTED]",
       },
       before: {
         address: "[REDACTED]",
+        customer: { email: "[REDACTED]", name: "[REDACTED]" },
         email: "[REDACTED]",
         itemId: "item-1",
         name: "[REDACTED]",
+        notes: "Previous phone was [REDACTED]",
         phone: "[REDACTED]",
       },
       input: {
         address: "[REDACTED]",
+        customer: { email: "[REDACTED]", name: "[REDACTED]" },
         email: "[REDACTED]",
         itemId: "item-1",
         name: "[REDACTED]",
+        notes: "Email [REDACTED] or call [REDACTED]",
         phone: "[REDACTED]",
       },
     });
@@ -205,24 +217,30 @@ describe("toolCallRoute", () => {
     ).toMatchObject({
       after: {
         address: "[REDACTED]",
+        customer: { email: "[REDACTED]", name: "[REDACTED]" },
         email: "[REDACTED]",
         itemId: "item-1",
         name: "[REDACTED]",
+        notes: "Email [REDACTED] or call [REDACTED]",
         phone: "[REDACTED]",
       },
       before: {
         address: "[REDACTED]",
+        customer: { email: "[REDACTED]", name: "[REDACTED]" },
         email: "[REDACTED]",
         itemId: "item-1",
         name: "[REDACTED]",
+        notes: "Previous phone was [REDACTED]",
         phone: "[REDACTED]",
       },
       input: {
         arguments: {
           address: "[REDACTED]",
+          customer: { email: "[REDACTED]", name: "[REDACTED]" },
           email: "[REDACTED]",
           itemId: "item-1",
           name: "[REDACTED]",
+          notes: "Email [REDACTED] or call [REDACTED]",
           phone: "[REDACTED]",
         },
       },
