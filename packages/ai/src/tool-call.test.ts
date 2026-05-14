@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { toolCallRoute, validateMutationTools } from "./tool-call.js";
-import type { ToolCallKv, ToolDefinition, ToolExecutorContext } from "./tool-call.js";
+import type { ContentApi, ToolCallKv, ToolDefinition, ToolExecutorContext } from "./tool-call.js";
 
 interface StoredValue {
   value: unknown;
@@ -121,6 +121,89 @@ describe("toolCallRoute", () => {
       after: { price: 14 },
       before: { price: 12 },
       toolName: "updateMenuItemPrice",
+    });
+  });
+
+  it("rejects confirmation from a different actor in the same workspace with 403", async () => {
+    const kv = new MemoryKv();
+    const state = { price: 12 };
+    const tools = { updateMenuItemPrice: priceTool(state) };
+
+    await toolCallRoute(
+      ctx({ actorId: "user-1", arguments: { price: 14 }, kv, toolName: "updateMenuItemPrice" }),
+      tools,
+      { tokenFactory: () => "confirm-1" },
+    );
+
+    await expect(
+      toolCallRoute(
+        ctx({
+          actorId: "user-2",
+          arguments: { price: 14 },
+          confirmToken: "confirm-1",
+          kv,
+          toolName: "updateMenuItemPrice",
+        }),
+        tools,
+        { tokenFactory: () => "undo-1" },
+      ),
+    ).rejects.toMatchObject({
+      message: "Confirm token does not match the actor.",
+      status: 403,
+    });
+    expect(state.price).toBe(12);
+    expect(kv.entries.has("tool-confirm:workspace-1:confirm-1")).toBe(true);
+  });
+
+  it("overwrites stale client-supplied priceDiff.before with current content at confirmation", async () => {
+    const kv = new MemoryKv();
+    const item = { id: "menu-item-1", price: 12 };
+    const content = {
+      async list(collection: string) {
+        expect(collection).toBe("carte_menu_items");
+        return [item];
+      },
+      async update(collection: string, id: string, patch: Record<string, unknown>) {
+        expect(collection).toBe("carte_menu_items");
+        expect(id).toBe(item.id);
+        Object.assign(item, patch);
+        return item;
+      },
+    };
+
+    await toolCallRoute(
+      ctx({
+        arguments: { before: { price: 1 }, id: item.id, price: 14 },
+        content,
+        kv,
+        toolName: "updateMenuItemPrice",
+      }),
+      undefined,
+      { tokenFactory: () => "confirm-1" },
+    );
+    item.price = 13;
+
+    await toolCallRoute(
+      ctx({
+        arguments: { before: { price: 1 }, id: item.id, price: 14 },
+        confirmToken: "confirm-1",
+        content,
+        kv,
+        toolName: "updateMenuItemPrice",
+      }),
+      undefined,
+      { now: () => new Date("2026-05-08T12:00:00.000Z"), tokenFactory: () => "undo-1" },
+    );
+
+    expect(kv.entries.get("tool-undo:workspace-1:undo-1")?.value).toMatchObject({
+      after: { price: 14 },
+      before: { price: 13 },
+    });
+    expect(
+      kv.entries.get("audit:workspace-1:2026-05-08T12:00:00.000Z:undo-1")?.value,
+    ).toMatchObject({
+      after: { price: 14 },
+      before: { price: 13 },
     });
   });
 
@@ -287,8 +370,10 @@ describe("toolCallRoute", () => {
 });
 
 function ctx(input: {
+  actorId?: string;
   arguments?: unknown;
   confirmToken?: string;
+  content?: ContentApi;
   kv?: ToolCallKv;
   toolName?: string;
   undoToken?: string;
@@ -298,11 +383,12 @@ function ctx(input: {
   return {
     input: {
       arguments: input.arguments,
-      actorId: "user-1",
+      actorId: input.actorId ?? "user-1",
       confirmToken: input.confirmToken,
       toolName: input.toolName,
       undoToken: input.undoToken,
     },
+    content: input.content,
     kv: input.kv ?? new MemoryKv(),
     request: new Request("https://carte.test/_emdash/api/plugins/carte-ai/tool-call", {
       headers: { "X-Workspace-Id": workspaceId },
