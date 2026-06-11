@@ -1,10 +1,12 @@
 export const TOOL_CONFIRMATION_TTL_SECONDS = 600;
 export const TOOL_UNDO_TTL_SECONDS = 600;
+export const TOOL_UNDO_STATUS_TTL_SECONDS = 900;
 
 export interface ToolCallKv {
   get<T>(key: string): Promise<T | null>;
+  list?: (prefix?: string) => Promise<Array<{ key: string; value: unknown }>>;
   put?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
-  set?: (key: string, value: unknown) => Promise<void>;
+  set?: (key: string, value: unknown, options?: { expirationTtl?: number }) => Promise<void>;
   delete?: (key: string) => Promise<boolean | void>;
 }
 
@@ -30,8 +32,32 @@ export interface MutationResult extends DiffPreview {
 }
 
 export interface UndoRecord extends MutationResult {
+  expiresAt?: string;
   input: unknown;
   toolName: string;
+}
+
+interface UndoStatusRecord {
+  expiredAt: string;
+  status: "pending" | "undone";
+}
+
+interface UndoStatusMutation {
+  expiredAt: string | undefined;
+  kv: ToolCallKv;
+  undoToken: string;
+  workspaceId: string;
+}
+
+interface ExpiringUndoStatusMutation extends UndoStatusMutation {
+  expiredAt: string;
+}
+
+interface UndoStatusWrite {
+  kv: ToolCallKv;
+  status: UndoStatusRecord;
+  undoToken: string;
+  workspaceId: string;
 }
 
 export interface ToolExecutorContext {
@@ -71,6 +97,64 @@ interface PendingConfirmation {
 }
 
 const DEFAULT_ACTOR_ID = "unknown";
+const FORBIDDEN_STATUS = 403;
+const MENU_ITEMS_COLLECTION = "carte_menu_items";
+const TOOL_CALL_REDACTED_VALUE = "[REDACTED]";
+const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+const PHONE_PATTERN = /(?:\+?\d|\(\d{3}\))[\d\s().-]{6,}\d/g;
+const HTTP_URL_PROTOCOLS = new Set(["http:", "https:"]);
+const LOCALHOST_NAMES = new Set(["localhost", "0.0.0.0"]);
+
+/**
+ * Documented KV key prefixes for tool-call state. Keep each prefix unique so
+ * undo, audit, and pending-confirmation records never collide in plugin KV.
+ */
+export const TOOL_CALL_KV_KEY_PREFIXES = {
+  audit: "audit",
+  autoApprove: "tool-auto-approve",
+  pendingConfirmation: "tool-confirm",
+  undo: "tool-undo",
+  undoStatus: "tool-undo-status",
+} as const;
+
+/**
+ * Tool-call KV redaction must preserve routing/audit metadata that is not PII.
+ * Any field outside this allow-list still flows through value/key PII checks
+ * before being persisted to undo or audit records.
+ */
+export const TOOL_CALL_PII_REDACTION_EXEMPT_FIELDS = [
+  "actorId",
+  "after",
+  "before",
+  "currency",
+  "id",
+  "input",
+  "itemId",
+  "price",
+  "result",
+  "status",
+  "timestamp",
+  "toolName",
+] as const;
+
+const TOOL_CALL_PII_FIELD_NAMES = new Set([
+  "address",
+  "customeraddress",
+  "customeremail",
+  "customername",
+  "customerphone",
+  "email",
+  "guestaddress",
+  "guestemail",
+  "guestname",
+  "guestphone",
+  "name",
+  "phone",
+  "postaladdress",
+]);
+const TOOL_CALL_PII_REDACTION_EXEMPT_FIELD_SET = new Set<string>(
+  TOOL_CALL_PII_REDACTION_EXEMPT_FIELDS.map((field) => field.toLowerCase()),
+);
 
 export async function toolCallRoute(
   ctx: ToolCallContext,
@@ -80,13 +164,49 @@ export async function toolCallRoute(
   const workspaceId = requireWorkspaceId(ctx.request);
   const input = parseToolCallInput(ctx.input, workspaceId);
   if (input.undoToken !== undefined) {
-    return undoMutation(ctx, tools, input);
+    return undoMutation(ctx, tools, input, options);
   }
   const tool = toolFor(tools, input.toolName);
   if (tool.kind === "read") {
     return executeRead(tool, ctx, input);
   }
   return handleMutation(ctx, tool, input, options);
+}
+
+export async function confirmCallRoute(
+  ctx: ToolCallContext,
+  tools: ToolRegistry = defaultTools(),
+  options: ToolCallOptions = {},
+): Promise<Record<string, unknown>> {
+  return toolCallRoute(ctx, tools, options);
+}
+
+export async function undoCallRoute(
+  ctx: ToolCallContext,
+  tools: ToolRegistry = defaultTools(),
+  options: ToolCallOptions = {},
+): Promise<Record<string, unknown>> {
+  return toolCallRoute(ctx, tools, options);
+}
+
+export async function auditListRoute(ctx: ToolCallContext): Promise<Record<string, unknown>> {
+  const workspaceId = requireWorkspaceId(ctx.request);
+  const entries = await readAuditEntries(ctx.kv, auditPrefix(workspaceId));
+  return { ok: true, result: { entries }, status: "listed" };
+}
+
+/**
+ * Defensive SSRF guard for future tools that accept caller-supplied URLs.
+ * Only HTTP(S) URLs whose hostname exactly matches an explicit allow-list entry
+ * pass; localhost and private IPv4 targets are always rejected.
+ */
+export function isAllowedToolUrl(url: string, allowedHosts: readonly string[]): boolean {
+  const parsed = parseUrl(url);
+  if (parsed === null || !HTTP_URL_PROTOCOLS.has(parsed.protocol)) {
+    return false;
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  return allowedHosts.includes(hostname) && !isLocalOrPrivateHost(hostname);
 }
 
 function defaultTools(): ToolRegistry {
@@ -153,8 +273,9 @@ async function executeMutation(
     await tool.execute(input.arguments, blankExecutorContext(ctx)),
   );
   const undoToken = tokenFrom(options, "undo");
-  await writeUndo(ctx.kv, input, mutation, undoToken);
-  await writeAudit(ctx.kv, input, mutation, undoToken, options.now?.() ?? new Date());
+  const now = options.now?.() ?? new Date();
+  await writeUndo(ctx.kv, input, mutation, undoToken, now);
+  await writeAudit(ctx.kv, input, mutation, undoToken, now);
   return { ok: true, result: mutation.result, status: "executed", undoToken };
 }
 
@@ -162,19 +283,25 @@ async function undoMutation(
   ctx: ToolCallContext,
   tools: ToolRegistry,
   input: ToolCallInput,
+  options: ToolCallOptions,
 ): Promise<Record<string, unknown>> {
   const undoToken = requireValue(input.undoToken, "undoToken");
   const key = undoKey(input.workspaceId, undoToken);
   const undoRecord = await ctx.kv.get<UndoRecord>(key);
   if (undoRecord === null) {
-    throw new Error("Undo token is invalid or expired.");
+    return missingUndoResponse(ctx.kv, input.workspaceId, undoToken);
   }
-  await ctx.kv.delete?.(key);
+  const expiredAt = undoRecord.expiresAt;
+  if (isExpired(expiredAt, options.now?.() ?? new Date())) {
+    await markUndoExpired({ expiredAt, kv: ctx.kv, undoToken, workspaceId: input.workspaceId });
+    return undoExpiredResponse(expiredAt);
+  }
   const tool = toolFor(tools, undoRecord.toolName);
   if (tool.undo === undefined) {
     throw new Error(`Tool ${undoRecord.toolName} has no undo implementation.`);
   }
   const result = await tool.undo(undoRecord.input, { ctx, undoRecord });
+  await markUndoCompleted({ expiredAt, kv: ctx.kv, undoToken, workspaceId: input.workspaceId });
   return { ok: true, result, status: "undone" };
 }
 
@@ -210,6 +337,9 @@ function assertSamePendingCall(
   if (pendingConfirmation.workspaceId !== input.workspaceId) {
     throw new Error("Confirm token does not match the workspace.");
   }
+  if (pendingConfirmation.actorId !== input.actorId) {
+    throw new ToolCallHttpError("Confirm token does not match the actor.", FORBIDDEN_STATUS);
+  }
 }
 
 async function previewFor(
@@ -228,13 +358,30 @@ async function writeUndo(
   input: ToolCallInput,
   mutation: MutationResult,
   undoToken: string,
+  now: Date,
 ): Promise<void> {
+  const persistedMutation = redactToolCallKvRecord(mutation) as MutationResult;
+  const expiresAt = new Date(now.getTime() + TOOL_UNDO_TTL_SECONDS * 1000).toISOString();
   await writeKv(
     kv,
     undoKey(input.workspaceId, undoToken),
-    { ...mutation, input: input.arguments, toolName: input.toolName },
+    {
+      ...persistedMutation,
+      expiresAt,
+      input: redactToolCallKvRecord(input.arguments),
+      toolName: input.toolName,
+    },
     { expirationTtl: TOOL_UNDO_TTL_SECONDS },
   );
+  await writeUndoStatus({
+    kv,
+    status: {
+      expiredAt: expiresAt,
+      status: "pending",
+    },
+    undoToken,
+    workspaceId: input.workspaceId,
+  });
 }
 
 async function writeAudit(
@@ -244,13 +391,50 @@ async function writeAudit(
   undoToken: string,
   now: Date,
 ): Promise<void> {
-  await writeKv(kv, `audit:${input.workspaceId}:${now.toISOString()}:${undoToken}`, {
+  await writeKv(kv, auditKey(input.workspaceId, now.toISOString(), undoToken), {
     actorId: input.actorId,
-    after: mutation.after,
-    before: mutation.before,
+    after: redactToolCallKvRecord(mutation.after),
+    before: redactToolCallKvRecord(mutation.before),
+    input: { arguments: redactToolCallKvRecord(input.arguments) },
     timestamp: now.toISOString(),
     toolName: input.toolName,
   });
+}
+
+function redactToolCallKvRecord(value: unknown): unknown {
+  if (typeof value === "string") {
+    return redactPiiInString(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => redactToolCallKvRecord(item));
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => [key, redactToolCallEntry(key, child)]),
+  );
+}
+
+function redactToolCallEntry(key: string, value: unknown): unknown {
+  if (isToolCallPiiField(key)) {
+    return TOOL_CALL_REDACTED_VALUE;
+  }
+  return redactToolCallKvRecord(value);
+}
+
+function isToolCallPiiField(key: string): boolean {
+  const normalized = key.toLowerCase();
+  if (TOOL_CALL_PII_REDACTION_EXEMPT_FIELD_SET.has(normalized)) {
+    return false;
+  }
+  return TOOL_CALL_PII_FIELD_NAMES.has(normalized);
+}
+
+function redactPiiInString(value: string): string {
+  return value
+    .replace(EMAIL_PATTERN, TOOL_CALL_REDACTED_VALUE)
+    .replace(PHONE_PATTERN, TOOL_CALL_REDACTED_VALUE);
 }
 
 async function writeKv(
@@ -263,7 +447,7 @@ async function writeKv(
     await kv.put(key, value, options);
     return;
   }
-  await kv.set?.(key, value);
+  await kv.set?.(key, value, options);
 }
 
 async function isAutoApproved(
@@ -316,8 +500,9 @@ async function updateMenuItemPrice(
   const record = recordFrom(input);
   const id = requireValue(optionalString(record.id), "id");
   const price = numberFrom(record.price, "price");
-  const result = await content?.update?.("carte_menu_items", id, { price });
-  return { ...priceDiff(input), result };
+  const before = await currentMenuItemPrice(content, id);
+  const result = await content?.update?.(MENU_ITEMS_COLLECTION, id, { price });
+  return { after: { price }, before, result };
 }
 
 function priceDiff(input: unknown): DiffPreview {
@@ -346,15 +531,93 @@ function tokenFrom(options: ToolCallOptions, prefix: string): string {
 }
 
 function autoApproveKey(workspaceId: string, toolName: string): string {
-  return `tool-auto-approve:${workspaceId}:${toolName}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.autoApprove}:${workspaceId}:${toolName}`;
+}
+
+async function readAuditEntries(kv: ToolCallKv, prefix: string): Promise<unknown[]> {
+  const listing = await kv.list?.(prefix);
+  if (listing === undefined) {
+    return [];
+  }
+  return listing.map((entry) => entry.value);
+}
+
+async function missingUndoResponse(
+  kv: ToolCallKv,
+  workspaceId: string,
+  undoToken: string,
+): Promise<Record<string, unknown>> {
+  const status = await kv.get<UndoStatusRecord>(undoStatusKey(workspaceId, undoToken));
+  if (status?.status === "undone") {
+    return { ok: true, result: null, status: "undone" };
+  }
+  if (status?.status === "pending") {
+    return undoExpiredResponse(status.expiredAt);
+  }
+  throw new Error("Undo token is invalid or expired.");
+}
+
+async function markUndoCompleted(mutation: UndoStatusMutation): Promise<void> {
+  await mutation.kv.delete?.(undoKey(mutation.workspaceId, mutation.undoToken));
+  if (mutation.expiredAt === undefined) {
+    return;
+  }
+  await writeUndoStatus({
+    kv: mutation.kv,
+    status: {
+      expiredAt: mutation.expiredAt,
+      status: "undone",
+    },
+    undoToken: mutation.undoToken,
+    workspaceId: mutation.workspaceId,
+  });
+}
+
+async function markUndoExpired(mutation: ExpiringUndoStatusMutation): Promise<void> {
+  await mutation.kv.delete?.(undoKey(mutation.workspaceId, mutation.undoToken));
+  await writeUndoStatus({
+    kv: mutation.kv,
+    status: {
+      expiredAt: mutation.expiredAt,
+      status: "pending",
+    },
+    undoToken: mutation.undoToken,
+    workspaceId: mutation.workspaceId,
+  });
+}
+
+async function writeUndoStatus(write: UndoStatusWrite): Promise<void> {
+  await writeKv(write.kv, undoStatusKey(write.workspaceId, write.undoToken), write.status, {
+    expirationTtl: TOOL_UNDO_STATUS_TTL_SECONDS,
+  });
+}
+
+function isExpired(expiresAt: string | undefined, now: Date): expiresAt is string {
+  return expiresAt !== undefined && now.getTime() > new Date(expiresAt).getTime();
+}
+
+function undoExpiredResponse(expiredAt: string): Record<string, unknown> {
+  return { error: "undo_expired", expiredAt, ok: false };
 }
 
 function confirmKey(workspaceId: string, token: string): string {
-  return `tool-confirm:${workspaceId}:${token}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.pendingConfirmation}:${workspaceId}:${token}`;
 }
 
 function undoKey(workspaceId: string, token: string): string {
-  return `tool-undo:${workspaceId}:${token}`;
+  return `${TOOL_CALL_KV_KEY_PREFIXES.undo}:${workspaceId}:${token}`;
+}
+
+function undoStatusKey(workspaceId: string, token: string): string {
+  return `${TOOL_CALL_KV_KEY_PREFIXES.undoStatus}:${workspaceId}:${token}`;
+}
+
+function auditKey(workspaceId: string, timestamp: string, undoToken: string): string {
+  return `${auditPrefix(workspaceId)}${timestamp}:${undoToken}`;
+}
+
+function auditPrefix(workspaceId: string): string {
+  return `${TOOL_CALL_KV_KEY_PREFIXES.audit}:${workspaceId}:`;
 }
 
 function recordFrom(value: unknown): Record<string, unknown> {
@@ -362,6 +625,10 @@ function recordFrom(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   throw new Error("Tool-call input must be an object.");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function optionalString(value: unknown): string | undefined {
@@ -384,4 +651,63 @@ function numberFrom(value: unknown, name: string): number {
     return value;
   }
   throw new Error(`Tool-call input requires numeric ${name}.`);
+}
+
+function parseUrl(url: string): URL | null {
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
+function isLocalOrPrivateHost(hostname: string): boolean {
+  return (
+    LOCALHOST_NAMES.has(hostname) ||
+    hostname.startsWith("127.") ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") ||
+    isPrivate172Host(hostname)
+  );
+}
+
+function isPrivate172Host(hostname: string): boolean {
+  const match = /^172\.(\d{1,3})\./.exec(hostname);
+  if (match === null) {
+    return false;
+  }
+  const secondOctet = Number(match[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+async function currentMenuItemPrice(
+  content: ContentApi | undefined,
+  id: string,
+): Promise<{ price: number } | null> {
+  const items = await content?.list?.(MENU_ITEMS_COLLECTION);
+  if (!Array.isArray(items)) {
+    return null;
+  }
+  const item = items.find((candidate) => {
+    const record = optionalRecordFrom(candidate);
+    return record?.id === id;
+  });
+  const record = optionalRecordFrom(item);
+  return typeof record?.price === "number" && Number.isFinite(record.price)
+    ? { price: record.price }
+    : null;
+}
+
+function optionalRecordFrom(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+class ToolCallHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ToolCallHttpError";
+    this.status = status;
+  }
 }

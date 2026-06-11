@@ -2,7 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RouteContext } from "emdash";
 
-import factory from "./index.js";
+const tenderChargeMock = vi.hoisted(() => vi.fn());
+const tenderRefundMock = vi.hoisted(() => vi.fn());
+const createTenderClientMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    charge: tenderChargeMock,
+    refund: tenderRefundMock,
+  })),
+);
+
+vi.mock("@tender/sdk", () => ({
+  createTenderClient: createTenderClientMock,
+}));
+
+import factory, { TENDER_EVENT_PROCESSED_VALUE } from "./index.js";
 
 const CANONICAL_CAPABILITIES = new Set([
   "content:read",
@@ -43,6 +56,128 @@ type RateLimitCounters = {
   setOptions: Array<Record<string, unknown> | undefined>;
 };
 
+const TENDER_CHECKOUT_URL =
+  "https://restaurant.example/_emdash/api/plugins/tender-core/checkout/txn_123";
+const TENDER_EVENT_TTL_SECONDS = 604_800;
+const TENDER_EVENT_IN_PROGRESS_TTL_SECONDS = 300;
+
+const tenderCheckoutContext = () => {
+  const subrequests: string[] = [];
+  const kvWrites: Array<{ key: string; options?: { expirationTtl: number } }> = [];
+  const ctx = {
+    input: tenderCheckoutInput(),
+    request: new Request("https://example.test/checkout"),
+    requestMeta: { ip: "203.0.113.44", userAgent: null, referer: null, geo: null },
+    kv: {
+      async get() {
+        subrequests.push("kv.get");
+        return null;
+      },
+      async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
+        subrequests.push("kv.set");
+        if (options) kvWrites.push({ key, options });
+      },
+    },
+    http: {
+      async fetch(url: string, init: RequestInit) {
+        subrequests.push("http.fetch");
+        return new Response(JSON.stringify({ url, init }));
+      },
+    },
+    settings: {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
+      currency: "usd",
+    },
+  } as unknown as RouteContext;
+  return { ctx, kvWrites, subrequests };
+};
+
+const tenderCheckoutInput = () => ({
+  cartId: "cart_123",
+  orderId: "order_123",
+  customerEmail: "guest@example.com",
+  successUrl: "https://restaurant.example/orders/success",
+  cancelUrl: "https://restaurant.example/orders/cancel",
+  lineItems: [{ name: "Margherita Pizza", unitAmount: 1295, quantity: 2 }],
+});
+
+interface TenderRefundContextOptions {
+  input?: {
+    orderId: string;
+    transactionId: string;
+    amount?: number;
+    reason?: string;
+  };
+  update?: (collection: string, id: string, value: unknown) => Promise<void>;
+}
+
+const tenderRefundContext = (options: TenderRefundContextOptions = {}) => {
+  const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+  const waitUntilTasks: Promise<unknown>[] = [];
+  const ctx = {
+    input: options.input ?? {
+      orderId: "order_123",
+      transactionId: "txn_123",
+      amount: 1295,
+      reason: "Customer changed their mind",
+    },
+    auth: { scopes: ["admin"] },
+    http: {
+      async fetch() {
+        throw new Error("Refund route must use Tender SDK instead of direct fetch.");
+      },
+    },
+    content: {
+      async update(collection: string, id: string, value: unknown) {
+        if (options.update) return options.update(collection, id, value);
+        updates.push({ collection, id, value });
+      },
+    },
+    settings: {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
+    },
+    waitUntil(task: Promise<unknown>) {
+      waitUntilTasks.push(task);
+    },
+  } as unknown as RouteContext;
+
+  return { ctx, updates, waitUntilTasks };
+};
+
+const expectTenderCheckoutCharge = (): void => {
+  expect(createTenderClientMock).toHaveBeenCalledWith({
+    baseUrl: "https://restaurant.example",
+    pluginToken: "tender_plugin_token",
+    fetch: expect.any(Function),
+  });
+  expect(tenderChargeMock).toHaveBeenCalledWith({
+    flow: "hosted",
+    amount: 2590,
+    currency: "usd",
+    customerEmail: "guest@example.com",
+    returnUrl: "https://restaurant.example/orders/success",
+    cancelUrl: "https://restaurant.example/orders/cancel",
+    description: "Margherita Pizza x2",
+    metadata: { carte_order_id: "order_123", carte_cart_id: "cart_123" },
+    originatingPluginId: "carte-orders-backend",
+  });
+};
+
+const expectCheckoutKvTtls = (
+  kvWrites: Array<{ key: string; options?: { expirationTtl: number } }>,
+): void => {
+  expect(kvWrites).toContainEqual({
+    key: "cart-hold:cart_123",
+    options: { expirationTtl: 600 },
+  });
+  expect(kvWrites).toContainEqual({
+    key: "rate-limit:checkout:203.0.113.44",
+    options: { expirationTtl: 120 },
+  });
+};
+
 const rateLimitContext = (ip: string | null, counters: RateLimitCounters): RouteContext => {
   const store = new Map<string, unknown>();
   return {
@@ -69,6 +204,41 @@ const checkoutHandler = () => {
   return handler;
 };
 
+type TenderEventUpdate = (collection: string, id: string, value: unknown) => Promise<void>;
+
+const tenderEventContext = (options: { update?: TenderEventUpdate } = {}) => {
+  const seenEvents = new Map<string, unknown>();
+  const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+  const waitUntilTasks: Promise<unknown>[] = [];
+  const kvWrites: Array<{ key: string; value: unknown; options?: { expirationTtl: number } }> = [];
+  const ctx = {
+    kv: {
+      async get(key: string) {
+        return seenEvents.get(key) ?? null;
+      },
+      async set(key: string, value: unknown, options?: { expirationTtl: number }) {
+        seenEvents.set(key, value);
+        if (options === undefined) kvWrites.push({ key, value });
+        else kvWrites.push({ key, value, options });
+      },
+    },
+    content: {
+      async update(collection: string, id: string, value: unknown) {
+        if (options.update === undefined) {
+          updates.push({ collection, id, value });
+          return;
+        }
+        await options.update(collection, id, value);
+      },
+    },
+    waitUntil(task: Promise<unknown>) {
+      waitUntilTasks.push(task);
+    },
+  } as unknown as RouteContext;
+
+  return { ctx, kvWrites, updates, waitUntilTasks };
+};
+
 const callCheckout = async (ctx: RouteContext): Promise<unknown> => {
   try {
     return await checkoutHandler()(ctx);
@@ -84,7 +254,7 @@ describe("@carte/orders-backend manifest", () => {
     expect(manifest.version).toBe("0.1.0");
   });
 
-  it("uses canonical capability names only and pins allowed Stripe hosts", () => {
+  it("uses canonical capability names and keeps Stripe hosts out of the allowlist", () => {
     const manifest = factory();
     for (const cap of manifest.capabilities) {
       expect(CANONICAL_CAPABILITIES.has(cap)).toBe(true);
@@ -95,17 +265,35 @@ describe("@carte/orders-backend manifest", () => {
       "email:send",
       "network:request",
     ]);
-    expect(manifest.allowedHosts).toEqual(["api.stripe.com", "checkout.stripe.com"]);
+    expect(manifest.allowedHosts).toEqual(["license.carteplugin.dev"]);
+    expect(manifest.allowedHosts).not.toContain("api.stripe.com");
+    expect(manifest.allowedHosts).not.toContain("checkout.stripe.com");
     expect(manifest.capabilities).not.toContain("network:request:unrestricted");
   });
 
-  it("declares Stripe and order settings with secret fields protected", () => {
+  it("does not register the legacy Stripe webhook route", () => {
     const manifest = factory();
+    const legacyStripeWebhookRoute = ["webhook", "stripe"].join("-");
 
-    expect(manifest.admin.settingsSchema).toMatchObject({
-      stripePublicKey: { type: "string" },
-      stripeSecretKey: { type: "secret", secret: true },
-      stripeWebhookSecret: { type: "secret", secret: true },
+    expect(manifest.routes).not.toHaveProperty(legacyStripeWebhookRoute);
+  });
+
+  it("declares placeholder Tender payment hooks for EmDash 0.10 namespace dispatch", () => {
+    const manifest = factory();
+    const hooks = manifest.hooks as Record<string, unknown>;
+
+    expect(hooks).toHaveProperty("tender:payment.succeeded");
+    expect(hooks).toHaveProperty("tender:payment.refunded");
+  });
+
+  it("declares Tender and order settings without legacy Stripe secrets", () => {
+    const manifest = factory();
+    const settings = manifest.admin.settingsSchema as Record<string, { options?: unknown }>;
+
+    expect(settings).toMatchObject({
+      tenderBaseUrl: { type: "string" },
+      tenderPluginToken: { type: "secret", secret: true },
+      tenderProvider: { type: "select", default: "stripe" },
       currency: { type: "select", default: "usd" },
       cartHoldTtlSeconds: { type: "number", default: 600 },
       orderTypes: { type: "select", default: "pickup,delivery" },
@@ -114,6 +302,53 @@ describe("@carte/orders-backend manifest", () => {
       taxMode: { type: "select" },
       manualVatPercent: { type: "number" },
     });
+    expect(settings).not.toHaveProperty("stripePublicKey");
+    expect(settings).not.toHaveProperty("stripeSecretKey");
+    expect(settings).not.toHaveProperty("stripeWebhookSecret");
+    expect(settings.tenderProvider?.options).toEqual([
+      { value: "stripe", label: "Stripe via Tender" },
+    ]);
+  });
+
+  it("shows the stale Stripe secret migration warning exactly once without leaking the key", async () => {
+    const { createStaleStripeSettingsWarning } = await import("./index.js");
+    const writes: Array<{ key: string; value: unknown; options?: Record<string, unknown> }> = [];
+    const seenKeys = new Set<string>();
+    const ctx = {
+      settings: { stripeSecretKey: "sk_live_should_never_leak" },
+      kv: {
+        async get(key: string) {
+          return seenKeys.has(key) ? "shown" : null;
+        },
+        async set(key: string, value: unknown, options?: Record<string, unknown>) {
+          seenKeys.add(key);
+          if (options === undefined) {
+            writes.push({ key, value });
+            return;
+          }
+          writes.push({ key, value, options });
+        },
+      },
+    } as unknown as RouteContext;
+
+    const firstWarning = await createStaleStripeSettingsWarning(ctx);
+    const secondWarning = await createStaleStripeSettingsWarning(ctx);
+
+    expect(firstWarning).toMatchObject({
+      type: "section",
+      label: "Tender migration notice",
+      text: expect.stringContaining("Move the legacy Stripe secret to @tender/stripe settings"),
+    });
+    expect(secondWarning).toBeNull();
+    expect(writes).toEqual([
+      {
+        key: "migration:stripe-secret-warning-shown",
+        value: "shown",
+        options: { expirationTtl: 31_536_000 },
+      },
+    ]);
+    expect(JSON.stringify(firstWarning)).not.toContain("sk_live_should_never_leak");
+    expectNoForbiddenBlockKitFields(firstWarning);
   });
 
   it("declares the orders collection for line item snapshot writes", () => {
@@ -121,8 +356,8 @@ describe("@carte/orders-backend manifest", () => {
 
     expect(manifest.storage).toEqual({
       carte_orders: {
-        indexes: ["status", "orderType", "email", "createdAt", "stripeCheckoutSessionId"],
-        uniqueIndexes: ["orderNumber", "stripeCheckoutSessionId"],
+        indexes: ["status", "orderType", "email", "createdAt"],
+        uniqueIndexes: ["orderNumber"],
       },
     });
   });
@@ -172,207 +407,54 @@ describe("@carte/orders-backend manifest", () => {
     });
   });
 
-  it("creates Stripe Checkout sessions and stores cart holds for 600 seconds", async () => {
+  it("creates hosted Tender charges and stores cart holds for 600 seconds", async () => {
     const manifest = factory();
-    const subrequests: string[] = [];
-    const kvWrites: Array<{ key: string; options?: { expirationTtl: number } }> = [];
-    const ctx = {
-      input: {
-        cartId: "cart_123",
-        customerEmail: "guest@example.com",
-        successUrl: "https://restaurant.example/orders/success",
-        cancelUrl: "https://restaurant.example/orders/cancel",
-        lineItems: [
-          {
-            name: "Margherita Pizza",
-            unitAmount: 1295,
-            quantity: 2,
-          },
-        ],
-      },
-      request: new Request("https://example.test/checkout"),
-      requestMeta: { ip: "203.0.113.44", userAgent: null, referer: null, geo: null },
-      kv: {
-        async get() {
-          subrequests.push("kv.get");
-          return null;
-        },
-        async set(key: string, _value: unknown, options?: { expirationTtl: number }) {
-          subrequests.push("kv.set");
-          if (options) {
-            kvWrites.push({ key, options });
-          }
-        },
-      },
-      http: {
-        async fetch(url: string, init: RequestInit) {
-          subrequests.push("http.fetch");
-          expect(url).toBe("https://api.stripe.com/v1/checkout/sessions");
-          expect(init.method).toBe("POST");
-          return new Response(JSON.stringify({ url: "https://checkout.stripe.com/c/pay_123" }));
-        },
-      },
-      settings: { stripeSecretKey: "sk_test_orders", currency: "usd" },
-    } as unknown as RouteContext;
+    const { ctx, kvWrites, subrequests } = tenderCheckoutContext();
+    tenderChargeMock.mockResolvedValueOnce({
+      transactionId: "txn_123",
+      status: "requires-action",
+      checkoutUrl: TENDER_CHECKOUT_URL,
+    });
 
     const checkoutRoute = manifest.routes.checkout;
     expect(checkoutRoute).toBeDefined();
 
-    const result = await checkoutRoute?.handler(ctx);
+    const checkoutResult = await checkoutRoute?.handler(ctx);
 
-    expect(result).toEqual({ checkoutUrl: "https://checkout.stripe.com/c/pay_123" });
-    expect(kvWrites).toContainEqual({
-      key: "cart-hold:cart_123",
-      options: { expirationTtl: 600 },
-    });
-    expect(kvWrites).toContainEqual({
-      key: "rate-limit:checkout:203.0.113.44",
-      options: { expirationTtl: 120 },
-    });
-    expect(subrequests).toHaveLength(4);
-    expect(subrequests.length).toBeLessThanOrEqual(4);
+    expect(checkoutResult).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL });
+    expectTenderCheckoutCharge();
+    expectCheckoutKvTtls(kvWrites);
+    expect(subrequests).toHaveLength(3);
   });
 
-  it("rejects Stripe webhooks with an invalid signature before state reads", async () => {
+  it("refunds paid orders through Tender with mapped reason text", async () => {
     const manifest = factory();
-    const stateReads: string[] = [];
-    const ctx = {
-      input: {
-        body: JSON.stringify(stripeCheckoutCompletedEvent()),
-        headers: { "stripe-signature": "t=1700000000,v1=bad" },
-      },
-      kv: {
-        async get(key: string) {
-          stateReads.push(key);
-          return undefined;
-        },
-      },
-      settings: { stripeWebhookSecret: "whsec_test_orders" },
-      waitUntil() {
-        throw new Error("waitUntil must not run for invalid signatures.");
-      },
-    } as unknown as RouteContext;
-
-    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
-      ok: false,
-      status: 400,
+    const { ctx, updates, waitUntilTasks } = tenderRefundContext();
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_123",
+      transactionId: "txn_123",
+      status: "succeeded",
+      providerRefundId: "re_123",
     });
-    expect(stateReads).toEqual([]);
-  });
-
-  it("creates one order for replayed Stripe webhook deliveries", async () => {
-    const manifest = factory();
-    const event = stripeCheckoutCompletedEvent();
-    const body = JSON.stringify(event);
-    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
-    const processedKeys = new Set<string>();
-    const subrequests: string[] = [];
-    const orders: unknown[] = [];
-    const emails: unknown[] = [];
-    const waitUntilTasks: Promise<unknown>[] = [];
-    const ctx = {
-      input: { body, headers: { "stripe-signature": signature } },
-      kv: {
-        async get(key: string) {
-          subrequests.push("kv.get");
-          return processedKeys.has(key) ? "completed" : undefined;
-        },
-        async set(key: string, value: string, options: { expirationTtl: number }) {
-          subrequests.push("kv.set");
-          expect(key).toBe("idempotency:evt_checkout_completed");
-          expect(["in-progress", "completed"]).toContain(value);
-          expect(options).toEqual({ expirationTtl: 604800 });
-          if (value === "completed") {
-            processedKeys.add(key);
-          }
-        },
-      },
-      content: {
-        async create(collection: string, order: unknown) {
-          subrequests.push("content.create");
-          expect(collection).toBe("carte_orders");
-          orders.push(order);
-        },
-      },
-      email: {
-        async send(message: unknown) {
-          subrequests.push("email.send");
-          emails.push(message);
-        },
-      },
-      settings: { stripeWebhookSecret: "whsec_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
-
-    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
-      ok: true,
-      status: 200,
-      idempotent: false,
-    });
-    await Promise.all(waitUntilTasks);
-    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
-      ok: true,
-      status: 200,
-      idempotent: true,
-    });
-
-    expect(waitUntilTasks).toHaveLength(1);
-    expect(orders).toHaveLength(1);
-    expect(emails).toHaveLength(1);
-    expect(subrequests.length).toBeLessThanOrEqual(7);
-  });
-
-  it("refunds paid orders with deterministic Stripe idempotency and metadata", async () => {
-    const manifest = factory();
-    const stripeRequests: RequestInit[] = [];
-    const updates: Array<{ collection: string; id: string; value: unknown }> = [];
-    const waitUntilTasks: Promise<unknown>[] = [];
-    const ctx = {
-      input: {
-        orderId: "order_123",
-        paymentIntentId: "pi_123",
-        amount: 1295,
-        reason: "requested_by_customer",
-      },
-      auth: { scopes: ["admin"] },
-      http: {
-        async fetch(url: string, init: RequestInit) {
-          expect(url).toBe("https://api.stripe.com/v1/refunds");
-          stripeRequests.push(init);
-          return new Response(
-            JSON.stringify({
-              id: "re_123",
-              payment_intent: "pi_123",
-              amount: 1295,
-              status: "succeeded",
-              created: 1_700_000_000,
-            }),
-          );
-        },
-      },
-      content: {
-        async update(collection: string, id: string, value: unknown) {
-          updates.push({ collection, id, value });
-        },
-      },
-      settings: { stripeSecretKey: "sk_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
 
     await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
       ok: true,
-      refundId: "re_123",
+      refundId: "rf_123",
       status: "succeeded",
     });
     await Promise.all(waitUntilTasks);
 
-    expect(stripeRequests).toHaveLength(1);
-    expect(stripeRequests[0]?.headers).toMatchObject({
-      "Idempotency-Key": "refund-order_123",
+    expect(createTenderClientMock).toHaveBeenCalledWith({
+      baseUrl: "https://restaurant.example",
+      pluginToken: "tender_plugin_token",
+      fetch: expect.any(Function),
+    });
+    expect(tenderRefundMock).toHaveBeenCalledWith({
+      transactionId: "txn_123",
+      amount: 1295,
+      reason: "requested-by-customer",
+      reasonNote: "Customer changed their mind",
+      idempotencyKey: "refund-order_123",
     });
     expect(updates).toEqual([
       {
@@ -381,51 +463,88 @@ describe("@carte/orders-backend manifest", () => {
         value: {
           status: "refunded",
           refund: {
-            id: "re_123",
-            paymentIntentId: "pi_123",
+            id: "rf_123",
+            transactionId: "txn_123",
             amount: 1295,
             status: "succeeded",
-            createdAt: "2023-11-14T22:13:20.000Z",
+            createdAt: expect.any(String),
           },
         },
       },
     ]);
   });
 
+  it("omits Tender refund amount for full refunds", async () => {
+    const manifest = factory();
+    const { ctx, updates, waitUntilTasks } = tenderRefundContext({
+      input: {
+        orderId: "order_full",
+        transactionId: "txn_full",
+        reason: "Operator requested full refund",
+      },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_full",
+      transactionId: "txn_full",
+      status: "succeeded",
+    });
+
+    await expect(manifest.routes.refund?.handler(ctx)).resolves.toMatchObject({
+      ok: true,
+      refundId: "rf_full",
+    });
+    await Promise.all(waitUntilTasks);
+
+    const fullRefundRequest = tenderRefundMock.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(fullRefundRequest).not.toHaveProperty("amount");
+    expect(updates[0]?.value).toMatchObject({
+      refund: expect.not.objectContaining({ amount: expect.any(Number) }),
+    });
+  });
+
+  it("forwards explicit zero Tender refund amounts", async () => {
+    const manifest = factory();
+    const { ctx, waitUntilTasks } = tenderRefundContext({
+      input: { orderId: "order_zero", transactionId: "txn_zero", amount: 0 },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "rf_zero",
+      transactionId: "txn_zero",
+      status: "succeeded",
+    });
+
+    await expect(manifest.routes.refund?.handler(ctx)).resolves.toMatchObject({
+      ok: true,
+      refundId: "rf_zero",
+    });
+    await Promise.all(waitUntilTasks);
+
+    expect(tenderRefundMock.mock.calls.at(-1)?.[0]).toMatchObject({
+      transactionId: "txn_zero",
+      amount: 0,
+      idempotencyKey: "refund-order_zero",
+    });
+  });
+
   it("logs an audit record when post-refund content store update fails", async () => {
     const manifest = factory();
-    const waitUntilTasks: Promise<unknown>[] = [];
     const errorLog: unknown[][] = [];
     const originalConsoleError = console.error;
+    const { ctx, waitUntilTasks } = tenderRefundContext({
+      input: { orderId: "order_456", transactionId: "txn_456" },
+      update: async () => {
+        throw new Error("Content store unavailable.");
+      },
+    });
+    tenderRefundMock.mockResolvedValueOnce({
+      refundId: "re_456",
+      transactionId: "txn_456",
+      status: "succeeded",
+      providerRefundId: "re_provider_456",
+    });
     console.error = (...args: unknown[]) => {
       errorLog.push(args);
     };
-    const ctx = {
-      input: { orderId: "order_456", paymentIntentId: "pi_456" },
-      auth: { scopes: ["admin"] },
-      http: {
-        async fetch() {
-          return new Response(
-            JSON.stringify({
-              id: "re_456",
-              payment_intent: "pi_456",
-              amount: 0,
-              status: "succeeded",
-              created: 1_700_000_000,
-            }),
-          );
-        },
-      },
-      content: {
-        async update() {
-          throw new Error("Content store unavailable.");
-        },
-      },
-      settings: { stripeSecretKey: "sk_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
 
     try {
       await expect(manifest.routes.refund?.handler(ctx)).resolves.toEqual({
@@ -454,164 +573,11 @@ describe("@carte/orders-backend manifest", () => {
     });
   });
 
-  it("defers the Stripe webhook 'processed' KV write into ctx.waitUntil", async () => {
-    const manifest = factory();
-    const event = stripeCheckoutCompletedEvent();
-    const body = JSON.stringify(event);
-    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
-    const kvWrites: Array<{ key: string; value: string; phase: "before" | "after" }> = [];
-    const waitUntilTasks: Promise<unknown>[] = [];
-    let waitUntilStarted = false;
-
-    const ctx = {
-      input: { body, headers: { "stripe-signature": signature } },
-      kv: {
-        async get() {
-          return undefined;
-        },
-        async set(key: string, value: string) {
-          kvWrites.push({ key, value, phase: waitUntilStarted ? "after" : "before" });
-        },
-      },
-      content: {
-        async create() {
-          /* no-op */
-        },
-      },
-      email: {
-        async send() {
-          /* no-op */
-        },
-      },
-      settings: { stripeWebhookSecret: "whsec_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
-
-    await manifest.routes["webhook-stripe"]?.handler(ctx);
-    waitUntilStarted = true;
-    await Promise.all(waitUntilTasks);
-
-    const completedWrite = kvWrites.find((write) => write.value === "completed");
-    expect(completedWrite).toBeDefined();
-    expect(completedWrite?.phase).toBe("after");
-  });
-
-  it("uses two-phase idempotency: writes in-progress synchronously, completed after waitUntil", async () => {
-    const manifest = factory();
-    const event = stripeCheckoutCompletedEvent();
-    const body = JSON.stringify(event);
-    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
-    const kvWrites: Array<{ key: string; value: string; phase: "before" | "after" }> = [];
-    const waitUntilTasks: Promise<unknown>[] = [];
-    let waitUntilStarted = false;
-    const ctx = {
-      input: { body, headers: { "stripe-signature": signature } },
-      kv: {
-        async get() {
-          return undefined;
-        },
-        async set(key: string, value: string) {
-          kvWrites.push({ key, value, phase: waitUntilStarted ? "after" : "before" });
-        },
-      },
-      content: { async create() {} },
-      email: { async send() {} },
-      settings: { stripeWebhookSecret: "whsec_test_orders" },
-      waitUntil(task: Promise<unknown>) {
-        waitUntilTasks.push(task);
-      },
-    } as unknown as RouteContext;
-
-    await manifest.routes["webhook-stripe"]?.handler(ctx);
-    waitUntilStarted = true;
-    await Promise.all(waitUntilTasks);
-
-    const inProgress = kvWrites.find((w) => w.value === "in-progress");
-    const completed = kvWrites.find((w) => w.value === "completed");
-    expect(inProgress).toBeDefined();
-    expect(inProgress?.phase).toBe("before");
-    expect(completed).toBeDefined();
-    expect(completed?.phase).toBe("after");
-  });
-
-  it("treats only 'completed' idempotency markers as no-ops on replay", async () => {
-    const manifest = factory();
-    const event = stripeCheckoutCompletedEvent();
-    const body = JSON.stringify(event);
-    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
-    const orders: unknown[] = [];
-    const baseCtx = (existingMarker: string | undefined, waitUntilTasks: Promise<unknown>[]) =>
-      ({
-        input: { body, headers: { "stripe-signature": signature } },
-        kv: {
-          async get() {
-            return existingMarker;
-          },
-          async set() {},
-        },
-        content: {
-          async create(_c: string, order: unknown) {
-            orders.push(order);
-          },
-        },
-        email: { async send() {} },
-        settings: { stripeWebhookSecret: "whsec_test_orders" },
-        waitUntil(t: Promise<unknown>) {
-          waitUntilTasks.push(t);
-        },
-      }) as unknown as RouteContext;
-
-    // 'completed' marker → no-op replay
-    const completedTasks: Promise<unknown>[] = [];
-    const completedResp = await manifest.routes["webhook-stripe"]?.handler(
-      baseCtx("completed", completedTasks),
-    );
-    await Promise.all(completedTasks);
-    expect(completedResp).toEqual({ ok: true, status: 200, idempotent: true });
-
-    // 'in-progress' marker → re-process (not idempotent)
-    const inProgressTasks: Promise<unknown>[] = [];
-    const inProgressResp = await manifest.routes["webhook-stripe"]?.handler(
-      baseCtx("in-progress", inProgressTasks),
-    );
-    await Promise.all(inProgressTasks);
-    expect(inProgressResp).toEqual({ ok: true, status: 200, idempotent: false });
-    expect(orders).toHaveLength(1);
-  });
-
-  it("returns 400 for Stripe webhooks whose body is malformed JSON instead of throwing", async () => {
-    const manifest = factory();
-    const body = "{not valid json";
-    const signature = await stripeSignatureHeader(body, "whsec_test_orders");
-    const ctx = {
-      input: { body, headers: { "stripe-signature": signature } },
-      kv: {
-        async get() {
-          return undefined;
-        },
-        async set() {},
-      },
-      content: { async create() {} },
-      email: { async send() {} },
-      settings: { stripeWebhookSecret: "whsec_test_orders" },
-      waitUntil() {
-        throw new Error("waitUntil must not run for malformed bodies.");
-      },
-    } as unknown as RouteContext;
-
-    await expect(manifest.routes["webhook-stripe"]?.handler(ctx)).resolves.toEqual({
-      ok: false,
-      status: 400,
-    });
-  });
-
   it("rejects refund callers without admin scope before external side effects", async () => {
     const manifest = factory();
     const sideEffects: string[] = [];
     const ctx = {
-      input: { orderId: "order_123", paymentIntentId: "pi_123" },
+      input: { orderId: "order_123", transactionId: "txn_123" },
       auth: { scopes: ["content:read"] },
       http: {
         async fetch() {
@@ -631,6 +597,91 @@ describe("@carte/orders-backend manifest", () => {
       "Refund route requires admin scope.",
     );
     expect(sideEffects).toEqual([]);
+  });
+
+  it("exports a Tender payment-succeeded hook that idempotently marks orders paid", async () => {
+    const { tenderPaymentSucceededHook } = await import("./index.js");
+    const event = {
+      id: "evt_tender_paid_123",
+      metadata: { carte_order_id: "order_123" },
+    };
+    const { ctx, kvWrites, updates, waitUntilTasks } = tenderEventContext();
+
+    await tenderPaymentSucceededHook(event, ctx);
+    await tenderPaymentSucceededHook(event, ctx);
+    await Promise.all(waitUntilTasks);
+
+    expect(kvWrites).toHaveLength(2);
+    expect(kvWrites[0]).toMatchObject({
+      key: "idempotency:tender:evt_tender_paid_123",
+      value: expect.stringMatching(/^in-progress:/),
+      options: { expirationTtl: TENDER_EVENT_IN_PROGRESS_TTL_SECONDS },
+    });
+    expect(kvWrites[1]).toEqual({
+      key: "idempotency:tender:evt_tender_paid_123",
+      value: TENDER_EVENT_PROCESSED_VALUE,
+      options: { expirationTtl: TENDER_EVENT_TTL_SECONDS },
+    });
+    expect(waitUntilTasks).toHaveLength(1);
+    expect(updates).toEqual([
+      {
+        collection: "carte_orders",
+        id: "order_123",
+        value: {
+          status: "paid",
+          payment: {
+            tenderEventId: "evt_tender_paid_123",
+            paidAt: expect.any(String),
+          },
+        },
+      },
+    ]);
+  });
+
+  it("logs Tender payment hook update failures from waitUntil work", async () => {
+    const { tenderPaymentSucceededHook } = await import("./index.js");
+    const errorLog: unknown[][] = [];
+    const originalConsoleError = console.error;
+    const { ctx, waitUntilTasks } = tenderEventContext({
+      update: async () => {
+        throw new Error("Content store unavailable.");
+      },
+    });
+    console.error = (...args: unknown[]) => {
+      errorLog.push(args);
+    };
+
+    try {
+      await tenderPaymentSucceededHook(
+        { id: "evt_tender_paid_failure", metadata: { carte_order_id: "order_failure" } },
+        ctx,
+      );
+      await expect(Promise.all(waitUntilTasks)).resolves.toEqual([undefined]);
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    expect(errorLog).toEqual([
+      [
+        "[carte-orders-backend][tender-event-reconcile]",
+        expect.objectContaining({
+          eventId: "evt_tender_paid_failure",
+          orderId: "order_failure",
+          status: "paid",
+        }),
+      ],
+    ]);
+  });
+
+  it("exports a Tender payment-refunded hook that ignores events without Carte metadata", async () => {
+    const { tenderPaymentRefundedHook } = await import("./index.js");
+    const { ctx, kvWrites, updates, waitUntilTasks } = tenderEventContext();
+
+    await tenderPaymentRefundedHook({ id: "evt_without_order", metadata: {} }, ctx);
+
+    expect(kvWrites).toEqual([]);
+    expect(waitUntilTasks).toEqual([]);
+    expect(updates).toEqual([]);
   });
 });
 
@@ -717,36 +768,3 @@ describe("@carte/orders-backend checkout rate limit", () => {
     expect(throttled.length).toBeGreaterThan(0);
   });
 });
-
-const stripeCheckoutCompletedEvent = () => ({
-  id: "evt_checkout_completed",
-  type: "checkout.session.completed",
-  data: {
-    object: {
-      id: "cs_test_123",
-      customer_email: "guest@example.com",
-      amount_total: 2590,
-      currency: "usd",
-      metadata: { cartId: "cart_123", orderType: "pickup" },
-    },
-  },
-});
-
-const stripeSignatureHeader = async (body: string, secret: string): Promise<string> => {
-  const timestamp = 1_700_000_000;
-  const signedPayload = `${timestamp}.${body}`;
-  const signature = await hmacSha256Hex(secret, signedPayload);
-  return `t=${timestamp},v1=${signature}`;
-};
-
-const hmacSha256Hex = async (secret: string, payload: string): Promise<string> => {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
-  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-};

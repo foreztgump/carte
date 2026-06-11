@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.2.0 — Tender adapter (rc)
+
+### Changed — Tender payment handoff
+
+- `@carte/orders-backend` now routes hosted checkout and refunds through the
+  Tender adapter (`@tender/sdk`) instead of direct Stripe API calls, closing the
+  core [PRO-727](https://linear.app/projects-linear/issue/PRO-727/carte-tender-adapter-route-carteorders-backend-through-tendersdk)
+  path needed before Vicky's Kitchen M5 can consume Carte payments.
+- Carte no longer owns the Stripe webhook route. Operators should move their
+  Stripe dashboard webhook URL and provider secrets to the Tender Stripe
+  provider before installing the rc; see the
+  [v0.2.0-rc migration guide](./MIGRATION.md).
+- This is an rc cut, not GA. The actual publish remains tracked by
+  [PRO-737](https://linear.app/projects-linear/issue/PRO-737/publish-carteorders-backend020-rc-and-tag-release)
+  and is gated on Tender publishing `@tender/sdk@0.1.0`, `tender-core`, and
+  `tender-stripe`.
+
+### Fixed — v0.1 tech-debt sweep
+
+- Hardened the `@carte/ai` write-on-confirm flow for the
+  [PRO-623](https://linear.app/projects-linear/issue/PRO-623/m8-follow-ups-pii-boundary-workspace-least-privilege-undo-correctness)
+  follow-up: actor-bound confirmations, current-content price diffs, PII
+  redaction in undo/audit KV, undo replay/expiry correctness, SSRF guardrails,
+  KV namespace hygiene, and response-envelope consistency.
+- Fixed the
+  [PRO-638](https://linear.app/projects-linear/issue/PRO-638/carteviews-dietaryfilter-crashes-on-unknown-allergen-tag-tolowercase)
+  `@carte/views` dietary-filter crash by making unknown allergen tags render as
+  humanized fallback labels instead of throwing.
+- Fixed
+  [PRO-640](https://linear.app/projects-linear/issue/PRO-640/sandbox-budget-display-drift)
+  sandbox-budget display drift so margin output reads the configured caps rather
+  than hardcoded 10-subrequest / 50ms assumptions.
+
 ## v0.1.0 — Launch readiness (2026-05-09)
 
 ### Added — M3 through M9 plugin family

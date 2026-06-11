@@ -1,10 +1,24 @@
 {
   "name": "@carte/orders-backend",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Carte orders backend — Stripe Checkout + webhook + refund routes. Sandboxed EmDash plugin.",
+  "version": "0.2.0-rc.1",
+  "description": "Carte orders backend — Tender Checkout + payment-event + refund routes. Sandboxed EmDash plugin.",
   "type": "module",
   "main": "src/index.ts",
+  "files": [
+    "README.md",
+    "src/events.ts",
+    "src/index.ts",
+    "src/manifest-constants.ts",
+    "src/rate-limit.ts",
+    "src/routes/**/*.ts",
+    "tsconfig.json",
+    "worker-configuration.d.ts",
+    "wrangler.toml"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "rc"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
@@ -12,9 +26,12 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
+    "@tender/sdk": "^0.1.0",
     "emdash": "^0.9.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.8.69",
+    "@tender/sdk": "file:../../vendor/tender-sdk-0.0.0.tgz",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

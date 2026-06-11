@@ -10,6 +10,7 @@ const SCAN_ROOTS = [
   "packages/reservations/src",
   "packages/orders-backend/src",
 ] as const;
+const WARN_THRESHOLD_RATIO = 0.8;
 const TABLE_HEADER = "| route | est-CPU-ms | subrequest-count | budget-margin |";
 const TABLE_SEPARATOR = "|---|---:|---:|---|";
 
@@ -23,9 +24,17 @@ type HandlerReport = {
   route: string;
   cpuMs: number;
   subrequests: number;
+  cpuMsCap: number;
+  subrequestCap: number;
   status: "PASS" | "WARN" | "FAIL";
 };
 type Analysis = { cpuMs: number; subrequests: number };
+type ReportInput = {
+  project: Project;
+  sourceFile: ts.SourceFile;
+  routeName: string;
+  analysis: Analysis;
+};
 type NamedExpression = ts.Expression | ts.FunctionDeclaration;
 type Project = {
   root: string;
@@ -170,6 +179,11 @@ function routeReports(project: Project, sourceFile: ts.SourceFile): HandlerRepor
         ...reportsForRoutesObject(project, sourceFile, unwrapObjectLiteral(node.initializer)),
       );
     }
+    if (isHooksProperty(node)) {
+      reports.push(
+        ...reportsForHooksObject(project, sourceFile, unwrapObjectLiteral(node.initializer)),
+      );
+    }
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);
@@ -193,6 +207,14 @@ function isRoutesProperty(node: ts.Node): node is ts.PropertyAssignment {
   );
 }
 
+function isHooksProperty(node: ts.Node): node is ts.PropertyAssignment {
+  return (
+    ts.isPropertyAssignment(node) &&
+    propertyName(node.name) === "hooks" &&
+    Boolean(unwrapObjectLiteral(node.initializer))
+  );
+}
+
 function reportsForRoutesObject(
   project: Project,
   sourceFile: ts.SourceFile,
@@ -200,6 +222,16 @@ function reportsForRoutesObject(
 ): HandlerReport[] {
   return routesObject.properties.flatMap((property) =>
     ts.isPropertyAssignment(property) ? reportForRouteProperty(project, sourceFile, property) : [],
+  );
+}
+
+function reportsForHooksObject(
+  project: Project,
+  sourceFile: ts.SourceFile,
+  hooksObject: ts.ObjectLiteralExpression,
+): HandlerReport[] {
+  return hooksObject.properties.flatMap((property) =>
+    ts.isPropertyAssignment(property) ? reportForHookProperty(project, sourceFile, property) : [],
   );
 }
 
@@ -214,7 +246,19 @@ function reportForRouteProperty(
   const analysis = handler
     ? analyzeExpression(project, handler, new Set())
     : { cpuMs: 0, subrequests: 0 };
-  return [toReport(project, sourceFile, routeName, analysis)];
+  return [toReport({ project, sourceFile, routeName, analysis })];
+}
+
+function reportForHookProperty(
+  project: Project,
+  sourceFile: ts.SourceFile,
+  property: ts.PropertyAssignment,
+): HandlerReport[] {
+  const hookName = propertyName(property.name);
+  if (!hookName) return [];
+  const handler = handlerExpression(project, property.initializer) ?? property.initializer;
+  const analysis = analyzeExpression(project, handler, new Set());
+  return [toReport({ project, sourceFile, routeName: `hooks/${hookName}`, analysis })];
 }
 
 function handlerExpression(project: Project, expression: ts.Expression): ts.Expression | undefined {
@@ -329,7 +373,10 @@ function isKvReceiver(receiver: string): boolean {
 
 function isContentReceiver(receiver: string): boolean {
   return (
-    receiver.includes(".content") || receiver === "content" || receiver.startsWith("contentStore(")
+    receiver.includes(".content") ||
+    receiver === "content" ||
+    receiver.startsWith("contentStore(") ||
+    receiver.startsWith("eventContentStore(")
   );
 }
 
@@ -388,14 +435,16 @@ function addAnalysis(left: Analysis, right: Analysis): Analysis {
   return { cpuMs: left.cpuMs + right.cpuMs, subrequests: left.subrequests + right.subrequests };
 }
 
-function toReport(
-  project: Project,
-  sourceFile: ts.SourceFile,
-  routeName: string,
-  analysis: Analysis,
-): HandlerReport {
+function toReport(input: ReportInput): HandlerReport {
+  const { project, sourceFile, routeName, analysis } = input;
   const status = reportStatus(project.costTable, analysis);
-  return { route: routeId(project.root, sourceFile.fileName, routeName), status, ...analysis };
+  return {
+    route: routeId(project.root, sourceFile.fileName, routeName),
+    status,
+    cpuMsCap: project.costTable.caps.cpuMs,
+    subrequestCap: project.costTable.caps.subrequests,
+    ...analysis,
+  };
 }
 
 function reportStatus(costTable: CostTable, analysis: Analysis): HandlerReport["status"] {
@@ -403,8 +452,8 @@ function reportStatus(costTable: CostTable, analysis: Analysis): HandlerReport["
     return "FAIL";
   }
   if (
-    analysis.subrequests >= costTable.caps.subrequests * 0.8 ||
-    analysis.cpuMs >= costTable.caps.cpuMs * 0.8
+    analysis.subrequests >= costTable.caps.subrequests * WARN_THRESHOLD_RATIO ||
+    analysis.cpuMs >= costTable.caps.cpuMs * WARN_THRESHOLD_RATIO
   ) {
     return "WARN";
   }
@@ -431,5 +480,7 @@ function printReports(reports: HandlerReport[]): void {
 }
 
 function budgetMargin(report: HandlerReport): string {
-  return `${report.status} (${10 - report.subrequests} subreq, ${(50 - report.cpuMs).toFixed(2)}ms CPU)`;
+  const subrequestMargin = report.subrequestCap - report.subrequests;
+  const cpuMargin = report.cpuMsCap - report.cpuMs;
+  return `${report.status} (${subrequestMargin} subreq, ${cpuMargin.toFixed(2)}ms CPU)`;
 }
