@@ -9,10 +9,10 @@
 - [x] Committed and pushed
 - [x] PR open: https://github.com/foreztgump/carte/pull/16
 - [x] agentmemory saved
-- [ ] PR merged
-- [ ] OpenSpec archived
-- [ ] Branch deleted: feat/PRO-tender-adapter
-- [ ] Worktree removed: n/a (work done on branch in main checkout)
+- [x] PR merged
+- [x] OpenSpec archived
+- [x] Branch deleted: feat/PRO-tender-adapter
+- [x] Worktree removed: n/a (work done on branch in main checkout)
 
 ## PR Review Triage
 
