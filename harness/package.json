@@ -1,0 +1,34 @@
+{
+  "name": "@carte/harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Carte EmDash 0.18 validation harness.",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --dir plugins/probe build && astro dev",
+    "build": "pnpm --dir plugins/probe build && astro build",
+    "preview": "astro preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint astro.config.mjs test",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/node": "10.1.4",
+    "@astrojs/react": "5.0.7",
+    "@carte/harness-probe": "workspace:*",
+    "@emdash-cms/sandbox-workerd": "0.1.6",
+    "astro": "6.4.6",
+    "better-sqlite3": "^12.5.0",
+    "emdash": "0.18.0",
+    "kysely": "^0.29.2",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "workerd": "^1.20260612.1"
+  },
+  "devDependencies": {
+    "@emdash-cms/plugin-cli": "0.5.1",
+    "@types/node": "^22.9.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "carte-harness-probe",
+  // TODO(PRO-848): swap to Tender's real DID before any registry publish.
+  "publisher": "did:plc:tenderfamilyexampleplaceholder",
+
+  "license": "MIT",
+  "author": { "name": "Carte Maintainers", "email": "maintainers@example.com" },
+  "security": { "email": "security@example.com", "url": "https://example.com/security" },
+  "description": "Probe plugin for the Carte EmDash 0.18 harness",
+  "repo": "https://github.com/NetworkReef/carte",
+
+  // Trust contract: the hook probe needs read/write content hook access.
+  "capabilities": ["content:read", "content:write"],
+  "allowedHosts": [],
+  "storage": {
+    "probe_claims": {
+      "indexes": ["kind", "slotKey"],
+      "uniqueIndexes": ["slotKey"]
+    },
+    "hook_events": {
+      "indexes": ["hook", "collection", "isNew"]
+    }
+  },
+  "admin": {
+    "pages": [{ "path": "/probe", "label": "Probe", "icon": "TestTube" }]
+  }
+}
