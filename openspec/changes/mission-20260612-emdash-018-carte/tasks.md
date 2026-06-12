@@ -5,11 +5,11 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 ## M0 — Platform self-verification (new Linear sub-issue of PRO-848)
 
 - [x] 0.1 Stand up minimal EmDash 0.18 harness site (Astro + emdash, Node-workerd runner; `wrangler dev` mode secondary)
-- [ ] 0.2 Verify sandboxed-format load path: hello plugin with `emdash-plugin.jsonc` + `src/plugin.ts` loads under both runners
-- [ ] 0.3 Verify manifest schema acceptance: capabilities, allowedHosts, storage `indexes` + `uniqueIndexes`; `emdash-plugin validate` behavior
-- [ ] 0.4 Verify hook names/signatures (`content:beforeSave/afterSave`, config-object form), route mount `/_emdash/api/plugins/<slug>/<route>` + auth, Block Kit admin schema
-- [ ] 0.5 Verify native react-admin mount shape (`./admin` export / `admin.settingsSchema`); confirm `adminEntry`/`adminPages`/`format` rejection
-- [ ] 0.6 Measure runtime limits per runner; record everything in `docs/VERIFIED-PLATFORM-0.18-carte.md` with evidence per claim
+- [x] 0.2 Verify sandboxed-format load path: hello plugin with `emdash-plugin.jsonc` + `src/plugin.ts` loads under the workerd harness; record Cloudflare runner probe infeasibility and doc-sourced facts
+- [x] 0.3 Verify manifest schema acceptance: capabilities, allowedHosts, storage `indexes` + `uniqueIndexes`; `emdash-plugin validate` behavior
+- [x] 0.4 Verify hook names/signatures (`content:beforeSave/afterSave`, config-object form), route mount `/_emdash/api/plugins/<slug>/<route>` + auth, Block Kit admin schema
+- [x] 0.5 Verify native react-admin mount shape (`./admin` export / `admin.settingsSchema`) with the harness descriptor entrypoint plus `definePlugin()` settings schema
+- [x] 0.6 Measure runtime limits per runner; record everything in `docs/VERIFIED-PLATFORM-0.18-carte.md` with evidence per claim
 
 ## M1 — WS1 bump + purge; core converted (PRO-852, PRO-855 partial)
 

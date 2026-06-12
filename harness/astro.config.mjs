@@ -9,10 +9,27 @@ const probePlugin = {
   version: "0.1.0",
   format: "standard",
   entrypoint: "@carte/harness-probe/sandbox",
-  capabilities: [],
+  capabilities: ["content:read", "content:write"],
   allowedHosts: [],
-  storage: {},
+  storage: {
+    probe_claims: {
+      indexes: ["kind", "slotKey"],
+      uniqueIndexes: ["slotKey"],
+    },
+    hook_events: {
+      indexes: ["hook", "collection", "isNew"],
+    },
+  },
+  adminPages: [{ path: "/probe", label: "Probe", icon: "TestTube" }],
 };
+
+function nativeProbePlugin() {
+  return {
+    id: "carte-native-probe",
+    version: "0.1.0",
+    entrypoint: "./src/native-probe.ts",
+  };
+}
 
 export default defineConfig({
   output: "server",
@@ -25,6 +42,7 @@ export default defineConfig({
         directory: "./uploads",
         baseUrl: "/_emdash/api/media/file",
       }),
+      plugins: [nativeProbePlugin()],
       sandboxed: [probePlugin],
       sandboxRunner: "@emdash-cms/sandbox-workerd",
     }),

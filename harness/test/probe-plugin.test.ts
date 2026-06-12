@@ -5,6 +5,7 @@ const harnessRoot = new URL("../", import.meta.url);
 const probeEntry = new URL("plugins/probe/src/plugin.ts", harnessRoot);
 const probeManifest = new URL("plugins/probe/emdash-plugin.jsonc", harnessRoot);
 const astroConfig = new URL("astro.config.mjs", harnessRoot);
+const nativeProbe = new URL("src/native-probe.ts", harnessRoot);
 
 describe("harness probe plugin", () => {
   it("uses the pnpm-safe SandboxedPlugin const annotation", async () => {
@@ -50,6 +51,7 @@ describe("harness probe plugin", () => {
     expect(source).toContain("private:");
     expect(source).toContain("uniqueConflict:");
     expect(source).toContain("postResponsePrimitive:");
+    expect(source).toContain("runtimeLimitProbe:");
   });
 
   it("registers content hook probes for documented event shapes", async () => {
@@ -73,11 +75,14 @@ describe("harness probe plugin", () => {
 
   it("registers a native definePlugin probe with settingsSchema", async () => {
     const config = await readFile(astroConfig, "utf8");
+    const nativeSource = await readFile(nativeProbe, "utf8");
 
-    expect(config).toContain('import { definePlugin } from "emdash";');
     expect(config).toContain("nativeProbePlugin()");
     expect(config).toContain("plugins:");
-    expect(config).toContain("settingsSchema");
-    expect(config).toContain('label: "Probe enabled"');
+    expect(config).toContain('entrypoint: "./src/native-probe.ts"');
+    expect(nativeSource).toContain('import { definePlugin } from "emdash";');
+    expect(nativeSource).toContain("createPlugin");
+    expect(nativeSource).toContain("settingsSchema");
+    expect(nativeSource).toContain('label: "Probe enabled"');
   });
 });
