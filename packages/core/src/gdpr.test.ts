@@ -206,4 +206,75 @@ describe("@carte/core GDPR erasure route", () => {
       ],
     });
   });
+
+  it("reports an erase failure when the PII update throws after the audit write", async () => {
+    const guestEmail = "Guest@Example.com";
+    const reservation = contentItem("reservation-1", {
+      guest: { email: guestEmail, name: "Ada", phone: "+15550101010", notes: "n" },
+    });
+    const order = contentItem("order-1", {
+      customer: { email: guestEmail, name: "Ada", phone: "+15550101010", notes: "n" },
+    });
+    const list: ContentList = async (collection: string) => ({
+      items: collection === "carte_reservations" ? [reservation] : [order],
+      hasMore: false,
+    });
+    const content: Partial<ContentAccess> = {
+      list,
+      update: async (collection: string, id: string, data: Record<string, unknown>) => {
+        if (id === "reservation-1") throw new Error("content-store write rejected");
+        return contentItem(id, data);
+      },
+      create: async (_collection: string, data: Record<string, unknown>) =>
+        contentItem("audit", data),
+    };
+
+    const result = await gdprEraseRoute(
+      routeCtx("https://carte.test/gdpr/erase?email=guest@example.com"),
+      pluginCtx(content),
+    );
+
+    expect(result).toMatchObject({
+      erased: { reservations: 0, orders: 1 },
+      failed: [
+        expect.objectContaining({
+          targetCollection: "carte_reservations",
+          targetId: "reservation-1",
+          reason: "content-store write rejected",
+        }),
+      ],
+    });
+  });
+
+  it("reports a per-collection failure when listing one collection throws", async () => {
+    const order = contentItem("order-1", {
+      customer: { email: "guest@example.com", name: "Ada", phone: "+15550101010", notes: "n" },
+    });
+    const list: ContentList = async (collection: string) => {
+      if (collection === "carte_reservations") throw new Error("list unavailable");
+      return { items: [order], hasMore: false };
+    };
+    const content: Partial<ContentAccess> = {
+      list,
+      update: async (_collection: string, id: string, data: Record<string, unknown>) =>
+        contentItem(id, data),
+      create: async (_collection: string, data: Record<string, unknown>) =>
+        contentItem("audit", data),
+    };
+
+    const result = await gdprEraseRoute(
+      routeCtx("https://carte.test/gdpr/erase?email=guest@example.com"),
+      pluginCtx(content),
+    );
+
+    expect(result).toMatchObject({
+      erased: { reservations: 0, orders: 1 },
+      failed: [
+        expect.objectContaining({
+          targetCollection: "carte_reservations",
+          reason: "list unavailable",
+        }),
+      ],
+    });
+  });
 });
