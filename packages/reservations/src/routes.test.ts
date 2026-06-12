@@ -67,7 +67,8 @@ describe("reservation public routes", () => {
 
   it("cancel-by-token flips state, restores capacity, and queues cancellation email", async () => {
     const context = await createRouteContext();
-    await context.capacityStore.setCapacity(SLOT, 0);
+    await context.capacityStore.setCapacity(SLOT, 2);
+    await context.capacityStore.claim({ ...SLOT, partySize: 2, holdId: "cancel-hold" });
     const reservationId = await context.putReservation({
       status: "confirmed",
       holdId: "cancel-hold",
@@ -94,7 +95,8 @@ describe("reservation public routes", () => {
 
   it("cancel-by-token is idempotent and does not double-restore capacity", async () => {
     const context = await createRouteContext();
-    await context.capacityStore.setCapacity(SLOT, 0);
+    await context.capacityStore.setCapacity(SLOT, 2);
+    await context.capacityStore.claim({ ...SLOT, partySize: 2, holdId: "cancel-hold" });
     const reservationId = await context.putReservation({
       status: "confirmed",
       holdId: "cancel-hold",
