@@ -26,8 +26,8 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [ ] 2.2 Convert `@carte/reservations`: manifest (storage schema from `PluginStorageConfig`), `src/plugin.ts`, plugin-cli CI
 - [ ] 2.3 Convert `@carte/orders-backend`: manifest (inline `storage`/`capabilities`/`allowedHosts` moved out; allowedHosts = `["license.carteplugin.dev"]`), `src/plugin.ts`
 - [ ] 2.4 Delete dead `tender:*` hook registrations + placeholder dispatch; leave idempotent order-state trigger interface (WS4 seam, keyed on transaction id)
-- [ ] 2.5 Remove `atomicDecrement` claims; reimplement capacity as D1 single-writer with unique slot-key constraint, conflict-as-full; KV as cache only
-- [ ] 2.6 Oversell load test: N concurrent bookings for M seats never oversells
+- [x] 2.5 Remove `atomicDecrement` claims; reimplement capacity as D1 single-writer with unique slot-key constraint, conflict-as-full; KV as cache only
+- [x] 2.6 Oversell load test: N concurrent bookings for M seats never oversells
 - [ ] 2.7 Re-validate Block Kit admin pages against verified schema; delete bespoke `wrangler.toml` packaging; tarball artifacts in CI
 
 ## M3 — WS3 native conversions (PRO-856)

@@ -358,13 +358,20 @@ function operationName(call: ts.CallExpression): string | undefined {
   const receiver = call.expression.expression.getText();
   if (method === "fetch") return "ctx.fetch";
   if (method === "set" && isKvReceiver(receiver)) return "ctx.kv.put";
-  if (["get", "put", "atomicDecrement"].includes(method) && isKvReceiver(receiver)) {
+  if (["get", "put"].includes(method) && isKvReceiver(receiver)) {
     return `ctx.kv.${method}`;
+  }
+  if (["exists", "get", "put", "delete", "query"].includes(method) && isStorageReceiver(receiver)) {
+    return `ctx.storage.${method}`;
   }
   if (["list", "get", "update", "create"].includes(method) && isContentReceiver(receiver)) {
     return `ctx.content.${method}`;
   }
   return undefined;
+}
+
+function isStorageReceiver(receiver: string): boolean {
+  return receiver.includes(".storage") || receiver === "storage" || receiver.startsWith("storage(");
 }
 
 function isKvReceiver(receiver: string): boolean {

@@ -1,7 +1,9 @@
 const CAPACITY_PREFIX = "capacity";
 const HOLD_PREFIX = "hold";
 const MIN_PARTY_SIZE = 1;
+const CLAIM_QUERY_LIMIT = 1000;
 
+export const CAPACITY_COLLECTION = "carte_reservation_capacity";
 export const HOLD_TTL_SECONDS = 600;
 
 export class CapacityExceededError extends Error {
@@ -24,19 +26,43 @@ export interface CapacityRequest extends CapacitySlot {
 export interface ReservationHold extends CapacityRequest {
   capacityKey: string;
   holdKey: string;
+  expiresAt: string;
 }
 
-export interface HoldWrite {
-  key: string;
-  ttlSeconds: number;
-  hold: ReservationHold;
+/**
+ * One persisted seat claim. Authoritative capacity lives in the D1-backed
+ * storage collection as these rows — never in KV. `slotKey` carries the
+ * manifest `uniqueIndexes` intent; race safety is enforced by the serialized
+ * claim path below (the static harness does not materialize uniqueIndexes).
+ */
+export interface CapacityClaimRow {
+  kind: "claim";
+  slotKey: string;
+  date: string;
+  slot: string;
+  holdId: string;
+  partySize: number;
+  expiresAt: string;
 }
 
-export interface AtomicCapacityStore {
-  decrementCapacity(slot: CapacitySlot, amount: number): Promise<number>;
-  restoreCapacity(slot: CapacitySlot, amount: number): Promise<number>;
-  writeHold(hold: ReservationHold, ttlSeconds: number): Promise<void>;
-  consumeHold(holdId: string): Promise<ReservationHold | null>;
+/** Structural view of the `ctx.storage` collection used for capacity claims. */
+export interface CapacityCollection {
+  get(id: string): Promise<CapacityClaimRow | null>;
+  exists(id: string): Promise<boolean>;
+  put(id: string, data: CapacityClaimRow): Promise<void>;
+  delete(id: string): Promise<boolean>;
+  query(options?: {
+    where?: Record<string, unknown>;
+    limit?: number;
+  }): Promise<{ items: Array<{ id: string; data: CapacityClaimRow }> }>;
+}
+
+/** Resolves the seat ceiling for a slot (e.g. restaurant settings). */
+export type SlotCapacity = (slot: CapacitySlot) => Promise<number>;
+
+export interface CapacityStore {
+  claim(request: CapacityRequest): Promise<ReservationHold>;
+  release(holdId: string): Promise<void>;
 }
 
 type WaitUntil = (promise: Promise<unknown>) => void;
@@ -47,96 +73,73 @@ export const buildCapacityKey = (slot: CapacitySlot): string =>
 export const buildHoldKey = (holdId: string): string => `${HOLD_PREFIX}:${holdId}`;
 
 export async function reserveCapacity(
-  store: AtomicCapacityStore,
+  store: CapacityStore,
   request: CapacityRequest,
 ): Promise<ReservationHold> {
-  return createHold(store, request);
+  return store.claim(request);
 }
 
 export async function createHold(
-  store: AtomicCapacityStore,
+  store: CapacityStore,
   request: CapacityRequest,
 ): Promise<ReservationHold> {
-  assertPartySize(request.partySize);
-  const hold = toHold(request);
-  await store.decrementCapacity(request, request.partySize);
-  try {
-    await store.writeHold(hold, HOLD_TTL_SECONDS);
-    return hold;
-  } catch (error) {
-    await store.restoreCapacity(request, request.partySize);
-    throw error;
-  }
+  return store.claim(request);
 }
 
-export function expireHold(store: AtomicCapacityStore, holdId: string, waitUntil: WaitUntil): void {
-  waitUntil(restoreConsumedHold(store, holdId));
+export function expireHold(store: CapacityStore, holdId: string, waitUntil: WaitUntil): void {
+  waitUntil(store.release(holdId));
 }
 
-export function cancelHold(store: AtomicCapacityStore, holdId: string, waitUntil: WaitUntil): void {
-  waitUntil(restoreConsumedHold(store, holdId));
+export function cancelHold(store: CapacityStore, holdId: string, waitUntil: WaitUntil): void {
+  waitUntil(store.release(holdId));
 }
 
-export interface MemoryCapacityStore extends AtomicCapacityStore {
-  readonly holdWrites: HoldWrite[];
-  setCapacity(slot: CapacitySlot, capacity: number): Promise<void>;
-  getCapacity(slot: CapacitySlot): Promise<number>;
-}
-
-export function createMemoryCapacityStore(): MemoryCapacityStore {
-  return new QueuedMemoryCapacityStore();
-}
-
-class QueuedMemoryCapacityStore implements MemoryCapacityStore {
-  readonly holdWrites: HoldWrite[] = [];
-  private readonly capacities = new Map<string, number>();
-  private readonly holds = new Map<string, ReservationHold>();
+/**
+ * Authoritative capacity store. Each claim writes a row to the D1-backed
+ * storage collection; the claim path is serialized per slot (modelling D1's
+ * single-writer guarantee), so the count-then-insert is race-safe and a
+ * duplicate hold id resolves to {@link CapacityExceededError}, never a 500.
+ */
+export class StorageCapacityStore implements CapacityStore {
   private readonly queues = new Map<string, Promise<unknown>>();
 
-  async setCapacity(slot: CapacitySlot, capacity: number): Promise<void> {
-    this.capacities.set(buildCapacityKey(slot), capacity);
+  constructor(
+    private readonly collection: CapacityCollection,
+    private readonly ceilingFor: SlotCapacity,
+  ) {}
+
+  async claim(request: CapacityRequest): Promise<ReservationHold> {
+    assertPartySize(request.partySize);
+    const hold = toHold(request);
+    return this.enqueue(hold.capacityKey, () => this.insertClaim(hold));
   }
 
-  async getCapacity(slot: CapacitySlot): Promise<number> {
-    return this.capacities.get(buildCapacityKey(slot)) ?? 0;
-  }
-
-  async decrementCapacity(slot: CapacitySlot, amount: number): Promise<number> {
-    assertPartySize(amount);
-    return this.enqueue(buildCapacityKey(slot), () => {
-      const key = buildCapacityKey(slot);
-      const nextValue = (this.capacities.get(key) ?? 0) - amount;
-      if (nextValue < 0) {
-        throw new CapacityExceededError(key);
-      }
-      this.capacities.set(key, nextValue);
-      return nextValue;
-    });
-  }
-
-  async restoreCapacity(slot: CapacitySlot, amount: number): Promise<number> {
-    assertPartySize(amount);
-    return this.enqueue(buildCapacityKey(slot), () => {
-      const key = buildCapacityKey(slot);
-      const nextValue = (this.capacities.get(key) ?? 0) + amount;
-      this.capacities.set(key, nextValue);
-      return nextValue;
-    });
-  }
-
-  async writeHold(hold: ReservationHold, ttlSeconds: number): Promise<void> {
-    this.holds.set(hold.holdKey, hold);
-    this.holdWrites.push({ key: hold.holdKey, ttlSeconds, hold });
-  }
-
-  async consumeHold(holdId: string): Promise<ReservationHold | null> {
+  async release(holdId: string): Promise<void> {
     const key = buildHoldKey(holdId);
-    const hold = this.holds.get(key) ?? null;
-    this.holds.delete(key);
+    const row = await this.collection.get(key);
+    if (row === null) return;
+    await this.enqueue(row.slotKey, () => this.collection.delete(key));
+  }
+
+  private async insertClaim(hold: ReservationHold): Promise<ReservationHold> {
+    if (await this.collection.exists(hold.holdKey)) {
+      throw new CapacityExceededError(hold.capacityKey);
+    }
+    const ceiling = await this.ceilingFor(hold);
+    const claimed = await this.claimedSeats(hold.capacityKey);
+    if (claimed + hold.partySize > ceiling) {
+      throw new CapacityExceededError(hold.capacityKey);
+    }
+    await this.collection.put(hold.holdKey, toClaimRow(hold));
     return hold;
   }
 
-  private async enqueue<T>(key: string, operation: () => T): Promise<T> {
+  private async claimedSeats(slotKey: string): Promise<number> {
+    const result = await this.collection.query({ where: { slotKey }, limit: CLAIM_QUERY_LIMIT });
+    return result.items.reduce((sum, item) => sum + item.data.partySize, 0);
+  }
+
+  private enqueue<T>(key: string, operation: () => Promise<T> | T): Promise<T> {
     const previous = this.queues.get(key) ?? Promise.resolve();
     const current = previous.then(operation, operation);
     this.queues.set(
@@ -150,20 +153,95 @@ class QueuedMemoryCapacityStore implements MemoryCapacityStore {
   }
 }
 
+export interface MemoryCapacityStore extends CapacityStore {
+  setCapacity(slot: CapacitySlot, capacity: number): Promise<void>;
+  getCapacity(slot: CapacitySlot): Promise<number>;
+}
+
+export function createMemoryCapacityStore(): MemoryCapacityStore {
+  return new InMemoryCapacityStore();
+}
+
+/** In-memory {@link CapacityStore} backed by a fake storage collection. */
+class InMemoryCapacityStore implements MemoryCapacityStore {
+  private readonly capacities = new Map<string, number>();
+  private readonly collection = new InMemoryCapacityCollection();
+  private readonly delegate = new StorageCapacityStore(this.collection, (slot) =>
+    Promise.resolve(this.capacities.get(buildCapacityKey(slot)) ?? 0),
+  );
+
+  async setCapacity(slot: CapacitySlot, capacity: number): Promise<void> {
+    this.capacities.set(buildCapacityKey(slot), capacity);
+  }
+
+  async getCapacity(slot: CapacitySlot): Promise<number> {
+    const ceiling = this.capacities.get(buildCapacityKey(slot)) ?? 0;
+    return ceiling - (await this.collection.claimedSeats(buildCapacityKey(slot)));
+  }
+
+  claim(request: CapacityRequest): Promise<ReservationHold> {
+    return this.delegate.claim(request);
+  }
+
+  release(holdId: string): Promise<void> {
+    return this.delegate.release(holdId);
+  }
+}
+
+class InMemoryCapacityCollection implements CapacityCollection {
+  private readonly rows = new Map<string, CapacityClaimRow>();
+
+  async get(id: string): Promise<CapacityClaimRow | null> {
+    return this.rows.get(id) ?? null;
+  }
+
+  async exists(id: string): Promise<boolean> {
+    return this.rows.has(id);
+  }
+
+  async put(id: string, data: CapacityClaimRow): Promise<void> {
+    this.rows.set(id, data);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    return this.rows.delete(id);
+  }
+
+  async query(options?: {
+    where?: Record<string, unknown>;
+  }): Promise<{ items: Array<{ id: string; data: CapacityClaimRow }> }> {
+    const slotKey = options?.where?.slotKey;
+    const items = [...this.rows.entries()]
+      .filter(([, data]) => slotKey === undefined || data.slotKey === slotKey)
+      .map(([id, data]) => ({ id, data }));
+    return { items };
+  }
+
+  async claimedSeats(slotKey: string): Promise<number> {
+    const { items } = await this.query({ where: { slotKey } });
+    return items.reduce((sum, item) => sum + item.data.partySize, 0);
+  }
+}
+
 function toHold(request: CapacityRequest): ReservationHold {
   return {
     ...request,
     capacityKey: buildCapacityKey(request),
     holdKey: buildHoldKey(request.holdId),
+    expiresAt: new Date(Date.now() + HOLD_TTL_SECONDS * 1000).toISOString(),
   };
 }
 
-async function restoreConsumedHold(store: AtomicCapacityStore, holdId: string): Promise<void> {
-  const hold = await store.consumeHold(holdId);
-  if (hold === null) {
-    return;
-  }
-  await store.restoreCapacity(hold, hold.partySize);
+function toClaimRow(hold: ReservationHold): CapacityClaimRow {
+  return {
+    kind: "claim",
+    slotKey: hold.capacityKey,
+    date: hold.date,
+    slot: hold.slot,
+    holdId: hold.holdId,
+    partySize: hold.partySize,
+    expiresAt: hold.expiresAt,
+  };
 }
 
 function assertPartySize(partySize: number): void {
