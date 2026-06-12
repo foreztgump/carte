@@ -9,7 +9,9 @@ import {
   allergenLabelFor,
 } from "../allergens.js";
 
-import type { PluginContext } from "emdash";
+import type { ContentHookEvent, PluginContext } from "emdash";
+
+type AllergenAuditEvent = ContentHookEvent & { previousContent?: Record<string, unknown> };
 
 const EU_FIC_14 = [
   "celery",
@@ -68,15 +70,14 @@ describe("@carte/core allergen audit", () => {
       actor: { id: "admin-1" },
     } as unknown as PluginContext;
 
-    await getAfterSaveHandler()(
-      {
-        collection: "carte_menu_items",
-        content: { id: "item-1", allergens: ["milk", "eggs"] },
-        previousContent: { allergens: ["milk"] },
-        isNew: false,
-      } as never,
-      ctx,
-    );
+    const event: AllergenAuditEvent = {
+      collection: "carte_menu_items",
+      content: { id: "item-1", allergens: ["milk", "eggs"] },
+      previousContent: { allergens: ["milk"] },
+      isNew: false,
+    };
+
+    await getAfterSaveHandler()(event, ctx);
 
     expect(waitUntil).toHaveBeenCalledTimes(2);
     await Promise.all(scheduled);
