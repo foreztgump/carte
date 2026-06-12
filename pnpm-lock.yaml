@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@emdash-cms/sandbox-workerd@0.1.6':
+    hash: 1171c9613d98b3b9084d5fc8206541d4ae8511115bcc3343676d8f3e6edb15af
+    path: patches/@emdash-cms__sandbox-workerd@0.1.6.patch
+
 importers:
 
   .:
@@ -109,7 +114,7 @@ importers:
         version: link:plugins/probe
       '@emdash-cms/sandbox-workerd':
         specifier: 0.1.6
-        version: 0.1.6(53c431d993decb841247bd631cd44d7b)
+        version: 0.1.6(patch_hash=1171c9613d98b3b9084d5fc8206541d4ae8511115bcc3343676d8f3e6edb15af)(53c431d993decb841247bd631cd44d7b)
       astro:
         specifier: 6.4.6
         version: 6.4.6(@types/node@22.19.17)(rollup@4.60.3)(tsx@4.21.0)(yaml@2.8.4)
@@ -7716,7 +7721,7 @@ snapshots:
       '@atcute/atproto': 3.1.12(@atcute/lexicons@1.3.1)
       '@atcute/lexicons': 1.3.1
 
-  '@emdash-cms/sandbox-workerd@0.1.6(53c431d993decb841247bd631cd44d7b)':
+  '@emdash-cms/sandbox-workerd@0.1.6(patch_hash=1171c9613d98b3b9084d5fc8206541d4ae8511115bcc3343676d8f3e6edb15af)(53c431d993decb841247bd631cd44d7b)':
     dependencies:
       emdash: 0.18.0(97ee7a9e1a1d0ceca116b53853f6b640)
       kysely: 0.29.2

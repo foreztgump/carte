@@ -59,6 +59,9 @@
       "esbuild",
       "sharp",
       "workerd"
-    ]
+    ],
+    "patchedDependencies": {
+      "@emdash-cms/sandbox-workerd@0.1.6": "patches/@emdash-cms__sandbox-workerd@0.1.6.patch"
+    }
   }
 }

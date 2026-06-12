@@ -396,9 +396,37 @@ harness/plugins/probe/dist/plugin.mjs
 harness/plugins/probe/dist/manifest.json
 ```
 
-## 8. BLOCKING DIVERGENCE — sandbox-workerd 0.1.6 enforces LEGACY capability names for `ctx.content` / `ctx.media`
+## 8. RESOLVED (was BLOCKING) — sandbox-workerd 0.1.6 enforced LEGACY capability names for `ctx.content` / `ctx.media`
 
-**Status: BLOCKING. Discovered M1 (PRO-852, `@carte/core` conversion). Not covered by M0 — the M0 probe declared `content:read`/`content:write` but its routes only exercised `ctx.storage` + `ctx.kv`, never a real `ctx.content.*` bridge call. So the bridge's capability check was never hit until a content-backed route ran in-sandbox.**
+**Status: RESOLVED via committed `pnpm patch` (PRO-852, M1). Originally BLOCKING — discovered during `@carte/core` conversion. Not covered by M0 — the M0 probe declared `content:read`/`content:write` but its routes only exercised `ctx.storage` + `ctx.kv`, never a real `ctx.content.*` bridge call. So the bridge's capability check was never hit until a content-backed route ran in-sandbox.**
+
+### Applied resolution (2026-06-12)
+
+Locked user decision: patch `@emdash-cms/sandbox-workerd@0.1.6` via `pnpm patch` so its bridge `requireCapability` accepts BOTH the deprecated and canonical capability names. Plugin manifests STAY canonical (`content:read`, …) — never reverted to legacy.
+
+- Patch file: `patches/@emdash-cms__sandbox-workerd@0.1.6.patch`, wired via `pnpm.patchedDependencies` in root `package.json`. `pnpm install` re-applies it on every clone/CI run.
+- Change: `requireCapability(opts, capability)` now resolves a minimal alias map (`read:content→content:read`, `write:content→content:write`, `read:media→media:read`, `write:media→media:write`, `read:users→users:read`, `network:fetch→network:request`) and passes if EITHER the requested legacy name OR its canonical alias is present in `opts.capabilities`. No other runner behavior changed.
+- Regression guard: `harness/test/sandbox-capability-alias.test.ts` asserts the patch is wired and contains the alias map + dual-accept logic.
+- Removal condition: drop the patch once upstream sandbox-workerd ships a bridge enforcer that uses canonical names (or applies its own `normalizeCapability()` inside `requireCapability`). Documented for downstream users in MIGRATION.md/READMEs (M4) and flagged for an upstream filing.
+
+**Post-patch verification (2026-06-12, harness on :4321, dev-bypass bearer):**
+
+```console
+$ curl -s -H "Authorization: Bearer <dev-token>" \
+  http://localhost:4321/_emdash/api/plugins/carte-core/menu-feed
+{"data":{"items":[],"hasMore":false}}                     # real content/list round-trip — no Missing capability error
+
+$ curl -s -H "Authorization: Bearer <dev-token>" \
+  http://localhost:4321/_emdash/api/plugins/carte-core/schema-jsonld
+{"error":{"code":"ROUTE_ERROR","message":"... carte_restaurants must include a restaurant profile."}}
+#   ^ reaches domain logic AFTER a successful content/list bridge call (empty DB) — the capability gate no longer fires.
+
+EmDash: Loaded sandboxed plugin carte-core:0.1.0 with capabilities: [content:read, content:write, media:read]
+```
+
+---
+
+### Original analysis (retained for history)
 
 **Claim.** `@emdash-cms/sandbox-workerd@0.1.6`'s in-sandbox bridge enforcer requires the **deprecated** capability names (`read:content`, `write:content`, `read:media`, …), while `emdash@0.18.0` + `@emdash-cms/plugin-cli@0.5.1` use and _require_ the **canonical** names (`content:read`, `content:write`, `media:read`). The two packages are mutually incompatible for any sandboxed plugin that touches `ctx.content` or `ctx.media`. There is **no manifest-level workaround**: plugin-cli `validate` rejects the legacy names, and the canonical names the host passes through unmodified fail the bridge check.
 

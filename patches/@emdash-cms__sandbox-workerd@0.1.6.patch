@@ -1,0 +1,26 @@
+diff --git a/dist/runner-DPvq5mbQ.mjs b/dist/runner-DPvq5mbQ.mjs
+index 494931fcb28022db616bb9d1d263e0fae2761c25..601b9d60df5caf2c2560ebdb941fd170a7a600b5 100644
+--- a/dist/runner-DPvq5mbQ.mjs
++++ b/dist/runner-DPvq5mbQ.mjs
+@@ -287,9 +287,20 @@ function requireOrderBy(body, key) {
+ 	if (!isOrderBy(value)) throw new Error(`Parameter ${key} must be an object mapping field to "asc"|"desc"`);
+ 	return value;
+ }
++const CAPABILITY_ALIASES = {
++	"read:content": "content:read",
++	"write:content": "content:write",
++	"read:media": "media:read",
++	"write:media": "media:write",
++	"read:users": "users:read",
++	"network:fetch": "network:request",
++};
+ function requireCapability(opts, capability) {
+ 	if (capability === "network:fetch" && opts.capabilities.includes("network:fetch:any")) return;
+-	if (!opts.capabilities.includes(capability)) throw new Error(`Missing capability: ${capability}`);
++	const canonical = CAPABILITY_ALIASES[capability];
++	if (opts.capabilities.includes(capability)) return;
++	if (canonical && opts.capabilities.includes(canonical)) return;
++	throw new Error(`Missing capability: ${capability}`);
+ }
+ function validateStorageCollection(opts, collection) {
+ 	if (!opts.storageCollections.includes(collection)) throw new Error(`Storage collection not declared: ${collection}`);
