@@ -123,8 +123,8 @@ const dataWithErasedPii = (
   return { ...data, [containerKey]: erasedContainer };
 };
 
-const errorReason = (error: unknown): string =>
-  error instanceof Error ? error.message : "audit-write-failed";
+const errorReason = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
 
 // HR9: write the audit entry FIRST. Only erase PII if the audit succeeded, so
 // no PII mutation can lack an audit trail even on transient audit-store failures.
@@ -152,10 +152,18 @@ const auditThenEraseItem = async (
     return {
       targetCollection: collection.collection,
       targetId: item.id,
-      reason: errorReason(error),
+      reason: errorReason(error, "audit-write-failed"),
     };
   }
-  await content.update(collection.collection, item.id, erasedData);
+  try {
+    await content.update(collection.collection, item.id, erasedData);
+  } catch (error) {
+    return {
+      targetCollection: collection.collection,
+      targetId: item.id,
+      reason: errorReason(error, "erase-update-failed"),
+    };
+  }
   return null;
 };
 
@@ -175,6 +183,27 @@ const eraseCollection = async (args: EraseCollectionArgs): Promise<EraseCollecti
     else failures.push(failure);
   }
   return { erased, failures };
+};
+
+// eraseCollection can still reject (content.list throws while finding matches),
+// so map any rejection to a per-collection failure instead of crashing the route.
+const eraseCollectionSettled = async (
+  args: EraseCollectionArgs,
+): Promise<EraseCollectionResult> => {
+  try {
+    return await eraseCollection(args);
+  } catch (error) {
+    return {
+      erased: 0,
+      failures: [
+        {
+          targetCollection: args.collection.collection,
+          targetId: "*",
+          reason: errorReason(error, "erase-collection-failed"),
+        },
+      ],
+    };
+  }
 };
 
 type GdprExportResult = {
@@ -218,8 +247,8 @@ export const gdprEraseRoute = async (
   const [reservationDef, orderDef] = GDPR_EXPORT_COLLECTIONS;
   const eraseArgs = { content, normalizedEmail: email, placeholder, timestamp };
   const [reservations, orders] = await Promise.all([
-    eraseCollection({ collection: reservationDef, ...eraseArgs }),
-    eraseCollection({ collection: orderDef, ...eraseArgs }),
+    eraseCollectionSettled({ collection: reservationDef, ...eraseArgs }),
+    eraseCollectionSettled({ collection: orderDef, ...eraseArgs }),
   ]);
   return {
     email,
