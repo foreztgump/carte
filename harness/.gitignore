@@ -1,0 +1,6 @@
+data.db
+data.db-*
+uploads/
+emdash-env.d.ts
+dist/
+.astro/

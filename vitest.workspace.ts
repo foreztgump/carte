@@ -8,4 +8,6 @@ export default defineWorkspace([
   "packages/views",
   "packages/ai",
   "scripts",
+  "harness",
+  "harness/plugins/probe",
 ]);
