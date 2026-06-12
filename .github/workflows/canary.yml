@@ -1,0 +1,45 @@
+name: Canary (emdash@latest)
+
+# Early-warning canary: installs emdash@latest instead of the pinned ^0.18 and
+# runs typecheck + plugin-cli build for the converted packages. A future emdash
+# release that breaks the API surface surfaces here EARLY without blocking PRs.
+# Non-blocking by design (scheduled + continue-on-error). PR gating lives in
+# ci.yml against the pinned version.
+
+on:
+  schedule:
+    # Daily at 06:00 UTC.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    # Non-blocking: a failure here is a signal, not a gate.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install --no-frozen-lockfile
+
+      # Override the pinned emdash with the latest published release across the
+      # workspace, then re-resolve. This intentionally diverges from the lockfile.
+      - name: Bump emdash to latest
+        run: pnpm update -r emdash@latest
+
+      - name: Typecheck against emdash@latest
+        run: pnpm -r typecheck
+
+      # Plugin packaging gate for the converted packages (M1: core; M2 extends).
+      - name: Validate and build sandboxed plugins against emdash@latest
+        run: |
+          pnpm -F @carte/core exec emdash-plugin validate
+          pnpm -F @carte/core exec emdash-plugin build
+          ls packages/core/dist/index.mjs packages/core/dist/plugin.mjs packages/core/dist/manifest.json

@@ -20,6 +20,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Sandboxed plugin packaging gate. Validates the manifest against the
+      # plugin-cli schema and builds the descriptor for the converted packages.
+      # M1: @carte/core only. M2 extends this to reservations + orders-backend.
+      - name: Validate and build sandboxed plugins (plugin-cli)
+        run: |
+          pnpm -F @carte/core exec emdash-plugin validate
+          pnpm -F @carte/core exec emdash-plugin build
+          ls packages/core/dist/index.mjs packages/core/dist/plugin.mjs packages/core/dist/manifest.json
+
       - run: pnpm -r typecheck
 
       - run: pnpm -r lint

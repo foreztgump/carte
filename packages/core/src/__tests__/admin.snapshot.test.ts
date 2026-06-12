@@ -6,6 +6,13 @@ import type { RouteContext } from "emdash";
 
 const ADMIN_ROUTES = ["admin", "admin/restaurant", "admin/hours", "admin/settings"] as const;
 const FORBIDDEN_SECTION_MARKERS = ["**", "[", "]"] as const;
+const CORE_BLOCK_TYPES = new Set(["section", "divider", "stats", "actions"]);
+const ADMIN_SHELL_PAGES = [
+  ["/carte", "Menus", "Menu library"],
+  ["/carte/restaurant", "Restaurant", "Restaurant profile"],
+  ["/carte/hours", "Hours", "Weekly hours"],
+  ["/carte/settings", "Settings", "Carte settings"],
+] as const;
 
 type ContentListResult = { items: Array<Record<string, unknown>>; hasMore: boolean };
 
@@ -26,12 +33,12 @@ const pageItems = (collection: string): ContentListResult => ({
   hasMore: false,
 });
 
-const makeContext = (): RouteContext => {
+const makeContext = (input: Record<string, unknown> = {}): RouteContext => {
   const list = vi.fn(async (collection: string) => pageItems(collection));
 
   return {
     content: { list, get: vi.fn() },
-    input: {},
+    input,
     request: new Request("https://example.test/_emdash/api/plugins/carte-core/admin"),
     requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
   } as unknown as RouteContext;
@@ -50,12 +57,31 @@ const walk = (value: unknown, visit: (key: string, value: unknown) => void, key 
   }
 };
 
+const pageBlocks = async (route: (typeof ADMIN_ROUTES)[number]) => {
+  const page = await routeHandler(route)(makeContext());
+  const blocks = (page as { blocks?: unknown }).blocks;
+
+  expect(blocks).toEqual(expect.any(Array));
+
+  return blocks as Array<Record<string, unknown>>;
+};
+
 describe("@carte/core Block Kit admin pages", () => {
   it.each(ADMIN_ROUTES)("%s renders stable canonical Block Kit JSON", async (route) => {
     const page = await routeHandler(route)(makeContext());
 
     expect(page).toMatchSnapshot();
   });
+
+  it.each(ADMIN_SHELL_PAGES)(
+    "admin page_load %s resolves the %s page",
+    async (path, title, marker) => {
+      const page = await routeHandler("admin")(makeContext({ type: "page_load", page: path }));
+
+      expect((page as { title?: unknown }).title).toBe(title);
+      expect(JSON.stringify(page)).toContain(marker);
+    },
+  );
 
   it.each(ADMIN_ROUTES)(
     "%s uses canonical primitives without redirects or markdown",
@@ -77,11 +103,43 @@ describe("@carte/core Block Kit admin pages", () => {
     },
   );
 
+  it.each(ADMIN_ROUTES)("%s emits 0.18 Block Kit block shapes", async (route) => {
+    const blocks = await pageBlocks(route);
+
+    blocks.forEach((block) => {
+      expect(CORE_BLOCK_TYPES.has(String(block.type))).toBe(true);
+      expect(block).not.toHaveProperty("id");
+      if (block.type === "section") expect(block).not.toHaveProperty("title");
+      if (block.type === "actions") {
+        expect(block).not.toHaveProperty("items");
+        expect(block.elements).toEqual(expect.any(Array));
+      }
+      if (block.type === "stats") expect(block.items).toEqual(expect.any(Array));
+    });
+  });
+
+  it.each(ADMIN_ROUTES)("%s emits valid 0.18 action button elements", async (route) => {
+    const blocks = await pageBlocks(route);
+    const actionBlocks = blocks.filter((block) => block.type === "actions");
+
+    expect(actionBlocks.length).toBeGreaterThan(0);
+    actionBlocks
+      .flatMap((block) => block.elements as Array<Record<string, unknown>>)
+      .forEach((element) => {
+        expect(element).toMatchObject({ type: "button" });
+        expect(element.action_id).toEqual(expect.any(String));
+        expect(element.label).toEqual(expect.any(String));
+        expect(element).not.toHaveProperty("id");
+        expect(element).not.toHaveProperty("action");
+        expect(element).not.toHaveProperty("text");
+      });
+  });
+
   it("settings surfaces the Cloudflare Free degradation warning", async () => {
     const page = await routeHandler("admin/settings")(makeContext());
 
     expect(JSON.stringify(page)).toContain("Cloudflare Free");
-    expect(JSON.stringify(page)).toContain("sandboxed isolation is degraded");
+    expect(JSON.stringify(page)).toContain("sandboxed plugins run unsandboxed");
     expect(JSON.stringify(page)).toContain("EmDash Issue #149");
   });
 });

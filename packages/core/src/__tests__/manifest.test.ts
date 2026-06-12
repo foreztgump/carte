@@ -1,26 +1,49 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
-import factory from "../index.js";
+import plugin from "../plugin.js";
 
 const EXPECTED_CAPABILITIES = ["content:read", "content:write", "media:read"];
 
-describe("@carte/core manifest", () => {
-  it("declares only the minimal canonical capabilities", () => {
-    const manifest = factory();
+const stripJsonc = (source: string): string =>
+  source.replace(/^\s*\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
 
+const manifest = JSON.parse(
+  stripJsonc(
+    readFileSync(fileURLToPath(new URL("../../emdash-plugin.jsonc", import.meta.url)), "utf8"),
+  ),
+) as {
+  slug: string;
+  publisher: string;
+  license: string;
+  capabilities: string[];
+  admin: { pages: Array<{ path: string; label: string }> };
+};
+
+describe("@carte/core manifest", () => {
+  it("declares the canonical trust contract in emdash-plugin.jsonc", () => {
+    expect(manifest.slug).toBe("carte-core");
+    expect(manifest.license).toBe("MIT");
+    expect(manifest.publisher).toMatch(/^(did:plc:|[a-z0-9.-]+$)/u);
+  });
+
+  it("declares only the minimal canonical capabilities in the manifest", () => {
     expect(manifest.capabilities).toEqual(EXPECTED_CAPABILITIES);
   });
 
-  it("declares settings defaults and all core route surfaces", () => {
-    const manifest = factory();
+  it("declares the four Block Kit admin pages in the manifest", () => {
+    expect(manifest.admin.pages.map((page) => page.path)).toEqual([
+      "/carte",
+      "/carte/restaurant",
+      "/carte/hours",
+      "/carte/settings",
+    ]);
+  });
 
-    expect(manifest.admin.settingsSchema).toMatchObject({
-      defaultCurrency: { default: "USD" },
-      defaultMenuLocale: { default: "en" },
-      timezone: { default: "America/Los_Angeles" },
-      x402WalletAddress: { default: "" },
-    });
-    expect(Object.keys(manifest.routes).sort()).toEqual([
+  it("exposes all core route surfaces on the sandboxed plugin", () => {
+    expect(Object.keys(plugin.routes ?? {}).sort()).toEqual([
       "admin",
       "admin/hours",
       "admin/restaurant",

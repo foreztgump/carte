@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import factory from "../../index.js";
+import plugin from "../../plugin.js";
 import {
   ALLERGEN_TAGS,
   DIETARY_TAG_TO_SCHEMA_URI,
@@ -9,7 +9,9 @@ import {
   allergenLabelFor,
 } from "../allergens.js";
 
-import type { PluginContext } from "emdash";
+import type { ContentHookEvent, PluginContext } from "emdash";
+
+type AllergenAuditEvent = ContentHookEvent & { previousContent?: Record<string, unknown> };
 
 const EU_FIC_14 = [
   "celery",
@@ -29,8 +31,8 @@ const EU_FIC_14 = [
 ] as const;
 
 const getAfterSaveHandler = () => {
-  const hook = factory().hooks["content:afterSave"];
-  if (!hook) throw new Error("Missing content:afterSave hook");
+  const hook = plugin.hooks?.["content:afterSave"];
+  if (!hook || typeof hook === "function") throw new Error("Missing content:afterSave hook config");
   return hook.handler;
 };
 
@@ -58,28 +60,22 @@ describe("@carte/core allergen taxonomy", () => {
 
 describe("@carte/core allergen audit", () => {
   it("emits an audit entry when menu item allergens change", async () => {
-    const scheduled: Promise<unknown>[] = [];
     const content = { create: vi.fn(async () => ({ id: "audit-1" })) };
-    const waitUntil = vi.fn((promise: Promise<unknown>) => scheduled.push(promise));
     const ctx = {
       content,
       kv: { delete: vi.fn(async () => true) },
-      waitUntil,
       actor: { id: "admin-1" },
     } as unknown as PluginContext;
 
-    await getAfterSaveHandler()(
-      {
-        collection: "carte_menu_items",
-        content: { id: "item-1", allergens: ["milk", "eggs"] },
-        previousContent: { allergens: ["milk"] },
-        isNew: false,
-      } as never,
-      ctx,
-    );
+    const event: AllergenAuditEvent = {
+      collection: "carte_menu_items",
+      content: { id: "item-1", allergens: ["milk", "eggs"] },
+      previousContent: { allergens: ["milk"] },
+      isNew: false,
+    };
 
-    expect(waitUntil).toHaveBeenCalledTimes(2);
-    await Promise.all(scheduled);
+    await getAfterSaveHandler()(event, ctx);
+
     expect(content.create).toHaveBeenCalledWith("carte_audit_log", {
       action: "menu_item_allergens_changed",
       actor: "admin-1",

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import factory from "../index.js";
+import plugin from "../plugin.js";
 
 import type { PluginContext } from "emdash";
 
@@ -13,11 +13,10 @@ const menuItemEvent = (content: Record<string, unknown>) => ({
 });
 
 const getHookHandler = (hookName: "content:beforeSave" | "content:afterSave") => {
-  const manifest = factory();
-  const hook = manifest.hooks[hookName];
+  const hook = plugin.hooks?.[hookName];
 
-  if (!hook) {
-    throw new Error(`Missing ${hookName} hook`);
+  if (!hook || typeof hook === "function") {
+    throw new Error(`Missing ${hookName} hook config`);
   }
 
   return hook.handler;
@@ -94,34 +93,30 @@ describe("@carte/core content:beforeSave", () => {
 });
 
 describe("@carte/core content:afterSave", () => {
-  it("schedules cache invalidation inside waitUntil for carte collections", async () => {
+  it("invalidates the menu caches in-request for carte collections", async () => {
     const handler = getHookHandler("content:afterSave");
-    const scheduled: Promise<unknown>[] = [];
-    const waitUntil = vi.fn((promise: Promise<unknown>) => scheduled.push(promise));
     const kv = {
       get: vi.fn(),
       set: vi.fn(),
       delete: vi.fn(async () => true),
       list: vi.fn(),
     };
-    const ctx = { kv, waitUntil } as unknown as PluginContext;
+    const ctx = { kv } as unknown as PluginContext;
 
     await handler(menuItemEvent({ price: 10 }), ctx);
 
-    expect(waitUntil).toHaveBeenCalledTimes(1);
     expect(kv.delete).not.toHaveBeenCalledWith("unrelated");
-    await expect(scheduled[0]).resolves.toBeUndefined();
     expect(kv.delete).toHaveBeenCalledWith("menu-feed");
     expect(kv.delete).toHaveBeenCalledWith("schema-jsonld");
   });
 
   it("ignores non-carte collections", async () => {
     const handler = getHookHandler("content:afterSave");
-    const waitUntil = vi.fn();
-    const ctx = { waitUntil } as unknown as PluginContext;
+    const kvDelete = vi.fn(async () => true);
+    const ctx = { kv: { delete: kvDelete } } as unknown as PluginContext;
 
     await handler({ collection: "posts", content: {}, isNew: false }, ctx);
 
-    expect(waitUntil).not.toHaveBeenCalled();
+    expect(kvDelete).not.toHaveBeenCalled();
   });
 });

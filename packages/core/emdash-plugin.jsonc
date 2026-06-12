@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "carte-core",
+  // TODO(PRO-848): swap to Tender's real DID before any registry publish.
+  // Publisher DID is UNRESOLVED-BUT-UNBLOCKING (library/environment.md); the
+  // family identity is reused across Tender + Carte. Offline build/validate
+  // only — no registry publish in this mission.
+  "publisher": "did:plc:tenderfamilyexampleplaceholder",
+
+  "license": "MIT",
+  "author": { "name": "Carte Maintainers", "email": "maintainers@example.com" },
+  "security": { "email": "security@example.com", "url": "https://example.com/security" },
+  "description": "Carte core — menus, restaurant settings, hours, schema.org JSON-LD. Sandboxed EmDash plugin.",
+  "repo": "https://github.com/NetworkReef/carte",
+
+  // Trust contract: read menus/orders/reservations content, write erasure +
+  // audit records, read media for menu imagery. Minimal canonical set.
+  "capabilities": ["content:read", "content:write", "media:read"],
+  "allowedHosts": [],
+
+  // Plugin storage (ctx.storage) — core persists GDPR/allergen audit trail and
+  // its content writes via ctx.content; the audit log is queried by
+  // targetCollection/targetId/actor/action/timestamp.
+  "storage": {
+    "carte_audit_log": {
+      "indexes": ["actor", "action", "targetCollection", "targetId", "timestamp"],
+    },
+  },
+
+  "admin": {
+    "pages": [
+      { "path": "/carte", "label": "Menus", "icon": "menu" },
+      { "path": "/carte/restaurant", "label": "Restaurant", "icon": "store" },
+      { "path": "/carte/hours", "label": "Hours", "icon": "clock" },
+      { "path": "/carte/settings", "label": "Settings", "icon": "cog" },
+    ],
+  },
+}

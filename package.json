@@ -26,10 +26,11 @@
     "@axe-core/playwright": "4.11.3",
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
+    "@emdash-cms/plugin-cli": "0.5.1",
     "@eslint/js": "^9.16.0",
     "@playwright/test": "^1.59.1",
     "@types/node": "^22.9.0",
-    "emdash": "^0.9.0",
+    "emdash": "^0.18",
     "eslint": "^9.16.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.7",
@@ -58,6 +59,9 @@
       "esbuild",
       "sharp",
       "workerd"
-    ]
+    ],
+    "patchedDependencies": {
+      "@emdash-cms/sandbox-workerd@0.1.6": "patches/@emdash-cms__sandbox-workerd@0.1.6.patch"
+    }
   }
 }
