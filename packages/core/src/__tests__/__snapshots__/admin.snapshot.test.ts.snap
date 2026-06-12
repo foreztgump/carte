@@ -4,17 +4,16 @@ exports[`@carte/core Block Kit admin pages > admin renders stable canonical Bloc
 {
   "blocks": [
     {
-      "id": "menus-intro",
-      "text": "Create menus, sections, and menu items for storefront display.",
-      "title": "Menu library",
+      "block_id": "menus-intro",
+      "text": "Menu library. Create menus, sections, and menu items for storefront display.",
       "type": "section",
     },
     {
-      "id": "menus-summary-divider",
+      "block_id": "menus-summary-divider",
       "type": "divider",
     },
     {
-      "id": "menus-summary",
+      "block_id": "menus-summary",
       "items": [
         {
           "label": "Menus",
@@ -29,38 +28,33 @@ exports[`@carte/core Block Kit admin pages > admin renders stable canonical Bloc
           "value": "1",
         },
       ],
-      "label": "Menu summary",
-      "type": "metrics",
+      "type": "stats",
     },
     {
-      "id": "menus-actions-divider",
+      "block_id": "menus-actions-divider",
       "type": "divider",
     },
     {
-      "id": "menus-actions",
-      "items": [
+      "block_id": "menus-actions",
+      "elements": [
         {
-          "action": "content.create.carte_menus",
-          "id": "create-menu",
+          "action_id": "content.create.carte_menus",
           "label": "Create menu",
           "style": "primary",
           "type": "button",
         },
         {
-          "action": "content.create.carte_menu_items",
-          "id": "create-item",
+          "action_id": "content.create.carte_menu_items",
           "label": "Create item",
           "type": "button",
         },
         {
-          "action": "route.post.menu-items/86",
-          "id": "eighty-six-item",
+          "action_id": "route.post.menu-items/86",
           "label": "86 item",
-          "style": "warning",
+          "style": "danger",
           "type": "button",
         },
       ],
-      "label": "Menu actions",
       "type": "actions",
     },
   ],
@@ -74,17 +68,16 @@ exports[`@carte/core Block Kit admin pages > admin/hours renders stable canonica
 {
   "blocks": [
     {
-      "id": "hours-intro",
-      "text": "Maintain regular service windows and dated closures.",
-      "title": "Weekly hours",
+      "block_id": "hours-intro",
+      "text": "Weekly hours. Maintain regular service windows and dated closures.",
       "type": "section",
     },
     {
-      "id": "hours-summary-divider",
+      "block_id": "hours-summary-divider",
       "type": "divider",
     },
     {
-      "id": "hours-summary",
+      "block_id": "hours-summary",
       "items": [
         {
           "label": "Weekly entries",
@@ -95,31 +88,27 @@ exports[`@carte/core Block Kit admin pages > admin/hours renders stable canonica
           "value": "1",
         },
       ],
-      "label": "Hours summary",
-      "type": "metrics",
+      "type": "stats",
     },
     {
-      "id": "hours-actions-divider",
+      "block_id": "hours-actions-divider",
       "type": "divider",
     },
     {
-      "id": "hours-actions",
-      "items": [
+      "block_id": "hours-actions",
+      "elements": [
         {
-          "action": "content.create.carte_hours",
-          "id": "add-hours",
+          "action_id": "content.create.carte_hours",
           "label": "Add hours",
           "style": "primary",
           "type": "button",
         },
         {
-          "action": "content.create.carte_closures",
-          "id": "add-closure",
+          "action_id": "content.create.carte_closures",
           "label": "Add closure",
           "type": "button",
         },
       ],
-      "label": "Hours actions",
       "type": "actions",
     },
   ],
@@ -133,42 +122,38 @@ exports[`@carte/core Block Kit admin pages > admin/restaurant renders stable can
 {
   "blocks": [
     {
-      "id": "restaurant-intro",
-      "text": "Manage public restaurant identity and contact details.",
-      "title": "Restaurant profile",
+      "block_id": "restaurant-intro",
+      "text": "Restaurant profile. Manage public restaurant identity and contact details.",
       "type": "section",
     },
     {
-      "id": "restaurant-summary-divider",
+      "block_id": "restaurant-summary-divider",
       "type": "divider",
     },
     {
-      "id": "restaurant-summary",
+      "block_id": "restaurant-summary",
       "items": [
         {
           "label": "Profiles",
           "value": "1",
         },
       ],
-      "label": "Restaurant summary",
-      "type": "metrics",
+      "type": "stats",
     },
     {
-      "id": "restaurant-actions-divider",
+      "block_id": "restaurant-actions-divider",
       "type": "divider",
     },
     {
-      "id": "restaurant-actions",
-      "items": [
+      "block_id": "restaurant-actions",
+      "elements": [
         {
-          "action": "content.edit.carte_restaurants",
-          "id": "edit-restaurant",
+          "action_id": "content.edit.carte_restaurants",
           "label": "Edit restaurant",
           "style": "primary",
           "type": "button",
         },
       ],
-      "label": "Restaurant actions",
       "type": "actions",
     },
   ],
@@ -182,52 +167,47 @@ exports[`@carte/core Block Kit admin pages > admin/settings renders stable canon
 {
   "blocks": [
     {
-      "id": "settings-intro",
-      "text": "Configure currency, locale, timezone, and x402 wallet details.",
-      "title": "Carte settings",
+      "block_id": "settings-intro",
+      "text": "Carte settings. Configure currency, locale, timezone, and x402 wallet details.",
       "type": "section",
     },
     {
-      "id": "cloudflare-free-warning-divider",
+      "block_id": "cloudflare-free-warning-divider",
       "type": "divider",
     },
     {
-      "id": "cloudflare-free-warning",
-      "text": "Cloudflare Free has no Dynamic Worker Loader, so sandboxed plugins run unsandboxed (in-process) instead of isolated. See EmDash Issue #149.",
-      "title": "Cloudflare Free warning",
+      "block_id": "cloudflare-free-warning",
+      "text": "Cloudflare Free warning. Cloudflare Free has no Dynamic Worker Loader, so sandboxed plugins run unsandboxed (in-process) instead of isolated. See EmDash Issue #149.",
       "type": "section",
     },
     {
-      "id": "settings-summary-divider",
+      "block_id": "settings-summary-divider",
       "type": "divider",
     },
     {
-      "id": "settings-summary",
+      "block_id": "settings-summary",
       "items": [
         {
           "label": "Settings records",
           "value": "1",
         },
       ],
-      "label": "Settings summary",
-      "type": "metrics",
+      "type": "stats",
     },
     {
-      "id": "settings-actions-divider",
+      "block_id": "settings-actions-divider",
       "type": "divider",
     },
     {
-      "id": "settings-actions",
-      "items": [
+      "block_id": "settings-actions",
+      "elements": [
         {
-          "action": "content.edit.carte_settings",
-          "id": "edit-settings",
+          "action_id": "content.edit.carte_settings",
           "label": "Edit settings",
-          "style": "warning",
+          "style": "danger",
           "type": "button",
         },
       ],
-      "label": "Settings actions",
       "type": "actions",
     },
   ],

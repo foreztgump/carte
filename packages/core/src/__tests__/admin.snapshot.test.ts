@@ -7,6 +7,12 @@ import type { RouteContext } from "emdash";
 const ADMIN_ROUTES = ["admin", "admin/restaurant", "admin/hours", "admin/settings"] as const;
 const FORBIDDEN_SECTION_MARKERS = ["**", "[", "]"] as const;
 const CORE_BLOCK_TYPES = new Set(["section", "divider", "stats", "actions"]);
+const ADMIN_SHELL_PAGES = [
+  ["/carte", "Menus", "Menu library"],
+  ["/carte/restaurant", "Restaurant", "Restaurant profile"],
+  ["/carte/hours", "Hours", "Weekly hours"],
+  ["/carte/settings", "Settings", "Carte settings"],
+] as const;
 
 type ContentListResult = { items: Array<Record<string, unknown>>; hasMore: boolean };
 
@@ -27,12 +33,12 @@ const pageItems = (collection: string): ContentListResult => ({
   hasMore: false,
 });
 
-const makeContext = (): RouteContext => {
+const makeContext = (input: Record<string, unknown> = {}): RouteContext => {
   const list = vi.fn(async (collection: string) => pageItems(collection));
 
   return {
     content: { list, get: vi.fn() },
-    input: {},
+    input,
     request: new Request("https://example.test/_emdash/api/plugins/carte-core/admin"),
     requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
   } as unknown as RouteContext;
@@ -66,6 +72,16 @@ describe("@carte/core Block Kit admin pages", () => {
 
     expect(page).toMatchSnapshot();
   });
+
+  it.each(ADMIN_SHELL_PAGES)(
+    "admin page_load %s resolves the %s page",
+    async (path, title, marker) => {
+      const page = await routeHandler("admin")(makeContext({ type: "page_load", page: path }));
+
+      expect((page as { title?: unknown }).title).toBe(title);
+      expect(JSON.stringify(page)).toContain(marker);
+    },
+  );
 
   it.each(ADMIN_ROUTES)(
     "%s uses canonical primitives without redirects or markdown",

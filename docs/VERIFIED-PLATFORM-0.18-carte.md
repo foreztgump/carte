@@ -214,6 +214,36 @@ $ curl -s -H "Authorization: Bearer <dev-token>" \
 }
 ```
 
+### 4.1 Actions blocks and button elements
+
+**Claim.** In `@emdash-cms/blocks@0.18.0`, actions blocks use
+`elements: Element[]`, not `items`. Button elements use `action_id`, `label`,
+and optional `style: "primary" | "danger" | "secondary"`. `@carte/core`
+admin pages must not emit legacy `items`, `id`, or `action` keys for action
+buttons.
+
+Evidence:
+
+```text
+node_modules/@emdash-cms/blocks/dist/validation-5vL6669b.d.ts:
+interface ButtonElement {
+  type: "button";
+  action_id: string;
+  label: string;
+  style?: "primary" | "danger" | "secondary";
+}
+interface ActionsBlock extends BlockBase {
+  type: "actions";
+  elements: Element[];
+}
+```
+
+```console
+$ pnpm -F @carte/core exec vitest run src/__tests__/admin.snapshot.test.ts -u
+✓ src/__tests__/admin.snapshot.test.ts (21 tests)
+Snapshots 4 updated
+```
+
 ## 5. Native admin mount shape
 
 **Claim.** The 0.18 harness `plugins: []` path accepts a native plugin descriptor with an `entrypoint` module. That module must export `createPlugin()`, and the factory can return `definePlugin({ admin: { settingsSchema } })`. Directly returning a `definePlugin()` result in `plugins: []` is not the harness config shape, because the integration generates a virtual import of `createPlugin` from the descriptor `entrypoint`.
