@@ -6,8 +6,8 @@
 // and graceful degrade. PII NEVER leaves to the LLM without explicit
 // user consent — enforced at the boundary, not in prompts.
 //
-// Native plugin (locally registered, trusted). The future React entry
-// will live at `admin/index.js` per `admin.entry`.
+// Native plugin (0.18 `definePlugin`, in-process and unsandboxed). The
+// future React admin mounts via the native `definePlugin({ admin })` shape.
 
 import { definePlugin } from "emdash";
 

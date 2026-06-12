@@ -36,6 +36,7 @@ Retention periods are:
 - Operational logs containing route status: 30 days, with no guest contact
   details logged by these handlers.
 
-On Cloudflare Free plans, EmDash cannot host sandboxed plugins with Dynamic
-Workers, so plugins run trusted instead of isolated. The erasure behavior is the
-same, but restaurants should treat the whole Worker as trusted application code.
+On Cloudflare Free plans, EmDash has no Dynamic Worker Loader, so sandboxed
+plugins run unsandboxed (in-process) instead of isolated. The erasure behavior
+is the same, but restaurants should treat the whole Worker as a single
+application-code trust boundary.

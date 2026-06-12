@@ -1,9 +1,9 @@
 // @carte/orders-admin — native EmDash plugin skeleton.
 //
 // v0.1 scope (later mission): native React UI for the live orders queue,
-// modifier management, order state transitions. Native plugins are
-// locally registered and trusted (not sandboxed) — this package will
-// host React under `admin/index.js` per `admin.entry`.
+// modifier management, order state transitions. Native (0.18 `definePlugin`)
+// plugins run in-process and unsandboxed — this package mounts its React
+// admin via the native `definePlugin({ admin })` shape.
 
 import { definePlugin } from "emdash";
 

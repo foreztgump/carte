@@ -155,7 +155,7 @@ const buildSettingsPage = (summary: AdminSummary): BlockKitPage =>
     section(
       "cloudflare-free-warning",
       "Cloudflare Free warning",
-      "Cloudflare Free means sandboxed isolation is degraded and plugins run trusted. See EmDash Issue #149.",
+      "Cloudflare Free has no Dynamic Worker Loader, so sandboxed plugins run unsandboxed (in-process) instead of isolated. See EmDash Issue #149.",
     ),
     metrics("settings-summary", "Settings summary", [metric("Settings records", summary.settings)]),
     actions("settings-actions", "Settings actions", [

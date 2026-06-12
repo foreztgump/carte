@@ -81,7 +81,7 @@ describe("@carte/core Block Kit admin pages", () => {
     const page = await routeHandler("admin/settings")(makeContext());
 
     expect(JSON.stringify(page)).toContain("Cloudflare Free");
-    expect(JSON.stringify(page)).toContain("sandboxed isolation is degraded");
+    expect(JSON.stringify(page)).toContain("sandboxed plugins run unsandboxed");
     expect(JSON.stringify(page)).toContain("EmDash Issue #149");
   });
 });

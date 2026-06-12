@@ -23,15 +23,16 @@ strategic programming. See CODE_PRINCIPLES.md for full details.
 
 ## EmDash Plugin Constraints
 
-Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constraints below are non-negotiable; violating any one is grounds for blocking review.
+Carte ships 6 plugins on EmDash `0.18` (`@emdash-cms/plugin-cli@0.5.1` exact). The constraints below are non-negotiable; violating any one is grounds for blocking review.
 
-- **Sandboxed runtime budget is HARD**: 50ms CPU + 10 subrequests + 30s wall time + ~128MB memory per invocation, per `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md`. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it."
+- **0.18 plugin formats**: plugins are authored in one of two formats — **sandboxed** (declared via an `emdash-plugin.jsonc` manifest, built with the `emdash-plugin` CLI) or **native** (`definePlugin(...)` exported from an `entrypoint`, in-process and unsandboxed). There is **no `emdash-plugin install` command** — installation is an `astro.config.mjs` edit (`sandboxed: []` + `sandboxRunner` for sandboxed; `plugins: []` for native) plus redeploy.
+- **Sandboxed runtime budget is per-runner**: on the **Cloudflare** runner (Dynamic Worker Loader) the HARD per-invocation limits are 50ms CPU + 10 subrequests + 30s wall time; the local **workerd** runner enforces **wall-clock only** (no CPU/subrequest/memory ceiling) — see `docs/VERIFIED-PLATFORM-0.18-carte.md` §6. Design to the Cloudflare ceiling regardless. Audit subrequest count when authoring sandboxed handlers (Stripe webhook example uses ~7 of 10). If you approach the ceiling, redesign — do not "try to fit it." (Note: the 10-subrequest figure is the sandbox runner's Worker Loader cap, distinct from the Workers platform subrequest limit — 50 on the Free plan, 10,000 on Paid; old docs that quote "50 on paid" are wrong.)
 - **`ctx.waitUntil` / `after()` is mandatory** for any async work that must run after the response is returned (EmDash Issue #710). Fire-and-forget without it will be killed mid-flight.
 - **Block Kit gotchas**: use `label` not `text`; use `items` not `stats`; no markdown in section text; no HTTP redirects from plugin routes.
 - **No raw SQL** — plugins use `ctx.content.*`. Plugin KV is auto-scoped; do not declare it in the manifest.
 - **Plugin routes mount at** `/_emdash/api/plugins/<plugin-id>/<route>`. Never assume root paths or hardcode prefixes.
 - **Capability naming is locked**: use only canonical resource:verb names from `github.com/emdash-cms/emdash/blob/main/skills/creating-plugins/SKILL.md` — `content:read`, `content:write`, `media:read`, `media:write`, `network:request` / `network:request:unrestricted`, `email:send`, `users:read`, plus `hooks.<x>:register` forms.
-- **Cloudflare Free plan has no Dynamic Workers** — Cloudflare Free cannot host sandboxed plugins (see `emdash` Issue #149), so sandboxed plugins lose isolation and run trusted on Free. Document this in plugin READMEs and surface in install flow.
+- **Cloudflare Free plan has no Dynamic Worker Loader** — Cloudflare Free cannot isolate sandboxed plugins (see `emdash` Issue #149), so sandboxed plugins lose isolation and run unsandboxed (in-process) on Free. Document this in plugin READMEs and surface in install flow.
 - **Stripe webhook MUST be idempotent**: dedupe via KV `idempotency:{stripeEventId}` with 7-day TTL. Re-deliveries are routine, not exceptional.
 - **Reservation capacity uses KV atomic decrement** — race-safe pattern is non-negotiable. No read-modify-write on capacity counters.
 - **AI plugin contract**: read-by-default, write-on-confirm. PII never leaves to LLM without explicit user consent — enforce at the tool-call boundary, not in prompts.
@@ -49,11 +50,11 @@ Carte ships 6 plugins on the EmDash plugin SDK (pinned to `^0.9.0`). The constra
 | `@carte/views`          | MIT (npm peer-dep)               | Astro components |
 | `@carte/ai`             | Commercial $99/yr (14-day trial) | Native React     |
 
-## Stack Pins (locked 2026-05-06)
+## Stack Pins (EmDash 0.18 — locked 2026-06-12)
 
-- EmDash plugin SDK: pinned to `^0.9.0` (released 2026-05-01). Avoid `emdash@1.0.0` — it is on npm but not `latest`-tagged, and it removes `locals.emdash.invalidateManifest`, which Carte may rely on.
+- EmDash: `0.18.0`. `@emdash-cms/plugin-cli@0.5.1` (exact pin — provides the `emdash-plugin` binary). `@emdash-cms/sandbox-workerd@0.1.6`. `@emdash-cms/blocks` + `@emdash-cms/cloudflare` `0.18.0` (version-locked to emdash — bump together). Supporting: astro 6.4.6, react 19.2.6, wrangler ^4.88.0.
 
-Stack: TypeScript, EmDash plugin SDK (`^0.9.0`), Cloudflare Workers (D1/R2/KV/Dynamic Workers), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
+Stack: TypeScript, EmDash `0.18` (sandboxed `emdash-plugin.jsonc` manifests + native `definePlugin`), Cloudflare Workers (D1/R2/KV/Dynamic Worker Loader), Astro storefront, React native admin, Stripe Checkout, Portable Text rich content, schema.org JSON-LD.
 
 ## Existing Conventions
 

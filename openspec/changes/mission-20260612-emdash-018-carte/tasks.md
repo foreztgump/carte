@@ -15,7 +15,7 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 
 - [x] 1.1 Bump `emdash ^0.9.0 → ^0.18` root + all packages; add `@emdash-cms/plugin-cli` exact-pinned 0.5.1
 - [ ] 1.2 Typecheck on real 0.18 types; eliminate every `as never`/`as unknown` cast (verified call or tracked rework item) — baseline `as never` at `allergens.test.ts:77` eliminated (typed `AllergenAuditEvent`); `orders-backend/src/index.ts:236` cast deferred to M2 (dies with tender purge)
-- [ ] 1.3 Purge pre-v0.13 terminology ("trusted", "locally registered") + stale design-doc pin language; update `AGENTS.md` baseline facts (incl. `^0.9.0` pin note, subrequest-cap correction)
+- [x] 1.3 Purge pre-v0.13 terminology ("trusted", "locally registered") + stale design-doc pin language; update `AGENTS.md` baseline facts (incl. `^0.9.0` pin note, subrequest-cap correction)
 - [ ] 1.4 CI canary job against `emdash@latest`
 - [ ] 1.5 Convert `@carte/core`: author `emdash-plugin.jsonc`, collapse to `src/plugin.ts`, delete `src/sandbox-entry.ts`, plugin-cli build/validate in CI
 - [ ] 1.6 Regression: PRO-623/PRO-638/PRO-640 tests pass post-bump

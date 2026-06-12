@@ -13,5 +13,5 @@ Shipped surfaces:
 - Single-tier modifier group editor (`src/modifiers/modifier-group-form.tsx`)
   per the OQ#11 locked decision.
 
-Execution model: **native** (locally registered, trusted — not sandboxed).
+Execution model: **native** (0.18 `definePlugin`, in-process and unsandboxed).
 Capabilities declared: `content:read`, `content:write`. No outbound network.

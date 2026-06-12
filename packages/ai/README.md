@@ -19,7 +19,7 @@ Shipped surfaces:
 - Workspace-scoped secrets (`workspace-secrets.ts`) and PII KV egress
   discipline tests.
 
-Execution model: **native** (locally registered, trusted). Capabilities
+Execution model: **native** (0.18 `definePlugin`, in-process and unsandboxed). Capabilities
 declared: `content:read`, `content:write`, `network:request`. `allowedHosts`
 restricted to the LLM provider domains plus the license server.
 

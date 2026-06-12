@@ -193,7 +193,7 @@ exports[`@carte/core Block Kit admin pages > admin/settings renders stable canon
     },
     {
       "id": "cloudflare-free-warning",
-      "text": "Cloudflare Free means sandboxed isolation is degraded and plugins run trusted. See EmDash Issue #149.",
+      "text": "Cloudflare Free has no Dynamic Worker Loader, so sandboxed plugins run unsandboxed (in-process) instead of isolated. See EmDash Issue #149.",
       "title": "Cloudflare Free warning",
       "type": "section",
     },
