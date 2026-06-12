@@ -8,8 +8,6 @@ const MENU_ITEM_COLLECTION = "carte_menu_items";
 const CACHE_KEYS = ["menu-feed", "schema-jsonld"] as const;
 const HOURS_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
 
-type WaitUntilContext = PluginContext & { waitUntil(promise: Promise<unknown>): void };
-
 export const isCarteCollection = (collection: string): boolean =>
   collection.startsWith(CARTE_COLLECTION_PREFIX);
 
@@ -21,10 +19,13 @@ export const beforeSave = async (
   validateHoursField(event.content);
 };
 
+// Sandboxed handlers have no post-response primitive (VERIFIED-PLATFORM §7:
+// no ctx.waitUntil, no global after()) — cache invalidation and the allergen
+// audit must complete in-request, so they are awaited here.
 export const afterSave = async (event: ContentHookEvent, ctx: PluginContext): Promise<void> => {
   if (!isCarteCollection(event.collection)) return;
-  getWaitUntil(ctx)(invalidateCarteCache(ctx.kv));
-  if (hasAllergenAuditChange(event)) getWaitUntil(ctx)(emitAllergenAuditIfChanged(event, ctx));
+  await invalidateCarteCache(ctx.kv);
+  if (hasAllergenAuditChange(event)) await emitAllergenAuditIfChanged(event, ctx);
 };
 
 const validateMenuItem = (content: Record<string, unknown>): Record<string, unknown> => {
@@ -77,10 +78,4 @@ const validateHoursString = (value: unknown): void => {
 
 const invalidateCarteCache = async (kv: KVAccess): Promise<void> => {
   await Promise.all(CACHE_KEYS.map((key) => kv.delete(key)));
-};
-
-const getWaitUntil = (ctx: PluginContext): WaitUntilContext["waitUntil"] => {
-  const waitUntil = (ctx as Partial<WaitUntilContext>).waitUntil;
-  if (!waitUntil) throw new Error("ctx.waitUntil is required for Carte cache invalidation.");
-  return waitUntil;
 };

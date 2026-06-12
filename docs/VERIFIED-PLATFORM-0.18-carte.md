@@ -395,3 +395,62 @@ harness/plugins/probe/dist/index.mjs
 harness/plugins/probe/dist/plugin.mjs
 harness/plugins/probe/dist/manifest.json
 ```
+
+## 8. BLOCKING DIVERGENCE — sandbox-workerd 0.1.6 enforces LEGACY capability names for `ctx.content` / `ctx.media`
+
+**Status: BLOCKING. Discovered M1 (PRO-852, `@carte/core` conversion). Not covered by M0 — the M0 probe declared `content:read`/`content:write` but its routes only exercised `ctx.storage` + `ctx.kv`, never a real `ctx.content.*` bridge call. So the bridge's capability check was never hit until a content-backed route ran in-sandbox.**
+
+**Claim.** `@emdash-cms/sandbox-workerd@0.1.6`'s in-sandbox bridge enforcer requires the **deprecated** capability names (`read:content`, `write:content`, `read:media`, …), while `emdash@0.18.0` + `@emdash-cms/plugin-cli@0.5.1` use and _require_ the **canonical** names (`content:read`, `content:write`, `media:read`). The two packages are mutually incompatible for any sandboxed plugin that touches `ctx.content` or `ctx.media`. There is **no manifest-level workaround**: plugin-cli `validate` rejects the legacy names, and the canonical names the host passes through unmodified fail the bridge check.
+
+Evidence — a content-backed `@carte/core` route fails in-sandbox:
+
+```console
+$ curl -s -H "Authorization: Bearer <dev-token>" \
+  http://localhost:4321/_emdash/api/plugins/carte-core/menu-feed
+{"error":{"code":"ROUTE_ERROR","message":"Plugin carte-core:0.1.0 route menu-feed failed: Bridge call content/list failed: {\"error\":\"Missing capability: read:content\"}"}}
+```
+
+The same plugin's admin Block Kit page renders fine (load + dispatch confirmed; the page swallows content errors → empty counts):
+
+```console
+$ curl -s -H "Authorization: Bearer <dev-token>" \
+  http://localhost:4321/_emdash/api/plugins/carte-core/admin | jq -c '.data | {type, title}'
+{"type":"page","title":"Menus"}
+```
+
+Capabilities flow unmodified from descriptor → runner (no canonical→legacy remap on the load path):
+
+```text
+node_modules/emdash/dist/astro/index.mjs  (generateSandboxedPluginsModule, ~L1295):
+  capabilities: ${JSON.stringify(descriptor.capabilities ?? [])}   // canonical, verbatim
+
+node_modules/emdash/dist/astro/middleware.mjs:1187-1201 (loadSandboxedPlugins):
+  manifest.capabilities = entry.capabilities ?? []                 // canonical, verbatim
+  await sandboxRunner.load(manifest, entry.code)
+
+node_modules/@emdash-cms/sandbox-workerd/dist/runner-DPvq5mbQ.mjs:90,93,95,99 (dispatch):
+  case "content/list": requireCapability(opts, "read:content")     // LEGACY name required
+  case "content/create": requireCapability(opts, "write:content")
+  ... requireCapability throws `Missing capability: read:content`
+```
+
+No manifest workaround exists — the two enforcers disagree:
+
+```console
+# plugin-cli REJECTS legacy names:
+$ emdash-plugin validate   # manifest with capabilities: ["read:content", ...]
+ERROR  capability "read:content" is deprecated. Use "content:read" instead.
+
+# host normalizeCapabilities() would collapse legacy→canonical anyway,
+# so even if validate passed, the runner would still receive canonical names.
+$ node -e "import('emdash').then(m=>console.log(m.normalizeCapabilities(['read:content'])))"
+[ 'content:read' ]
+```
+
+**Impact.** Blocks the in-sandbox `ctx.content` / `ctx.media` round-trip for **all three** sandboxed plugins (`@carte/core`, `@carte/reservations`, `@carte/orders-backend`). `ctx.storage` + `ctx.kv` are unaffected (no capability gate). Plugin **load, dispatch, hooks, and Block Kit admin pages all work**; only content/media bridge calls fail.
+
+**Resolution options (for orchestrator/operator — do NOT hack around in-plugin):**
+
+1. Bump `@emdash-cms/sandbox-workerd` to a version whose bridge enforcer uses canonical names (verify upstream changelog; 0.1.6 is the locked pin per AGENTS.md "Stack Pins").
+2. If no such version exists, file upstream against sandbox-workerd to apply `normalizeCapability()` inside `requireCapability` (accept both legacy and canonical).
+3. Interim: a host-side shim that denormalizes canonical→legacy before `sandboxRunner.load` — but this contradicts AGENTS.md "Capability naming is locked" to canonical, so it must be an explicit operator decision, not a silent plugin change.

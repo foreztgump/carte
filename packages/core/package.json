@@ -4,14 +4,20 @@
   "private": true,
   "description": "Carte core — menus, restaurant settings, hours, schema.org JSON-LD. Sandboxed EmDash plugin.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.mjs",
   "exports": {
-    ".": "./src/index.ts",
+    ".": "./dist/index.mjs",
+    "./sandbox": "./dist/plugin.mjs",
     "./contracts": "./src/contracts.ts",
     "./taxonomy": "./src/taxonomy/allergens.ts",
     "./taxonomy/allergens": "./src/taxonomy/allergens.ts"
   },
+  "files": [
+    "dist",
+    "emdash-plugin.jsonc"
+  ],
   "scripts": {
+    "build": "emdash-plugin build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
@@ -21,6 +27,7 @@
     "emdash": "^0.18"
   },
   "devDependencies": {
+    "@emdash-cms/plugin-cli": "0.5.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

@@ -17,7 +17,7 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [ ] 1.2 Typecheck on real 0.18 types; eliminate every `as never`/`as unknown` cast (verified call or tracked rework item) — baseline `as never` at `allergens.test.ts:77` eliminated (typed `AllergenAuditEvent`); `orders-backend/src/index.ts:236` cast deferred to M2 (dies with tender purge)
 - [x] 1.3 Purge pre-v0.13 terminology ("trusted", "locally registered") + stale design-doc pin language; update `AGENTS.md` baseline facts (incl. `^0.9.0` pin note, subrequest-cap correction)
 - [ ] 1.4 CI canary job against `emdash@latest`
-- [ ] 1.5 Convert `@carte/core`: author `emdash-plugin.jsonc`, collapse to `src/plugin.ts`, delete `src/sandbox-entry.ts`, plugin-cli build/validate in CI
+- [~] 1.5 Convert `@carte/core`: author `emdash-plugin.jsonc`, collapse to `src/plugin.ts` (was `src/index.ts`), delete `wrangler.toml`, plugin-cli build/validate green, harness load confirmed (`Loaded sandboxed plugin carte-core:0.1.0`), admin Block Kit renders. **BLOCKED on in-sandbox `ctx.content`**: sandbox-workerd 0.1.6 bridge requires LEGACY capability names (`read:content`) while emdash 0.18 + plugin-cli 0.5.1 require CANONICAL (`content:read`) — content/media routes fail `Missing capability: read:content`. See `docs/VERIFIED-PLATFORM-0.18-carte.md` §8. Escalated to orchestrator (affects all 3 sandboxed plugins).
 - [ ] 1.6 Regression: PRO-623/PRO-638/PRO-640 tests pass post-bump
 
 ## M2 — WS2 remainder + WS5 capacity (PRO-855, PRO-860)

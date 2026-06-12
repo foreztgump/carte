@@ -5,8 +5,8 @@
   "description": "Carte EmDash 0.18 validation harness.",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --dir plugins/probe build && astro dev",
-    "build": "pnpm --dir plugins/probe build && astro build",
+    "dev": "pnpm --dir plugins/probe build && pnpm --filter @carte/core build && astro dev",
+    "build": "pnpm --dir plugins/probe build && pnpm --filter @carte/core build && astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint astro.config.mjs test",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@astrojs/node": "10.1.4",
     "@astrojs/react": "5.0.7",
+    "@carte/core": "workspace:*",
     "@carte/harness-probe": "workspace:*",
     "@emdash-cms/sandbox-workerd": "0.1.6",
     "astro": "6.4.6",
