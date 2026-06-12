@@ -1,57 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import factory from "./index.js";
+import plugin from "./plugin.js";
 
-import type { RouteContext } from "emdash";
-
-const CANONICAL_CAPABILITIES = new Set([
-  "content:read",
-  "content:write",
-  "media:read",
-  "media:write",
-  "network:request",
-  "email:send",
-  "users:read",
-]);
+import type { PluginContext, SandboxedRouteContext } from "emdash/plugin";
 
 describe("@carte/reservations manifest", () => {
-  it("declares the canonical id and version", () => {
-    const manifest = factory();
-    expect(manifest.id).toBe("carte-reservations");
-    expect(manifest.version).toBe("0.1.0");
-  });
-
-  it("uses canonical capability names only", () => {
-    const manifest = factory();
-    for (const cap of manifest.capabilities) {
-      expect(CANONICAL_CAPABILITIES.has(cap)).toBe(true);
-    }
-    expect(manifest.capabilities).toEqual(["content:read", "content:write", "email:send"]);
-  });
-
-  it("declares reservation collections for ctx.content access", () => {
-    const manifest = factory();
-    expect(Object.keys(manifest.storage).sort()).toEqual([
-      "carte_reservation_blocks",
-      "carte_reservations",
-    ]);
-    expect(manifest.storage.carte_reservations.indexes).toEqual([
-      "status",
-      "slotStart",
-      "guestEmail",
-      "confirmationToken",
-      "cancelToken",
-    ]);
-    expect(manifest.storage.carte_reservation_blocks.indexes).toEqual([
-      "startsAt",
-      "endsAt",
-      "scope",
-    ]);
-  });
-
   it("declares public reservation and admin wildcard routes", () => {
-    const manifest = factory();
-    expect(Object.keys(manifest.routes).sort()).toEqual([
+    expect(Object.keys(plugin.routes ?? {}).sort()).toEqual([
       "admin",
       "admin/blocks",
       "admin/settings",
@@ -59,18 +14,9 @@ describe("@carte/reservations manifest", () => {
       "confirm",
       "submit",
     ]);
-    expect(manifest.routes.submit?.public).toBe(true);
-    expect(manifest.routes.confirm?.public).toBe(true);
-    expect(manifest.routes["cancel-by-token"]?.public).toBe(true);
-  });
-
-  it("declares core reservation settings", () => {
-    const manifest = factory();
-    expect(manifest.admin.settingsSchema).toMatchObject({
-      capacityPerSlot: { type: "number", default: 20, min: 1 },
-      slotMinutes: { type: "number", default: 30, min: 5 },
-      leadMinutes: { type: "number", default: 120, min: 0 },
-    });
+    expect(plugin.routes?.submit).toMatchObject({ public: true });
+    expect(plugin.routes?.confirm).toMatchObject({ public: true });
+    expect(plugin.routes?.["cancel-by-token"]).toMatchObject({ public: true });
   });
 });
 
@@ -80,12 +26,9 @@ type RateLimitCounters = {
   setOptions: Array<Record<string, unknown> | undefined>;
 };
 
-const ipContext = (ip: string | null, counters: RateLimitCounters): RouteContext => {
+const ipContext = (counters: RateLimitCounters): PluginContext => {
   const store = new Map<string, unknown>();
   return {
-    input: {},
-    request: new Request("https://example.test/submit"),
-    requestMeta: { ip, userAgent: null, referer: null, geo: null },
     kv: {
       async get<T>(key: string): Promise<T | null> {
         counters.get += 1;
@@ -97,14 +40,35 @@ const ipContext = (ip: string | null, counters: RateLimitCounters): RouteContext
         store.set(key, value);
       },
     },
-  } as unknown as RouteContext;
+  } as PluginContext;
 };
 
 const submitHandler = () => {
-  const handler = factory().routes.submit?.handler;
-  if (handler === undefined) throw new Error("submit route missing");
-  return handler;
+  const route = plugin.routes?.submit;
+  if (typeof route !== "object" || route === null) throw new Error("submit route missing");
+  return route.handler;
 };
+
+const routeContext = (
+  ip: string | null,
+  request = new Request("https://example.test/submit"),
+): SandboxedRouteContext => ({
+  input: {},
+  request: {
+    url: request.url,
+    method: request.method,
+    headers: requestHeaders(request),
+  },
+  requestMeta: { ip, userAgent: null, referer: null, geo: null },
+});
+
+function requestHeaders(request: Request): Record<string, string> {
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, name) => {
+    headers[name] = value;
+  });
+  return headers;
+}
 
 describe("@carte/reservations submit rate limit", () => {
   beforeEach(() => {
@@ -118,11 +82,12 @@ describe("@carte/reservations submit rate limit", () => {
 
   it("throttles burst traffic from one IP inside a 60 second window", async () => {
     const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
-    const ctx = ipContext("203.0.113.10", counters);
+    const ctx = ipContext(counters);
+    const routeCtx = routeContext("203.0.113.10");
     const handler = submitHandler();
 
     const responses = [];
-    for (let index = 0; index < 100; index += 1) responses.push(await handler(ctx));
+    for (let index = 0; index < 100; index += 1) responses.push(await handler(routeCtx, ctx));
 
     const throttled = responses.filter(
       (response) => response instanceof Response && response.status === 429,
@@ -136,13 +101,13 @@ describe("@carte/reservations submit rate limit", () => {
 
   it("allows legitimate one request per second traffic", async () => {
     const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
-    const ctx = ipContext("203.0.113.11", counters);
+    const ctx = ipContext(counters);
     const handler = submitHandler();
 
     const responses = [];
     for (let index = 0; index < 100; index += 1) {
       vi.setSystemTime(new Date(Date.UTC(2026, 4, 8, 12, 0, index)));
-      responses.push(await handler(ctx));
+      responses.push(await handler(routeContext("203.0.113.11"), ctx));
     }
 
     expect(responses.every((response) => !(response instanceof Response))).toBe(true);
@@ -152,10 +117,10 @@ describe("@carte/reservations submit rate limit", () => {
 
   it("writes rate-limit counters with a TTL covering the 60s window", async () => {
     const counters: RateLimitCounters = { get: 0, set: 0, setOptions: [] };
-    const ctx = ipContext("203.0.113.12", counters);
+    const ctx = ipContext(counters);
     const handler = submitHandler();
 
-    await handler(ctx);
+    await handler(routeContext("203.0.113.12"), ctx);
 
     expect(counters.set).toBe(1);
     expect(counters.setOptions[0]).toMatchObject({ expirationTtl: 120 });
@@ -172,19 +137,20 @@ describe("@carte/reservations submit rate limit", () => {
       },
     };
     const handler = submitHandler();
-    const buildCtx = (xff: string): RouteContext =>
-      ({
-        input: {},
-        request: new Request("https://example.test/submit", {
+    const pluginCtx = {
+      kv: sharedKv,
+    } as PluginContext;
+    const buildRouteCtx = (xff: string): SandboxedRouteContext =>
+      routeContext(
+        null,
+        new Request("https://example.test/submit", {
           headers: { "x-forwarded-for": xff },
         }),
-        requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
-        kv: sharedKv,
-      }) as unknown as RouteContext;
+      );
 
     const responses = [];
     for (let index = 0; index < 100; index += 1) {
-      responses.push(await handler(buildCtx(`10.0.0.${index}`)));
+      responses.push(await handler(buildRouteCtx(`10.0.0.${index}`), pluginCtx));
     }
 
     const throttled = responses.filter(

@@ -4,8 +4,17 @@
   "private": true,
   "description": "Carte reservations — bookings, capacity, confirmations. Sandboxed EmDash plugin.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.mjs",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./sandbox": "./dist/plugin.mjs"
+  },
+  "files": [
+    "dist",
+    "emdash-plugin.jsonc"
+  ],
   "scripts": {
+    "build": "emdash-plugin build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
@@ -15,6 +24,7 @@
     "emdash": "^0.18"
   },
   "devDependencies": {
+    "@emdash-cms/plugin-cli": "0.5.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

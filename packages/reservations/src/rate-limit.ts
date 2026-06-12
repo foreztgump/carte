@@ -40,6 +40,8 @@ const storedHits = (state: RateLimitState | null, windowStart: number): number[]
 /**
  * Subrequest audit for /submit: 1 KV read + 1 KV write on accepted requests,
  * 1 KV read on throttled requests. Added subrequests per invocation: ≤ 2.
+ * HR6: KV read-then-write remains a best-effort per-IP throttle under
+ * concurrent requests; it is not an authorization or capacity primitive.
  */
 export const enforceRateLimit = async (
   ctx: RouteContext,

@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "carte-reservations",
+  // TODO(PRO-848): swap to Tender's real DID before any registry publish.
+  // Publisher DID is UNRESOLVED-BUT-UNBLOCKING (library/environment.md); the
+  // family identity is reused across Tender + Carte. Offline build/validate
+  // only — no registry publish in this mission.
+  "publisher": "did:plc:tenderfamilyexampleplaceholder",
+
+  "license": "MIT",
+  "author": { "name": "Carte Maintainers", "email": "maintainers@example.com" },
+  "security": { "email": "security@example.com", "url": "https://example.com/security" },
+  "description": "Carte reservations — bookings, capacity, confirmations. Sandboxed EmDash plugin.",
+  "repo": "https://github.com/NetworkReef/carte",
+
+  "capabilities": ["content:read", "content:write", "email:send"],
+  "allowedHosts": [],
+
+  "storage": {
+    "carte_reservations": {
+      "indexes": ["status", "slotStart", "guestEmail", "confirmationToken", "cancelToken"],
+      "uniqueIndexes": ["confirmationToken", "cancelToken"],
+    },
+    "carte_reservation_blocks": {
+      "indexes": ["startsAt", "endsAt", "scope"],
+    },
+    "carte_reservation_capacity": {
+      "indexes": ["slotKey", "date", "slot"],
+      "uniqueIndexes": ["slotKey"],
+    },
+  },
+
+  "admin": {
+    "pages": [
+      { "path": "/carte-reservations", "label": "Reservations" },
+      { "path": "/carte-reservations/blocks", "label": "Closures" },
+    ],
+  },
+}

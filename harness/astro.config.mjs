@@ -4,6 +4,7 @@ import react from "@astrojs/react";
 // The harness `dev`/`build` scripts run `pnpm --filter @carte/core build` first so
 // this import resolves. Do NOT hand-roll the descriptor — the plugin-cli emits it.
 import carteCore from "@carte/core";
+import carteReservations from "@carte/reservations";
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
@@ -47,7 +48,7 @@ export default defineConfig({
         baseUrl: "/_emdash/api/media/file",
       }),
       plugins: [nativeProbePlugin()],
-      sandboxed: [probePlugin, carteCore],
+      sandboxed: [probePlugin, carteCore, carteReservations],
       sandboxRunner: "@emdash-cms/sandbox-workerd",
     }),
   ],

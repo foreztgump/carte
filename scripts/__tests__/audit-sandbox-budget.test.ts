@@ -62,7 +62,7 @@ export default definePlugin({
       "| route | est-CPU-ms | subrequest-count | budget-margin |",
     );
     expect(auditResult.output).toContain("packages/core/src/schema-jsonld");
-    expect(auditResult.output).toContain("packages/reservations/src/submit");
+    expect(auditResult.output).toContain("packages/reservations/src/plugin/submit");
     expect(auditResult.output).toContain("packages/orders-backend/src/checkout");
   });
 
