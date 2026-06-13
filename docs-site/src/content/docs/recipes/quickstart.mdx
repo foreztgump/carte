@@ -1,11 +1,11 @@
 ---
 title: Quickstart
-description: Install EmDash and all six Carte v0.1 plugins on a fresh project.
+description: Install EmDash 0.18 and all six Carte plugins on a fresh project.
 sidebar:
   order: 1
 ---
 
-This recipe takes a fresh EmDash site from zero to the complete Carte v0.1
+This recipe takes a fresh EmDash 0.18 site from zero to the complete Carte
 plugin family. It installs the sandboxed menu, reservation, and order backends,
 the native admin plugins, and the Astro storefront component package.
 
@@ -17,10 +17,10 @@ Related plugin overviews:
 [`@carte/views`](/plugins/carte-views/), and
 [`@carte/ai`](/plugins/carte-ai/).
 
-## 1. Create a fresh EmDash project
+## 1. Create a fresh EmDash 0.18 project
 
 ```bash
-pnpm create emdash@^0.9.0 my-restaurant
+pnpm create emdash@^0.18 my-restaurant
 cd my-restaurant
 pnpm install
 ```
@@ -32,15 +32,15 @@ Done in ...
 EmDash project created in my-restaurant
 ```
 
-Carte v0.1 targets EmDash plugin SDK `^0.9.0`. Keep the generated EmDash
-version on that range until the Carte release notes announce a newer target.
+Carte v0.3.0-rc targets EmDash `^0.18`. Keep the generated EmDash version on
+that range until the Carte release notes announce a newer target.
 
 ## 2. Install the Carte packages
 
 ```bash
 pnpm add @carte/core @carte/reservations @carte/orders-backend
 pnpm add @carte/orders-admin @carte/ai
-pnpm add -D @carte/views astro
+pnpm add -D @carte/views
 ```
 
 Expected output:
@@ -54,40 +54,86 @@ dependencies:
 + @carte/ai
 devDependencies:
 + @carte/views
-+ astro
 ```
 
-## 3. Register the plugins
+## 3. Register the plugins in `astro.config.mjs`
 
-Add the Carte plugin package names to the EmDash plugin list in your site
-configuration:
+There is **no `emdash-plugin install` command** — installation is an
+`astro.config.mjs` edit. The three sandboxed plugins go in `sandboxed: []` (with
+a `sandboxRunner`); the two native plugins go in `plugins: []`. Build the
+sandboxed plugins first (`emdash-plugin build`) so their descriptor imports
+resolve.
 
-```ts
-export default {
-  plugins: [
-    "@carte/core",
-    "@carte/reservations",
-    "@carte/orders-backend",
-    "@carte/orders-admin",
-    "@carte/ai",
+```js
+// astro.config.mjs
+import { defineConfig } from "astro/config";
+import node from "@astrojs/node";
+import react from "@astrojs/react";
+import emdash, { local } from "emdash/astro";
+import { sqlite } from "emdash/db";
+
+import carteCore from "@carte/core";
+import carteReservations from "@carte/reservations";
+import carteOrdersBackend from "@carte/orders-backend";
+
+// Native descriptors point `entrypoint` at the package's named `createPlugin`
+// export; the admin-module field resolves the `./admin` React module. See the
+// complete, verified shape in `harness/astro.config.mjs`.
+function ordersAdminPlugin() {
+  return {
+    id: "carte-orders-admin",
+    version: "0.1.0",
+    entrypoint: "@carte/orders-admin",
+    // admin module: "@carte/orders-admin/admin"
+  };
+}
+
+function aiPlugin() {
+  return {
+    id: "carte-ai",
+    version: "0.1.0",
+    entrypoint: "@carte/ai",
+    // admin module: "@carte/ai/admin"
+  };
+}
+
+export default defineConfig({
+  output: "server",
+  adapter: node({ mode: "standalone" }),
+  integrations: [
+    react(),
+    emdash({
+      database: sqlite({ url: "file:./data.db" }),
+      storage: local({ directory: "./uploads", baseUrl: "/_emdash/api/media/file" }),
+      plugins: [ordersAdminPlugin(), aiPlugin()],
+      sandboxed: [carteCore, carteReservations, carteOrdersBackend],
+      sandboxRunner: "@emdash-cms/sandbox-workerd",
+    }),
   ],
-};
+});
 ```
 
 Expected output when EmDash loads the manifest:
 
 ```text
-Loaded plugin @carte/core
-Loaded plugin @carte/reservations
-Loaded plugin @carte/orders-backend
-Loaded plugin @carte/orders-admin
-Loaded plugin @carte/ai
+Loaded sandboxed plugin carte-core:0.1.0
+Loaded sandboxed plugin carte-reservations:0.1.0
+Loaded sandboxed plugin carte-orders-backend:0.1.0
+Loaded plugin carte-orders-admin
+Loaded plugin carte-ai
 ```
 
 The sandboxed plugins declare only canonical EmDash capabilities:
 `content:read`, `content:write`, `media:read`, `email:send`, and
 `network:request`. Plugin KV is scoped by EmDash automatically; do not add a KV
 capability.
+
+:::caution[Cloudflare Free plan has no sandboxed isolation]
+On the Cloudflare Free plan there is no Dynamic Worker Loader, so the three
+sandboxed plugins run **unsandboxed (in-process)** — treat the whole Worker as
+one application-code trust boundary. Use a Paid plan (or a self-hosted workerd
+runner) for real isolation.
+:::
 
 ## 4. Fill required settings
 
@@ -100,9 +146,7 @@ Set these values in EmDash settings before sending real traffic:
 - timezone: America/New_York
 
 @carte/orders-backend
-- stripePublicKey: pk_test_...
-- stripeSecretKey: sk_test_...       (secret)
-- stripeWebhookSecret: whsec_...     (secret)
+- Tender payment provider (tender-core + tender-stripe) configured per MIGRATION.md
 
 @carte/ai
 - anthropicApiKey, openaiApiKey, or geminiApiKey (secret)
@@ -118,9 +162,9 @@ Secrets stored in EmDash settings
 ## 5. Smoke-test the public routes
 
 ```bash
-curl -s http://localhost:8787/_emdash/api/plugins/carte-core/schema-jsonld
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-reservations/submit
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-orders-backend/checkout
+curl -s http://localhost:4321/_emdash/api/plugins/carte-core/schema-jsonld
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-reservations/submit
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-orders-backend/checkout
 ```
 
 Expected output:

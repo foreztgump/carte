@@ -3,7 +3,7 @@ title: "@carte/orders-admin"
 description: Native React order management for Carte restaurants.
 ---
 
-`@carte/orders-admin` is the native React admin plugin for Carte v0.1.
+`@carte/orders-admin` is the native React admin plugin for Carte.
 It renders order lists and order details, drives status changes, requests
 refunds, validates modifier groups, and manages email templates through typed
 contracts.
@@ -14,6 +14,38 @@ contracts.
 - Calls orders-backend routes through typed REST contracts from `@carte/core`.
 - Prevents invalid order workflow transitions in the admin UI.
 - Keeps the native plugin boundary separate from sandbox-only Worker config.
+
+## Install (EmDash 0.18)
+
+`@carte/orders-admin` is a **native** plugin: it exports a `definePlugin(...)`
+factory and runs in-process (unsandboxed). There is **no `emdash-plugin install`
+command** — register it in `astro.config.mjs` via the `plugins: []` array. A
+native descriptor points `entrypoint` at the package's named `createPlugin`
+export; its admin-module field resolves the package's `./admin` React module
+(`@carte/orders-admin/admin`). See the complete, verified native descriptor in
+[`harness/astro.config.mjs`](https://github.com/foreztgump/carte/blob/main/harness/astro.config.mjs):
+
+```js
+// astro.config.mjs
+import emdash from "emdash/astro";
+
+function ordersAdminPlugin() {
+  return {
+    id: "carte-orders-admin",
+    version: "0.1.0",
+    entrypoint: "@carte/orders-admin",
+    // admin module: "@carte/orders-admin/admin"
+  };
+}
+
+emdash({
+  plugins: [ordersAdminPlugin()],
+  // ...database/storage options
+});
+```
+
+Native plugins run in-process, so the Cloudflare Free sandbox-isolation caveat
+does not apply — but they share the host Worker's trust boundary by design.
 
 ## Recipes
 

@@ -3,7 +3,7 @@ title: "@carte/core"
 description: Menu, restaurant settings, taxonomy, and Schema.org foundation for Carte.
 ---
 
-`@carte/core` is the sandboxed foundation plugin for Carte v0.1. It owns the
+`@carte/core` is the sandboxed foundation plugin for Carte. It owns the
 restaurant profile, menu collections, canonical allergen and dietary taxonomy,
 Block Kit admin routes, 86-state restore behavior, and Schema.org JSON-LD output.
 
@@ -12,7 +12,39 @@ Block Kit admin routes, 86-state restore behavior, and Schema.org JSON-LD output
 - Declares the core restaurant and menu content model.
 - Publishes canonical EU FIC allergen tags plus documented US extensions.
 - Generates Restaurant and Menu JSON-LD for rich results validation.
-- Invalidates cached JSON-LD from EmDash content hooks with `ctx.waitUntil`.
+- Invalidates cached JSON-LD from EmDash content hooks (all work in-request —
+  sandboxed handlers have no post-response primitive).
+
+## Install (EmDash 0.18)
+
+`@carte/core` is a **sandboxed** plugin: it ships an `emdash-plugin.jsonc`
+manifest and a `src/plugin.ts`, built with the `emdash-plugin` CLI. There is
+**no `emdash-plugin install` command** — installation is an `astro.config.mjs`
+edit. Add the built descriptor to the `sandboxed: []` array of the `emdash()`
+integration and set a `sandboxRunner`:
+
+```js
+// astro.config.mjs
+import emdash from "emdash/astro";
+import carteCore from "@carte/core";
+
+emdash({
+  sandboxed: [carteCore],
+  sandboxRunner: "@emdash-cms/sandbox-workerd",
+  // ...database/storage options
+});
+```
+
+The manifest declares the canonical capabilities `content:read`,
+`content:write`, and `media:read`. Run `emdash-plugin build` before the Astro
+build so the descriptor import resolves, then redeploy.
+
+:::caution[Cloudflare Free plan has no sandboxed isolation]
+The Dynamic Worker Loader that isolates sandboxed plugins is unavailable on the
+Cloudflare Free plan. On Free, `@carte/core` runs **unsandboxed (in-process)** —
+treat the whole Worker as one application-code trust boundary. Use a Paid plan
+(or a self-hosted workerd runner) for real isolation.
+:::
 
 ## Recipes
 

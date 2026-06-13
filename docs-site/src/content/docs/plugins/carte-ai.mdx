@@ -3,7 +3,7 @@ title: "@carte/ai"
 description: AI-native admin panel with explicit write confirmation, audit, and undo.
 ---
 
-`@carte/ai` is the commercial native React AI admin plugin for Carte v0.1. It is
+`@carte/ai` is the commercial native React AI admin plugin for Carte. It is
 read-by-default and only performs writes after an explicit user confirmation,
 with before/after diffs, audit entries, and ten-minute undo tokens.
 
@@ -12,7 +12,40 @@ with before/after diffs, audit entries, and ten-minute undo tokens.
 - Presents AI-suggested operational changes as confirmable diffs.
 - Enforces per-turn PII opt-in at the tool-call boundary before LLM egress.
 - Records audit entries for AI write actions and allergen changes.
-- Provides the interim MCP wrapper Worker for EmDash 0.9.0 deployments.
+- Provides the interim MCP wrapper Worker until EmDash exposes a plugin MCP API.
+
+## Install (EmDash 0.18)
+
+`@carte/ai` is a **native** plugin: it exports a `definePlugin(...)` factory and
+runs in-process (unsandboxed). There is **no `emdash-plugin install` command** —
+register it in `astro.config.mjs` via the `plugins: []` array, pointing
+`entrypoint` at the package's named `createPlugin` export; its admin-module field
+resolves the package's `./admin` React module (`@carte/ai/admin`). See the
+complete, verified native descriptor in
+[`harness/astro.config.mjs`](https://github.com/foreztgump/carte/blob/main/harness/astro.config.mjs):
+
+```js
+// astro.config.mjs
+import emdash from "emdash/astro";
+
+function aiPlugin() {
+  return {
+    id: "carte-ai",
+    version: "0.1.0",
+    entrypoint: "@carte/ai",
+    // admin module: "@carte/ai/admin"
+  };
+}
+
+emdash({
+  plugins: [aiPlugin()],
+  // ...database/storage options
+});
+```
+
+`@carte/ai` is a commercial SKU ($99/yr, 14-day trial). Native plugins run
+in-process, so the Cloudflare Free sandbox-isolation caveat does not apply — but
+they share the host Worker's trust boundary by design.
 
 ## Recipes
 
