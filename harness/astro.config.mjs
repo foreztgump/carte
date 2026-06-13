@@ -25,6 +25,10 @@ import { sqlite } from "emdash/db";
 // it to the synthetic virtual module id and fails to resolve. An absolute
 // path resolves identically in both modes.
 const HERE = dirname(fileURLToPath(import.meta.url));
+// The harness-local probe uses ABSOLUTE paths because it is not a published
+// package with an `exports` map; the real Carte natives below use bare package
+// specifiers (preferred for published packages). Both forms resolve under
+// `astro build` Rollup — a RELATIVE path does not (the M2/PR#20 CI break).
 const nativeProbeEntrypoint = resolve(HERE, "src/native-probe.ts");
 const nativeProbeAdminEntry = resolve(HERE, "src/native-probe-admin.tsx");
 

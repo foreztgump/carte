@@ -3,8 +3,9 @@
 // Native (`definePlugin`) plugins run in-process and unsandboxed. The React
 // admin is mounted via the documented 0.18 path: the admin `entry` field is a
 // package module specifier resolving to the `./admin` export, which exposes
-// `PluginAdminExports` (React elements keyed by `admin.pages[].path`). The host
-// resolves `adminMode === "react"` from the presence of that entry field.
+// `PluginAdminExports` (React component functions keyed by `admin.pages[].path`;
+// the host invokes each as `jsx(Component, {})` — see VERIFIED-PLATFORM §5.1).
+// The host resolves `adminMode === "react"` from the presence of that entry field.
 
 import { definePlugin } from "emdash";
 
