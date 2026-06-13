@@ -33,7 +33,7 @@ const toRouteContext = (
       method: routeCtx.request.method,
       headers: routeCtx.request.headers,
     }),
-    requestMeta: NO_REQUEST_META,
+    requestMeta: (routeCtx.requestMeta as RouteContext["requestMeta"]) ?? NO_REQUEST_META,
     waitUntil: (task: Promise<unknown>) => {
       deferredTasks.push(task);
     },

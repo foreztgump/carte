@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import plugin from "./plugin.js";
 
@@ -32,5 +32,38 @@ describe("@carte/orders-backend sandboxed plugin surface", () => {
 
   it("registers no Tender payment hooks (dead tender:* eventing purged)", () => {
     expect(plugin.hooks).toBeUndefined();
+  });
+
+  it("threads the sandbox requestMeta into the per-IP checkout rate-limit key", async () => {
+    const clientIp = "198.51.100.21";
+    const setKeys: string[] = [];
+    const ctx = {
+      plugin: { id: "carte-orders-backend", version: "0.1.0" },
+      storage: {},
+      log: { debug() {}, info() {}, warn() {}, error() {} },
+      site: { name: "Carte Test", url: "https://example.test", locale: "en" },
+      url: (path: string) => new URL(path, "https://example.test").toString(),
+      kv: {
+        get: vi.fn(async () => null),
+        set: vi.fn(async (key: string) => {
+          setKeys.push(key);
+        }),
+        delete: vi.fn(async () => true),
+        list: vi.fn(async () => []),
+      },
+    };
+    const routeCtx = {
+      input: {},
+      request: { url: "https://example.test/checkout", method: "POST", headers: new Headers() },
+      requestMeta: { ip: clientIp, userAgent: null, referer: null, geo: null },
+    };
+
+    const checkout = plugin.routes?.checkout;
+    const handler = typeof checkout === "function" ? checkout : checkout?.handler;
+    // The empty input throws downstream of the rate limiter; the per-IP key is
+    // written before validation, which is exactly what this test asserts.
+    await handler?.(routeCtx as never, ctx as never).catch(() => undefined);
+
+    expect(setKeys.some((key) => key.includes(encodeURIComponent(clientIp)))).toBe(true);
   });
 });
