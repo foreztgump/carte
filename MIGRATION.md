@@ -77,7 +77,7 @@ import carteOrdersBackend from "@carte/orders-backend";
 function ordersAdminPlugin() {
   return {
     id: "carte-orders-admin",
-    version: "0.1.0",
+    version: "0.3.0-rc.1",
     entrypoint: "@carte/orders-admin",
     // admin module: "@carte/orders-admin/admin" (see harness/astro.config.mjs)
   };
@@ -86,7 +86,7 @@ function ordersAdminPlugin() {
 function aiPlugin() {
   return {
     id: "carte-ai",
-    version: "0.1.0",
+    version: "0.3.0-rc.1",
     entrypoint: "@carte/ai",
     // admin module: "@carte/ai/admin" (see harness/astro.config.mjs)
   };
