@@ -1,8 +1,11 @@
-import { isValidElement } from "react";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import factory from "./index.js";
-import adminExports from "./admin/index.js";
+import adminExports, { pages } from "./admin/index.js";
+
+afterEach(cleanup);
 
 const ORDERS_PATH = "/carte-orders";
 const MODIFIERS_PATH = "/carte-orders/modifiers";
@@ -33,11 +36,24 @@ describe("@carte/orders-admin native definePlugin shape (0.18)", () => {
     ]);
   });
 
-  it("exposes a PluginAdminExports React mount from ./admin for each page", () => {
-    const pages = adminExports.pages ?? {};
+  it("exposes `pages` as a NAMED export keyed by admin page path", () => {
     expect(Object.keys(pages)).toEqual([ORDERS_PATH, MODIFIERS_PATH]);
-    for (const element of Object.values(pages)) {
-      expect(isValidElement(element)).toBe(true);
+    expect(adminExports.pages).toBe(pages);
+  });
+
+  it("stores each page value as a renderable component function, not an element", () => {
+    for (const page of Object.values(pages)) {
+      expect(typeof page).toBe("function");
     }
+  });
+
+  it("renders the orders page component into the orders admin UI", () => {
+    render(createElement(pages[ORDERS_PATH]!));
+    expect(screen.getByRole("heading", { name: "Carte Orders" })).toBeTruthy();
+  });
+
+  it("renders the modifiers page component into the modifier groups UI", () => {
+    render(createElement(pages[MODIFIERS_PATH]!));
+    expect(screen.getByRole("heading", { name: "Modifier groups" })).toBeTruthy();
   });
 });
