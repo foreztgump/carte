@@ -41,7 +41,7 @@ describe("@carte/orders-admin manifest", () => {
 
   it("registers native React admin pages without sandbox-only fields", () => {
     const manifest = factory();
-    expect(manifest.admin?.entry).toBe("admin/index.js");
+    expect(manifest.admin?.entry).toBe("@carte/orders-admin/admin");
     expect(manifest.admin?.pages).toEqual([
       { path: "/carte-orders", label: "Orders", icon: "shopping-bag" },
       { path: "/carte-orders/modifiers", label: "Modifiers", icon: "sliders" },

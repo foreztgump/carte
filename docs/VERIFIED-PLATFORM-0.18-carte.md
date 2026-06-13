@@ -252,13 +252,25 @@ Evidence:
 
 ```js
 // harness/astro.config.mjs
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
 plugins: [nativeProbePlugin()];
 
 function nativeProbePlugin() {
   return {
     id: "carte-native-probe",
     version: "0.1.0",
-    entrypoint: "./src/native-probe.ts",
+    // MUST be an ABSOLUTE path. EmDash inlines the entrypoint into the
+    // `virtual:emdash/plugins` module as `import { createPlugin } from
+    // "<entrypoint>"`. A relative path ("./src/native-probe.ts") only
+    // resolves under the Vite dev server (anchored at project root); the
+    // `astro build` Rollup pass anchors it to the synthetic virtual module
+    // id and fails ("Could not resolve ./src/native-probe.ts"), breaking CI.
+    // Verified + fixed in M2 (PR #20). An absolute path resolves in both modes.
+    entrypoint: resolve(HERE, "src/native-probe.ts"),
   };
 }
 ```
@@ -316,6 +328,83 @@ Native format imports `createPlugin` from `descriptor.entrypoint`.
 node_modules/emdash/src/plugins/types.ts:
 PluginAdminConfig has settingsSchema?: Record<string, SettingField>.
 ```
+
+### 5.1 Native **React admin page** render — fully verified end-to-end (M3 spike, 2026-06-13)
+
+**Claim.** A native plugin can mount a real React admin **page** (beyond `settingsSchema`) that renders inside the host admin shell. This is wired by **two decoupled mechanisms** — both must be satisfied:
+
+1. **Runtime `adminMode` flag** (`node_modules/emdash/dist/astro/middleware.mjs:1438`): `hasAdminEntry = !!plugin.admin?.entry; if (hasAdminEntry) adminMode = "react"`. The nested `admin.entry` value is only checked for **truthiness** — it is NEVER imported at runtime, so its string value is a flag, not a resolved module. `admin.pages` drives the nav-visible page list (`manifestPlugins[id].adminPages`).
+2. **Build-time React component registry** (`node_modules/emdash/dist/astro/index.mjs`):
+   - `generatePluginsModule` (~L1060): native descriptors emit `import { createPlugin as createPluginN } from "<descriptor.entrypoint>"` then `createPluginN(...)`. The package MUST export a **named `createPlugin`** from its `entrypoint`.
+   - `generateAdminRegistryModule` (~L1101): `descriptors.filter(d => d.adminEntry)` then `import * as adminN from "<descriptor.adminEntry>"`, storing the **whole module namespace** as `pluginAdmins[pluginId]`. The harness descriptor MUST carry a **flat `adminEntry`** (distinct from the nested `admin.entry`).
+   - The admin app reads `pluginAdmins[pluginId]?.pages` (`@emdash-cms/admin/dist/index.js:179,29779`), so **`pages` must be a NAMED export** of the `adminEntry` module — a `default`-only export is invisible to the resolver.
+   - The page is rendered via `jsx(PluginComponent, {})` (`@emdash-cms/admin/dist/index.js:40094` `PluginPage`), so each `pages[path]` value is invoked as a **COMPONENT FUNCTION**, NOT a React element. ⚠️ The `PluginAdminExports.pages` type is annotated `Record<string, JSX.Element>` (`types-DMwSpvcw.d.mts:1164`) but the runtime treats values as components — the type is misleading. Storing `createElement(App, {...})` elements (as the first orders-admin/ai conversion did) is a latent bug; store the component function (or a thin wrapper component).
+
+**Proven working shape (native-probe spike):**
+
+```ts
+// package: createPlugin returns definePlugin with nested admin.entry (truthy flag) + pages
+export function createPlugin() {
+  return definePlugin({
+    id: "carte-native-probe",
+    version: "0.1.0",
+    capabilities: [],
+    admin: {
+      entry: "@carte/harness/native-probe-admin", // truthy → adminMode:"react" (never imported)
+      pages: [{ path: "/probe-react", label: "Probe React", icon: "TestTube" }],
+    },
+  });
+}
+```
+
+```tsx
+// ./admin module — `pages` is a NAMED export; values are COMPONENT FUNCTIONS
+import type { PluginAdminExports } from "emdash";
+function ProbeReactAdmin() {
+  return <div data-testid="probe-react-admin">Probe React Admin OK</div>;
+}
+export const pages = { "/probe-react": ProbeReactAdmin } as unknown as PluginAdminExports["pages"];
+```
+
+```js
+// harness/astro.config.mjs — flat entrypoint + flat adminEntry, BOTH absolute paths
+function nativeProbePlugin() {
+  return {
+    id: "carte-native-probe", version: "0.1.0",
+    entrypoint: resolve(HERE, "src/native-probe.ts"),       // → named createPlugin
+    adminEntry: resolve(HERE, "src/native-probe-admin.tsx"), // → React registry (import * as)
+  };
+}
+// REQUIRED Vite config to avoid dual-React "Invalid hook call" in the dev server:
+vite: {
+  resolve: { dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"] },
+  optimizeDeps: { include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@emdash-cms/admin"] },
+}
+```
+
+Evidence:
+
+```console
+$ pnpm --filter @carte/harness build         # astro build (Rollup) — both flat paths resolve
+exit 0
+
+$ curl -s http://localhost:4332/_emdash/api/manifest | jq '.data.plugins["carte-native-probe"]'
+{ "version": "0.1.0", "enabled": true, "adminMode": "react",
+  "adminPages": [{ "path": "/probe-react", "label": "Probe React", "icon": "TestTube" }],
+  "dashboardWidgets": [] }
+
+# agent-browser → /_emdash/admin/plugins/carte-native-probe/probe-react (dev-bypass session):
+#   main content renders "Probe React Admin OK" — NOT an error boundary.
+#   Only console error is the benign use-sync-external-store React-18+ advisory.
+#   Screenshot: validation/M3/spike-native-react-admin-RENDERS.png
+```
+
+**Critical gotchas for the real orders-admin/ai rework:**
+
+- The flat descriptor `adminEntry` (build-time registry source) is REQUIRED for React components to bundle — the mission purge gates ban `adminEntry` in **plugin source**, but it is mandatory in `harness/astro.config.mjs` (the install/config surface). Gates were relaxed to permit flat `adminEntry` only in the harness config.
+- The `optimizeDeps.include: ["@emdash-cms/admin", ...react]` Vite block is REQUIRED in the harness dev server — without it the dep-optimizer splits React into two instances and `useContext` returns null inside the admin's `IconBase` → "Invalid hook call" error boundary. (Single physical `react@19.2.6` in the tree; the split is purely a Vite optimizer artifact.)
+- `pages` values are COMPONENT FUNCTIONS, not `createElement(...)` elements (see above).
+- Production (Cloudflare/Rollup) render of native React admin remains **unverified** in this harness — prod auth is passkey/WebAuthn and dev-bypass is 403 there. Dev-server render is proven; the Rollup `astro build` resolves the modules (exit 0); a production-auth fixture is deferred follow-up (not M3-blocking, since the harness dev surface is the validation target).
 
 ## 6. Runtime limits per runner
 

@@ -4,6 +4,11 @@ import react from "@astrojs/react";
 // The harness `dev`/`build` scripts run `pnpm --filter @carte/core build` first so
 // this import resolves. Do NOT hand-roll the descriptor — the plugin-cli emits it.
 import carteCore from "@carte/core";
+// Built sandboxed descriptor for @carte/harness-probe (emdash-plugin build →
+// dist/index.mjs). The harness `dev`/`build` scripts run the probe build first
+// so this import resolves. The plugin-cli emits the canonical descriptor the
+// sandboxed-plugins virtual module consumes — do NOT hand-roll it.
+import carteHarnessProbe from "@carte/harness-probe";
 import carteOrdersBackend from "@carte/orders-backend";
 import carteReservations from "@carte/reservations";
 import { dirname, resolve } from "node:path";
@@ -20,32 +25,44 @@ import { sqlite } from "emdash/db";
 // it to the synthetic virtual module id and fails to resolve. An absolute
 // path resolves identically in both modes.
 const HERE = dirname(fileURLToPath(import.meta.url));
+// The harness-local probe uses ABSOLUTE paths because it is not a published
+// package with an `exports` map; the real Carte natives below use bare package
+// specifiers (preferred for published packages). Both forms resolve under
+// `astro build` Rollup — a RELATIVE path does not (the M2/PR#20 CI break).
 const nativeProbeEntrypoint = resolve(HERE, "src/native-probe.ts");
+const nativeProbeAdminEntry = resolve(HERE, "src/native-probe-admin.tsx");
 
-const probePlugin = {
-  id: "carte-harness-probe",
-  version: "0.1.0",
-  format: "standard",
-  entrypoint: "@carte/harness-probe/sandbox",
-  capabilities: ["content:read", "content:write"],
-  allowedHosts: [],
-  storage: {
-    probe_claims: {
-      indexes: ["kind", "slotKey"],
-      uniqueIndexes: ["slotKey"],
-    },
-    hook_events: {
-      indexes: ["hook", "collection", "isNew"],
-    },
-  },
-  adminPages: [{ path: "/probe", label: "Probe", icon: "TestTube" }],
-};
+const probePlugin = carteHarnessProbe;
 
 function nativeProbePlugin() {
   return {
     id: "carte-native-probe",
     version: "0.1.0",
     entrypoint: nativeProbeEntrypoint,
+    adminEntry: nativeProbeAdminEntry,
+  };
+}
+
+// Real native plugins. `entrypoint` → the package's named `createPlugin`
+// export; `adminEntry` → the package's `./admin` module (named `pages`
+// export). Package specifiers resolve under both `astro dev` (Vite) and
+// `astro build` (Rollup) because workspace packages are symlinked into
+// node_modules with `exports` maps for `.` and `./admin`.
+function nativeOrdersAdminPlugin() {
+  return {
+    id: "carte-orders-admin",
+    version: "0.1.0",
+    entrypoint: "@carte/orders-admin",
+    adminEntry: "@carte/orders-admin/admin",
+  };
+}
+
+function nativeAiPlugin() {
+  return {
+    id: "carte-ai",
+    version: "0.1.0",
+    entrypoint: "@carte/ai",
+    adminEntry: "@carte/ai/admin",
   };
 }
 
@@ -60,12 +77,31 @@ export default defineConfig({
         directory: "./uploads",
         baseUrl: "/_emdash/api/media/file",
       }),
-      plugins: [nativeProbePlugin()],
+      plugins: [nativeProbePlugin(), nativeOrdersAdminPlugin(), nativeAiPlugin()],
       sandboxed: [probePlugin, carteCore, carteReservations, carteOrdersBackend],
       sandboxRunner: "@emdash-cms/sandbox-workerd",
     }),
   ],
   server: {
     port: 4321,
+  },
+  vite: {
+    // Native plugin admin entries (native-probe-admin.tsx) are pulled in via
+    // emdash's generated `virtual:emdash/admin-registry`. Without deduping,
+    // Vite's dep-optimized @emdash-cms/admin bundle and the freshly-compiled
+    // admin entry resolve SEPARATE React instances → "Invalid hook call /
+    // more than one copy of React". Force a single React copy.
+    resolve: {
+      dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@emdash-cms/admin",
+      ],
+    },
   },
 });

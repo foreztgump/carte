@@ -15,8 +15,10 @@
   "dependencies": {
     "@astrojs/node": "10.1.4",
     "@astrojs/react": "5.0.7",
+    "@carte/ai": "workspace:*",
     "@carte/core": "workspace:*",
     "@carte/harness-probe": "workspace:*",
+    "@carte/orders-admin": "workspace:*",
     "@carte/orders-backend": "workspace:*",
     "@carte/reservations": "workspace:*",
     "@emdash-cms/sandbox-workerd": "0.1.6",

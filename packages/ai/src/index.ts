@@ -1,13 +1,16 @@
-// @carte/ai — native EmDash plugin skeleton (paid SKU).
+// @carte/ai — native EmDash 0.18 plugin (paid SKU).
 //
-// v0.1 scope (later mission): BYO-LLM chat with tool-call streaming;
-// read-by-default, write-on-confirm contract enforced at the tool-call
-// boundary; license check at license.carteplugin.dev with 24h KV cache
-// and graceful degrade. PII NEVER leaves to the LLM without explicit
-// user consent — enforced at the boundary, not in prompts.
+// v0.1 scope: BYO-LLM chat with tool-call streaming; read-by-default,
+// write-on-confirm contract enforced at the tool-call boundary; license
+// check at license.carteplugin.dev with 24h KV cache and graceful degrade.
+// PII NEVER leaves to the LLM without explicit user consent — enforced at
+// the boundary, not in prompts.
 //
-// Native plugin (0.18 `definePlugin`, in-process and unsandboxed). The
-// future React admin mounts via the native `definePlugin({ admin })` shape.
+// Native (`definePlugin`) plugins run in-process and unsandboxed. The React
+// admin is mounted via the documented 0.18 path: the admin `entry` field is a
+// package module specifier resolving to the `./admin` export, which exposes
+// `PluginAdminExports` (React elements keyed by `admin.pages[].path`). The host
+// resolves `adminMode === "react"` from the presence of that entry field.
 
 import { definePlugin } from "emdash";
 
@@ -16,6 +19,8 @@ import { checkLicense } from "./license.js";
 import type { LicenseKv, LicenseRecord } from "./license.js";
 import { chatStreamRoute, historyRoute } from "./routes/chat.js";
 import { auditListRoute, confirmCallRoute, toolCallRoute, undoCallRoute } from "./tool-call.js";
+
+const ADMIN_ENTRY = "@carte/ai/admin";
 
 const PLUGIN_ID = "carte-ai";
 const PLUGIN_VERSION = "0.1.0";
@@ -70,7 +75,7 @@ const factory = () =>
       "undo-call": { handler: undoCallRoute },
     },
     admin: {
-      entry: "admin/index.js",
+      entry: ADMIN_ENTRY,
       settingsSchema: {
         anthropicApiKey: {
           type: "secret",
@@ -91,6 +96,10 @@ const factory = () =>
       pages: [{ path: "/carte-ai", label: "Chat", icon: "sparkles" }],
     },
   });
+
+// Named export consumed by the EmDash 0.18 native harness registry, which
+// emits `import { createPlugin } from "<entrypoint>"` (VERIFIED-PLATFORM §5.1).
+export const createPlugin = factory;
 
 export default factory;
 

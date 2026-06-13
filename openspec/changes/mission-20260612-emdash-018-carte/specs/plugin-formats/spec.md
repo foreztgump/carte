@@ -27,7 +27,7 @@ Each sandboxed package SHALL be a single `src/plugin.ts` bare default export `sa
 
 ### Requirement: Native-format plugins use the documented 0.18 surface
 
-`@carte/orders-admin` and `@carte/ai` SHALL use `definePlugin()` on real `emdash@^0.18` types, register via the harness `astro.config.mjs` `plugins: []`, and mount React admin via the documented path (`./admin` export or `admin.settingsSchema`). Obsolete descriptor fields (`entrypoint`, `format`, `adminEntry`, `adminPages`, `admin.entry`) SHALL NOT appear.
+`@carte/orders-admin` and `@carte/ai` SHALL use `definePlugin()` on real `emdash@^0.18` types, register via the harness `astro.config.mjs` `plugins: []`, and mount React admin via the documented 0.18 path. The documented path is: set `admin.entry` to the package's `./admin` **module specifier** (e.g. `@carte/orders-admin/admin`) — this is the canonical field the 0.18 runtime reads to flip a plugin to `adminMode: "react"` (verified: `node_modules/emdash/dist/astro/middleware.mjs` — `hasAdminEntry → adminMode = "react"`; the JSDoc on `PluginAdminConfig.entry` gives `"@emdash-cms/plugin-audit-log/admin"` as the example value) — and/or express settings via `admin.settingsSchema`. Obsolete descriptor fields (`entrypoint`, `format`, `adminEntry`, `adminPages`) SHALL NOT appear, and `admin.entry` SHALL NOT carry the dead pre-v0.13 **relative value** (`"admin/index.js"` or any relative `./…`/`.js` path) — only a bare package specifier is permitted.
 
 #### Scenario: Native admin renders
 

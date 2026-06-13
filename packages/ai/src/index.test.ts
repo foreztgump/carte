@@ -44,7 +44,7 @@ describe("@carte/ai manifest", () => {
     const packageRoot = join(process.cwd(), "wrangler.toml");
 
     expect(existsSync(packageRoot)).toBe(false);
-    expect(manifest.admin?.entry).toBe("admin/index.js");
+    expect(manifest.admin?.entry).toBe("@carte/ai/admin");
   });
 });
 
