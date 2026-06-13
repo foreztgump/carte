@@ -10,7 +10,14 @@ const MODIFIERS_PATH = "/carte-orders/modifiers";
 describe("@carte/orders-admin native definePlugin shape (0.18)", () => {
   it("does not carry the dead pre-v0.13 relative admin entry", () => {
     const plugin = factory();
-    expect(plugin.admin?.entry).not.toBe("admin/index.js");
+    const entry = plugin.admin?.entry ?? "";
+    // The dead shape was a relative module path ending in a JS file; the 0.18
+    // shape is a bare package module specifier. Guard regression without
+    // embedding the dead literal.
+    expect(entry.startsWith("@carte/")).toBe(true);
+    expect(/\.js$/.test(entry)).toBe(false);
+    expect(entry.includes("/")).toBe(true);
+    expect(entry.startsWith(".")).toBe(false);
   });
 
   it("mounts React admin via the documented package module specifier", () => {
