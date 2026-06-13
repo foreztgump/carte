@@ -1,7 +1,15 @@
 {
   "caps": {
-    "cpuMs": 50,
-    "subrequests": 10
+    "cloudflare": {
+      "enforcement": "blocking",
+      "cpuMs": 50,
+      "subrequests": 10,
+      "wallMs": 30000
+    },
+    "workerd": {
+      "enforcement": "advisory",
+      "wallMs": 30000
+    }
   },
   "statementCpuMs": 0.01,
   "operations": {

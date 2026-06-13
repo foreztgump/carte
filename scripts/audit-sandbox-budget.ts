@@ -11,22 +11,32 @@ const SCAN_ROOTS = [
   "packages/orders-backend/src",
 ] as const;
 const WARN_THRESHOLD_RATIO = 0.8;
-const TABLE_HEADER = "| route | est-CPU-ms | subrequest-count | budget-margin |";
-const TABLE_SEPARATOR = "|---|---:|---:|---|";
+const RUNNERS = ["cloudflare", "workerd"] as const;
+const TABLE_HEADER = "| route | runner | est-CPU-ms | subrequest-count | budget-margin |";
+const TABLE_SEPARATOR = "|---|---|---:|---:|---|";
 
+type RunnerName = (typeof RUNNERS)[number];
+type BlockingCaps = {
+  enforcement: "blocking";
+  cpuMs: number;
+  subrequests: number;
+  wallMs: number;
+};
+type AdvisoryCaps = { enforcement: "advisory"; wallMs: number };
 type CostTable = {
-  caps: { cpuMs: number; subrequests: number };
+  caps: { cloudflare: BlockingCaps; workerd: AdvisoryCaps };
   statementCpuMs: number;
   operations: Record<string, { subrequests: number; cpuMs: number }>;
 };
+type Status = "PASS" | "WARN" | "FAIL";
 type CliOptions = { root: string; help: boolean };
 type HandlerReport = {
   route: string;
+  runner: RunnerName;
   cpuMs: number;
   subrequests: number;
-  cpuMsCap: number;
-  subrequestCap: number;
-  status: "PASS" | "WARN" | "FAIL";
+  status: Status;
+  margin: string;
 };
 type Analysis = { cpuMs: number; subrequests: number };
 type ReportInput = {
@@ -80,8 +90,11 @@ function printHelp(): void {
   console.log(`Usage: pnpm tsx scripts/audit-sandbox-budget.ts [--root <repo-root>]
 
 Walks sandboxed Carte plugin route handlers with the TypeScript Compiler API,
-estimates ctx.fetch / ctx.kv.* / ctx.content.* usage, and fails when a handler
-exceeds 10 subrequests or 50ms estimated CPU.`);
+estimates ctx.fetch / ctx.kv.* / ctx.content.* usage, and reports one row per
+runner. Cloudflare (Worker Loader) caps are blocking: a breach of its 10
+subrequests or 50ms estimated CPU ceiling FAILS (exit 1). The workerd runner
+enforces wall-clock only, so its rows are advisory (WARN, never blocking).
+Caps are read from scripts/sandbox-cost-table.json, not hardcoded.`);
 }
 
 async function loadProject(root: string): Promise<Project> {
@@ -271,7 +284,7 @@ function reportForRouteProperty(
   const routeName = propertyName(property.name);
   if (!routeName) return [];
   const analysis = analyzeHandlerInitializer(project, property.initializer);
-  return [toReport({ project, sourceFile, routeName, analysis })];
+  return toReport({ project, sourceFile, routeName, analysis });
 }
 
 function reportForHookProperty(
@@ -283,7 +296,7 @@ function reportForHookProperty(
   if (!hookName) return [];
   const handler = handlerExpression(project, property.initializer) ?? property.initializer;
   const analysis = analyzeExpression(project, handler, new Set());
-  return [toReport({ project, sourceFile, routeName: `hooks/${hookName}`, analysis })];
+  return toReport({ project, sourceFile, routeName: `hooks/${hookName}`, analysis });
 }
 
 // A route's `handler` value is one of:
@@ -563,25 +576,56 @@ function addAnalysis(left: Analysis, right: Analysis): Analysis {
   return { cpuMs: left.cpuMs + right.cpuMs, subrequests: left.subrequests + right.subrequests };
 }
 
-function toReport(input: ReportInput): HandlerReport {
+function toReport(input: ReportInput): HandlerReport[] {
   const { project, sourceFile, routeName, analysis } = input;
-  const status = reportStatus(project.costTable, analysis);
+  const route = routeId(project.root, sourceFile.fileName, routeName);
+  return RUNNERS.map((runner) => runnerReport(project.costTable, route, runner, analysis));
+}
+
+function runnerReport(
+  costTable: CostTable,
+  route: string,
+  runner: RunnerName,
+  analysis: Analysis,
+): HandlerReport {
+  return runner === "cloudflare"
+    ? cloudflareReport(costTable.caps.cloudflare, route, analysis)
+    : workerdReport(route, analysis);
+}
+
+// Cloudflare's Worker Loader caps are HARD: a breach FAILs (exit 1). Caps are
+// read from the cost table per runner — never hardcoded — so the PRO-640
+// display fix shows margins arithmetically consistent with those caps.
+function cloudflareReport(caps: BlockingCaps, route: string, analysis: Analysis): HandlerReport {
+  const status = blockingStatus(caps, analysis);
+  const subrequestMargin = caps.subrequests - analysis.subrequests;
+  const cpuMargin = caps.cpuMs - analysis.cpuMs;
   return {
-    route: routeId(project.root, sourceFile.fileName, routeName),
-    status,
-    cpuMsCap: project.costTable.caps.cpuMs,
-    subrequestCap: project.costTable.caps.subrequests,
+    route,
+    runner: "cloudflare",
     ...analysis,
+    status,
+    margin: `${status} (${subrequestMargin} subreq, ${cpuMargin.toFixed(2)}ms CPU)`,
   };
 }
 
-function reportStatus(costTable: CostTable, analysis: Analysis): HandlerReport["status"] {
-  if (analysis.subrequests > costTable.caps.subrequests || analysis.cpuMs > costTable.caps.cpuMs) {
-    return "FAIL";
-  }
+// The workerd runner enforces wall-clock only (no CPU/subrequest ceiling), so
+// CPU/subrequest pressure is advisory — surfaced as WARN, never blocking.
+function workerdReport(route: string, analysis: Analysis): HandlerReport {
+  return {
+    route,
+    runner: "workerd",
+    ...analysis,
+    status: "WARN",
+    margin: "WARN advisory (wall-clock only; no CPU/subrequest ceiling)",
+  };
+}
+
+function blockingStatus(caps: BlockingCaps, analysis: Analysis): Status {
+  if (analysis.subrequests > caps.subrequests || analysis.cpuMs > caps.cpuMs) return "FAIL";
   if (
-    analysis.subrequests >= costTable.caps.subrequests * WARN_THRESHOLD_RATIO ||
-    analysis.cpuMs >= costTable.caps.cpuMs * WARN_THRESHOLD_RATIO
+    analysis.subrequests >= caps.subrequests * WARN_THRESHOLD_RATIO ||
+    analysis.cpuMs >= caps.cpuMs * WARN_THRESHOLD_RATIO
   ) {
     return "WARN";
   }
@@ -602,13 +646,7 @@ function printReports(reports: HandlerReport[]): void {
   console.log(TABLE_SEPARATOR);
   for (const report of reports) {
     console.log(
-      `| ${report.route} | ${report.cpuMs.toFixed(2)} | ${report.subrequests} | ${budgetMargin(report)} |`,
+      `| ${report.route} | ${report.runner} | ${report.cpuMs.toFixed(2)} | ${report.subrequests} | ${report.margin} |`,
     );
   }
-}
-
-function budgetMargin(report: HandlerReport): string {
-  const subrequestMargin = report.subrequestCap - report.subrequests;
-  const cpuMargin = report.cpuMsCap - report.cpuMs;
-  return `${report.status} (${subrequestMargin} subreq, ${cpuMargin.toFixed(2)}ms CPU)`;
 }

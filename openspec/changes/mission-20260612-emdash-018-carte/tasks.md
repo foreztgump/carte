@@ -39,8 +39,8 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 
 ## M4 — WS6 budget + WS7 docs/release (PRO-862, PRO-865)
 
-- [ ] 4.1 `sandbox-cost-table.json`: per-runner columns with M0 measured numbers; remove `atomicDecrement` row
-- [ ] 4.2 `audit-sandbox-budget.ts`: read caps from cost table (closes the PRO-640 pattern); blocking (Cloudflare) vs advisory (workerd)
+- [x] 4.1 `sandbox-cost-table.json`: per-runner columns with M0 measured numbers; remove `atomicDecrement` row
+- [x] 4.2 `audit-sandbox-budget.ts`: read caps from cost table (closes the PRO-640 pattern); blocking (Cloudflare) vs advisory (workerd)
 - [ ] 4.3 `MIGRATION.md` v0.2→v0.3: manifest-based install, no `emdash-plugin install` command (astro.config.mjs `sandboxed:[]` + `sandboxRunner`), Tender eventing status
 - [ ] 4.4 docs-site install pages + per-plugin READMEs (incl. Cloudflare Free = no sandboxed isolation note)
 - [ ] 4.5 Changesets: family-wide minor to v0.3.0-rc; update `LAUNCH_CHECKLIST.md` gates (publish stays blocked on PRO-766)
