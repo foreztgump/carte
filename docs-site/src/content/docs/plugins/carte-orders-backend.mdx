@@ -1,19 +1,52 @@
 ---
 title: "@carte/orders-backend"
-description: Stripe Checkout, order webhooks, idempotency, and refund routes.
+description: Tender-hosted checkout, refunds, idempotent order state, and snapshots.
 ---
 
-`@carte/orders-backend` is the sandboxed ordering backend for Carte v0.1. It
-creates Stripe Checkout sessions, verifies Stripe webhooks before state changes,
-deduplicates event replays, snapshots line items, and queues receipt work outside
-the response path.
+`@carte/orders-backend` is the sandboxed ordering backend for Carte. It creates
+Tender-hosted checkout sessions, processes refunds, snapshots line items, and
+transitions order state idempotently — all in-request. Tender owns payment-card
+details; Carte never receives raw PAN, CVC, or expiry.
 
 ## Primary responsibilities
 
-- Uses Stripe Checkout so Carte never receives raw card PAN, CVC, or expiry.
-- Persists cart holds and order snapshots with bounded TTLs.
-- Deduplicates webhook re-delivery with seven-day idempotency keys.
+- Uses Tender-hosted checkout so Carte never receives raw card PAN, CVC, or expiry.
+- Persists order snapshots (line items, pricing, customer contact) at checkout.
+- Transitions order state idempotently via `applyTenderTransaction`, deduped by
+  seven-day KV idempotency keys keyed on Tender transaction id.
 - Exposes typed order mutation routes consumed by native admin surfaces.
+
+## Install (EmDash 0.18)
+
+`@carte/orders-backend` is a **sandboxed** plugin (`emdash-plugin.jsonc` manifest +
+`src/plugin.ts`, built with the `emdash-plugin` CLI). There is **no
+`emdash-plugin install` command** — install by editing `astro.config.mjs`: add
+the built descriptor to `sandboxed: []` and set a `sandboxRunner`:
+
+```js
+// astro.config.mjs
+import emdash from "emdash/astro";
+import carteOrdersBackend from "@carte/orders-backend";
+
+emdash({
+  sandboxed: [carteOrdersBackend],
+  sandboxRunner: "@emdash-cms/sandbox-workerd",
+  // ...database/storage options
+});
+```
+
+The manifest declares the canonical capabilities `content:read`,
+`content:write`, `email:send`, and `network:request`, with `allowedHosts`
+limited to `license.carteplugin.dev`. Run `emdash-plugin build` before the Astro
+build, then redeploy. See [MIGRATION.md](https://github.com/foreztgump/carte/blob/main/MIGRATION.md)
+for the full Tender three-plugin payment setup.
+
+:::caution[Cloudflare Free plan has no sandboxed isolation]
+The Dynamic Worker Loader that isolates sandboxed plugins is unavailable on the
+Cloudflare Free plan. On Free, `@carte/orders-backend` runs **unsandboxed
+(in-process)** — treat the whole Worker as one application-code trust boundary.
+Use a Paid plan (or a self-hosted workerd runner) for real isolation.
+:::
 
 ## Recipes
 

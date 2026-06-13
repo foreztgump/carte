@@ -47,7 +47,7 @@ export default definePlugin({
 
     expect(auditResult.exitCode).toBe(1);
     expect(auditResult.output).toContain(
-      "| route | est-CPU-ms | subrequest-count | budget-margin |",
+      "| route | runner | est-CPU-ms | subrequest-count | budget-margin |",
     );
     expect(auditResult.output).toContain("packages/core/src/noisy");
     expect(auditResult.output).toContain("11");
@@ -59,11 +59,52 @@ export default definePlugin({
 
     expect(auditResult.exitCode).toBe(0);
     expect(auditResult.output).toContain(
-      "| route | est-CPU-ms | subrequest-count | budget-margin |",
+      "| route | runner | est-CPU-ms | subrequest-count | budget-margin |",
     );
     expect(auditResult.output).toContain("packages/core/src/schema-jsonld");
     expect(auditResult.output).toContain("packages/reservations/src/plugin/submit");
     expect(auditResult.output).toContain("packages/orders-backend/src/plugin/checkout");
+    expect(rowFor(auditResult.output, "packages/core/src/schema-jsonld", "cloudflare")).toContain(
+      "cloudflare",
+    );
+    expect(rowFor(auditResult.output, "packages/core/src/schema-jsonld", "workerd")).toContain(
+      "advisory",
+    );
+  });
+
+  it("emits per-runner rows: cloudflare blocks (FAIL→exit 1), workerd is advisory (WARN, no block)", async () => {
+    const fixtureRoot = await createFixture(`import { definePlugin } from "emdash";
+
+const noisyHandler = async (ctx) => {
+  await ctx.kv.get("1");
+  await ctx.kv.get("2");
+  await ctx.kv.get("3");
+  await ctx.kv.get("4");
+  await ctx.kv.get("5");
+  await ctx.kv.get("6");
+  await ctx.kv.get("7");
+  await ctx.kv.get("8");
+  await ctx.kv.get("9");
+  await ctx.kv.get("10");
+  await ctx.kv.get("11");
+  return { ok: true };
+};
+
+export default definePlugin({
+  id: "fixture",
+  version: "0.0.0",
+  routes: { noisy: { handler: noisyHandler } },
+});
+`);
+
+    const auditResult = await runAuditor("--root", fixtureRoot);
+
+    expect(auditResult.exitCode).toBe(1);
+    const cloudflareRow = rowFor(auditResult.output, "packages/core/src/noisy", "cloudflare");
+    const workerdRow = rowFor(auditResult.output, "packages/core/src/noisy", "workerd");
+    expect(cloudflareRow).toContain("FAIL");
+    expect(workerdRow).toContain("WARN");
+    expect(workerdRow).toContain("advisory");
   });
 
   it("counts the real reservations submit claim path through the adaptRoute wrapper", async () => {
@@ -99,15 +140,23 @@ export default definePlugin({
     const auditResult = await runAuditor("--root", fixtureRoot);
 
     expect(auditResult.exitCode).toBe(0);
-    expect(auditResult.output).toContain("PASS (16 subreq, 91.95ms CPU)");
+    const cloudflareRow = rowFor(auditResult.output, "packages/core/src/compact", "cloudflare");
+    expect(cloudflareRow).toContain("PASS (16 subreq, 91.95ms CPU)");
   });
 });
 
+const rowFor = (output: string, route: string, runner: string): string => {
+  const row = output
+    .split("\n")
+    .find((line) => line.includes(`| ${route} |`) && line.includes(`| ${runner} |`));
+  if (row === undefined) throw new Error(`No ${runner} budget row for ${route}`);
+  return row;
+};
+
 const subrequestCountFor = (output: string, route: string): number => {
-  const row = output.split("\n").find((line) => line.includes(`| ${route} |`));
-  if (row === undefined) throw new Error(`No budget row for ${route}`);
+  const row = rowFor(output, route, "cloudflare");
   const cells = row.split("|").map((cell) => cell.trim());
-  return Number(cells[3]);
+  return Number(cells[4]);
 };
 
 const createFixture = async (source: string, caps?: CostCaps): Promise<string> => {
@@ -122,7 +171,14 @@ const createFixture = async (source: string, caps?: CostCaps): Promise<string> =
 const writeCostTable = async (fixtureRoot: string, caps: CostCaps): Promise<void> => {
   const tablePath = path.join(fixtureRoot, "scripts/sandbox-cost-table.json");
   const rawTable = await readFile(path.join(REPO_ROOT, "scripts/sandbox-cost-table.json"), "utf8");
-  const costTable = { ...JSON.parse(rawTable), caps };
+  const base = JSON.parse(rawTable);
+  const costTable = {
+    ...base,
+    caps: {
+      ...base.caps,
+      cloudflare: { ...base.caps.cloudflare, cpuMs: caps.cpuMs, subrequests: caps.subrequests },
+    },
+  };
   await mkdir(path.dirname(tablePath), { recursive: true });
   await writeFile(tablePath, JSON.stringify(costTable), "utf8");
 };

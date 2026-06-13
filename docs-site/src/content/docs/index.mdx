@@ -3,17 +3,17 @@ title: Carte documentation
 description: Launch-ready documentation for the Carte v0.1 EmDash plugin family.
 ---
 
-Carte is the restaurant plugin family for EmDash: menus, reservations, Stripe
-ordering, storefront components, and an AI-native admin panel.
+Carte is the restaurant plugin family for EmDash 0.18: menus, reservations,
+Tender-hosted ordering, storefront components, and an AI-native admin panel.
 
-## v0.1 plugin family
+## Plugin family
 
 - [`@carte/core`](./plugins/carte-core/) — menu schema, restaurant settings,
   allergen taxonomy, admin Block Kit, and Schema.org JSON-LD.
 - [`@carte/reservations`](./plugins/carte-reservations/) — race-safe
-  reservations, holds, confirmation tokens, cancellation, and email queues.
-- [`@carte/orders-backend`](./plugins/carte-orders-backend/) — Stripe Checkout,
-  webhook idempotency, order snapshots, refunds, and email receipts.
+  reservations, holds, confirmation tokens, cancellation, and email.
+- [`@carte/orders-backend`](./plugins/carte-orders-backend/) — Tender-hosted
+  checkout, idempotent order state, order snapshots, refunds, and email receipts.
 - [`@carte/orders-admin`](./plugins/carte-orders-admin/) — native React order
   management UI for status changes, refunds, modifiers, and templates.
 - [`@carte/views`](./plugins/carte-views/) — Astro storefront components for
@@ -23,12 +23,13 @@ ordering, storefront components, and an AI-native admin panel.
 
 ## Launch readiness
 
-Carte **v0.1 has shipped**. Start with the recipes for the most common flows:
+Carte runs on **EmDash 0.18** (v0.3.0-rc family). Start with the recipes for the
+most common flows:
 
 - [Quickstart](./recipes/quickstart/) — install the plugin family.
 - [Menu page](./recipes/menu-page/) — render menus with JSON-LD.
 - [Reservation form](./recipes/reservation-form/) — wire the public form.
-- [First order](./recipes/first-order/) — Stripe Checkout end to end.
+- [First order](./recipes/first-order/) — Tender-hosted checkout end to end.
 - [AI panel](./recipes/ai-panel/) — turn on the AI admin assistant.
 
 The launch gate, ownership, and HITL-deferred items are tracked in

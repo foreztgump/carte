@@ -1,6 +1,6 @@
 {
   "name": "@carte/orders-admin",
-  "version": "0.1.0",
+  "version": "0.3.0-rc.1",
   "private": true,
   "description": "Carte orders admin — native React UI for the orders queue. EmDash native plugin.",
   "type": "module",

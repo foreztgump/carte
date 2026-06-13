@@ -26,7 +26,7 @@ describe("@carte/orders-admin manifest", () => {
   it("declares the canonical id and version", () => {
     const manifest = factory();
     expect(manifest.id).toBe("carte-orders-admin");
-    expect(manifest.version).toBe("0.1.0");
+    expect(manifest.version).toBe("0.3.0-rc.1");
   });
 
   it("uses canonical capability names only", () => {

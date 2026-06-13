@@ -1,6 +1,6 @@
 {
   "name": "@carte/orders-backend",
-  "version": "0.2.0-rc.1",
+  "version": "0.3.0-rc.1",
   "description": "Carte orders backend — Tender Checkout, refunds, order state. Sandboxed EmDash plugin.",
   "type": "module",
   "main": "dist/index.mjs",

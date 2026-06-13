@@ -3,17 +3,47 @@ title: "@carte/reservations"
 description: Race-safe reservation holds, confirmations, cancellations, and capacity checks.
 ---
 
-`@carte/reservations` is the sandboxed reservation plugin for Carte v0.1. It
+`@carte/reservations` is the sandboxed reservation plugin for Carte. It
 computes slots at read time, creates short-lived holds, sends confirmation and
-cancellation email in post-response work, and keeps capacity changes within the
-EmDash sandbox budget.
+cancellation email in-request, and keeps capacity changes within the EmDash
+sandbox budget.
 
 ## Primary responsibilities
 
 - Computes available reservation slots from hours, blocks, bookings, and holds.
-- Uses atomic capacity updates to avoid overselling covers.
+- Uses a single-writer capacity claim path to avoid overselling covers.
 - Issues HMAC-backed confirmation and cancellation tokens.
-- Schedules outbound email work with `ctx.waitUntil`.
+- Sends outbound email in-request (no post-response primitive in the sandbox).
+
+## Install (EmDash 0.18)
+
+`@carte/reservations` is a **sandboxed** plugin (`emdash-plugin.jsonc` manifest +
+`src/plugin.ts`, built with the `emdash-plugin` CLI). There is **no
+`emdash-plugin install` command** — install by editing `astro.config.mjs`: add
+the built descriptor to `sandboxed: []` and set a `sandboxRunner`:
+
+```js
+// astro.config.mjs
+import emdash from "emdash/astro";
+import carteReservations from "@carte/reservations";
+
+emdash({
+  sandboxed: [carteReservations],
+  sandboxRunner: "@emdash-cms/sandbox-workerd",
+  // ...database/storage options
+});
+```
+
+The manifest declares the canonical capabilities `content:read`,
+`content:write`, and `email:send`. Run `emdash-plugin build` before the Astro
+build, then redeploy.
+
+:::caution[Cloudflare Free plan has no sandboxed isolation]
+The Dynamic Worker Loader that isolates sandboxed plugins is unavailable on the
+Cloudflare Free plan. On Free, `@carte/reservations` runs **unsandboxed
+(in-process)** — treat the whole Worker as one application-code trust boundary.
+Use a Paid plan (or a self-hosted workerd runner) for real isolation.
+:::
 
 ## Recipes
 

@@ -39,11 +39,11 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 
 ## M4 — WS6 budget + WS7 docs/release (PRO-862, PRO-865)
 
-- [ ] 4.1 `sandbox-cost-table.json`: per-runner columns with M0 measured numbers; remove `atomicDecrement` row
-- [ ] 4.2 `audit-sandbox-budget.ts`: read caps from cost table (closes the PRO-640 pattern); blocking (Cloudflare) vs advisory (workerd)
-- [ ] 4.3 `MIGRATION.md` v0.2→v0.3: manifest-based install, no `emdash-plugin install` command (astro.config.mjs `sandboxed:[]` + `sandboxRunner`), Tender eventing status
-- [ ] 4.4 docs-site install pages + per-plugin READMEs (incl. Cloudflare Free = no sandboxed isolation note)
-- [ ] 4.5 Changesets: family-wide minor to v0.3.0-rc; update `LAUNCH_CHECKLIST.md` gates (publish stays blocked on PRO-766)
+- [x] 4.1 `sandbox-cost-table.json`: per-runner columns with M0 measured numbers; remove `atomicDecrement` row
+- [x] 4.2 `audit-sandbox-budget.ts`: read caps from cost table (closes the PRO-640 pattern); blocking (Cloudflare) vs advisory (workerd)
+- [x] 4.3 `MIGRATION.md` v0.2→v0.3: new "v0.2 → v0.3.0-rc — EmDash 0.18 manifest-based install" section with the `astro.config.mjs` example (`sandboxed:[core,reservations,ordersBackend]` + `sandboxRunner`; `plugins:[ordersAdmin, ai]`), an EXPLICIT "there is no `emdash-plugin install` command — it does not exist" negative, wrangler-var wiring described as replaced, Tender eventing status (placeholders removed, idempotent `applyTenderTransaction` seam kept), the `tender:payment` literal cleared, and a "sandbox-workerd capability-name divergence" known-issue section (pnpm patch carried; upstream issue to be filed by operator, NOT by the worker)
+- [x] 4.4 docs-site install pages + per-plugin READMEs: all six `docs-site/.../carte-*.mdx` and the five plugin READMEs document the 0.18 install model (sandboxed → `emdash-plugin.jsonc` + `astro.config.mjs` `sandboxed:[]`; natives → `plugins:[]`), Cloudflare-Free-no-isolation note on every sandboxed install section, capability-name divergence note in the three sandboxed READMEs; docs-site index + quickstart recipe rewritten off the stale `^0.9.0`/string-array/Stripe model; legacy `wrangler.toml`/`admin.entry` install references removed
+- [x] 4.5 Changesets: family-wide minor to v0.3.0-rc (f-m4-changesets-rc) — DONE: family packages (`@carte/core`, `@carte/reservations`, `@carte/orders-backend`, `@carte/orders-admin`, `@carte/ai`) version-bumped to `0.3.0-rc.1` (v0.2 manual-rc-suffix precedent — no `.changeset/pre.json`), single family-wide `minor` changeset `.changeset/carte-v03-rc.md` authored, v0.2-era orphan changesets removed; `pnpm changeset status` lists all five at minor → 0.3.0; NO publish (PRO-766). `LAUNCH_CHECKLIST.md` gates updated for the 0.18 model (plugin-cli validate/build/bundle in CI, harness e2e evidence, per-runner budget audit, capability patch) with the npm publish row still BLOCKED on PRO-766 — DONE
 - [ ] 4.6 CI grep gates green: `sandbox-entry`, `tender:payment`, `atomicDecrement`, plugin-def `as never`, "trusted", `ctx.logger`, `putIfAbsent`, `adminEntry`, `format: "native"`, `adminPages`
 
 ## M5 — Bug cleanup (PRO-764, PRO-770, PRO-769, PRO-496)

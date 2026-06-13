@@ -1,6 +1,6 @@
 {
   "name": "@carte/core",
-  "version": "0.1.0",
+  "version": "0.3.0-rc.1",
   "private": true,
   "description": "Carte core — menus, restaurant settings, hours, schema.org JSON-LD. Sandboxed EmDash plugin.",
   "type": "module",
