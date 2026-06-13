@@ -35,7 +35,7 @@ type ReportInput = {
   routeName: string;
   analysis: Analysis;
 };
-type NamedExpression = ts.Expression | ts.FunctionDeclaration;
+type NamedExpression = ts.Expression | ts.FunctionDeclaration | ts.MethodDeclaration;
 type Project = {
   root: string;
   costTable: CostTable;
@@ -158,7 +158,35 @@ function visitNamedDeclarations(node: ts.Node, named: Map<string, NamedExpressio
   if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
     named.set(node.name.text, node.initializer);
   }
+  if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
+    registerMethod(named, node.name.text, node);
+  }
   ts.forEachChild(node, (child) => visitNamedDeclarations(child, named));
+}
+
+// Class methods are keyed by bare name. When several classes declare the same
+// method (e.g. `claim`, `query`), keep the worst-case variant — the one with
+// the most call expressions in its body — so the budget estimate stays
+// conservative rather than resolving to an empty delegate.
+function registerMethod(
+  named: Map<string, NamedExpression>,
+  name: string,
+  method: ts.MethodDeclaration,
+): void {
+  const existing = named.get(name);
+  if (existing === undefined || countCalls(method) > countCalls(existing)) {
+    named.set(name, method);
+  }
+}
+
+function countCalls(node: ts.Node): number {
+  let count = 0;
+  const visit = (child: ts.Node): void => {
+    if (ts.isCallExpression(child)) count += 1;
+    ts.forEachChild(child, visit);
+  };
+  visit(node);
+  return count;
 }
 
 function auditProject(project: Project): HandlerReport[] {
@@ -242,10 +270,7 @@ function reportForRouteProperty(
 ): HandlerReport[] {
   const routeName = propertyName(property.name);
   if (!routeName) return [];
-  const handler = handlerExpression(project, property.initializer);
-  const analysis = handler
-    ? analyzeExpression(project, handler, new Set())
-    : { cpuMs: 0, subrequests: 0 };
+  const analysis = analyzeHandlerInitializer(project, property.initializer);
   return [toReport({ project, sourceFile, routeName, analysis })];
 }
 
@@ -259,6 +284,62 @@ function reportForHookProperty(
   const handler = handlerExpression(project, property.initializer) ?? property.initializer;
   const analysis = analyzeExpression(project, handler, new Set());
   return [toReport({ project, sourceFile, routeName: `hooks/${hookName}`, analysis })];
+}
+
+// A route's `handler` value is one of:
+//   - an object literal `{ handler }` (after route-factory unwrap)
+//   - a bare function/identifier
+//   - a curried wrapper call `adaptRoute(realHandler)` — the inner arrow only
+//     forwards to its `handler` parameter, so the cost lives in the bound
+//     argument. We analyze BOTH the wrapper body (settle/auth overhead) and the
+//     bound argument, summing them.
+function analyzeHandlerInitializer(project: Project, initializer: ts.Expression): Analysis {
+  const handler = handlerExpression(project, initializer);
+  const wrapperArg = wrappedHandlerArgument(project, initializer);
+  const handlerAnalysis = handler
+    ? analyzeExpression(project, handler, new Set())
+    : { cpuMs: 0, subrequests: 0 };
+  const argAnalysis = wrapperArg
+    ? analyzeExpression(project, wrapperArg, new Set())
+    : { cpuMs: 0, subrequests: 0 };
+  return addAnalysis(handlerAnalysis, argAnalysis);
+}
+
+// Detects `factory(boundHandler)` where `factory` is a curried wrapper
+// (`(handler) => async (routeCtx, ctx) => { ... handler(...) ... }`) and
+// returns the bound handler argument for separate analysis.
+function wrappedHandlerArgument(
+  project: Project,
+  initializer: ts.Expression,
+): ts.Expression | undefined {
+  const unwrapped = unwrapExpression(initializer);
+  const call = handlerCall(unwrapped);
+  if (call === undefined || call.arguments.length === 0) return undefined;
+  const factory = calledExpression(project, call.expression);
+  return factory && isCurriedWrapper(factory) ? call.arguments[0] : undefined;
+}
+
+function handlerCall(expression: ts.Expression): ts.CallExpression | undefined {
+  if (ts.isCallExpression(expression)) return expression;
+  if (ts.isObjectLiteralExpression(expression)) {
+    const handler = objectPropertyExpression(expression, "handler");
+    const inner = handler ? unwrapExpression(handler) : undefined;
+    return inner && ts.isCallExpression(inner) ? inner : undefined;
+  }
+  return undefined;
+}
+
+// A curried wrapper is a function whose body/expression is itself a function
+// (it returns a handler), e.g. `(handler) => async (routeCtx, ctx) => {...}`.
+function isCurriedWrapper(expression: NamedExpression): boolean {
+  if (!ts.isArrowFunction(expression) && !ts.isFunctionExpression(expression)) return false;
+  const body = expression.body;
+  if (!ts.isBlock(body)) return ts.isArrowFunction(body) || ts.isFunctionExpression(body);
+  const returned = body.statements.find(ts.isReturnStatement)?.expression;
+  const unwrapped = returned ? unwrapExpression(returned) : undefined;
+  return (
+    unwrapped !== undefined && (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped))
+  );
 }
 
 function handlerExpression(project: Project, expression: ts.Expression): ts.Expression | undefined {
@@ -301,7 +382,9 @@ function analyzeExpression(
   stack: Set<string>,
 ): Analysis {
   if (ts.isIdentifier(expression)) return analyzeNamed(project, expression.text, stack);
-  if (ts.isFunctionDeclaration(expression)) return analyzeFunction(project, expression, stack);
+  if (ts.isFunctionDeclaration(expression) || ts.isMethodDeclaration(expression)) {
+    return analyzeFunction(project, expression, stack);
+  }
   if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) {
     return analyzeFunction(project, expression, stack);
   }
@@ -341,7 +424,7 @@ function analyzeCallsInNode(project: Project, node: ts.Node, stack: Set<string>)
 }
 
 function analyzeCall(project: Project, call: ts.CallExpression, stack: Set<string>): Analysis {
-  const operation = operationName(call);
+  const operation = operationName(project, call);
   const operationCost = operation ? project.costTable.operations[operation] : undefined;
   const direct = operationCost ?? { cpuMs: 0, subrequests: 0 };
   const calleeName = calledName(call.expression);
@@ -351,17 +434,21 @@ function analyzeCall(project: Project, call: ts.CallExpression, stack: Set<strin
   return addAnalysis(direct, nested);
 }
 
-function operationName(call: ts.CallExpression): string | undefined {
+function operationName(project: Project, call: ts.CallExpression): string | undefined {
   if (ts.isIdentifier(call.expression) && call.expression.text === "fetch") return "ctx.fetch";
   if (!ts.isPropertyAccessExpression(call.expression)) return undefined;
   const method = call.expression.name.text;
-  const receiver = call.expression.expression.getText();
+  const receiverNode = call.expression.expression;
+  const receiver = receiverNode.getText();
   if (method === "fetch") return "ctx.fetch";
   if (method === "set" && isKvReceiver(receiver)) return "ctx.kv.put";
   if (["get", "put"].includes(method) && isKvReceiver(receiver)) {
     return `ctx.kv.${method}`;
   }
-  if (["exists", "get", "put", "delete", "query"].includes(method) && isStorageReceiver(receiver)) {
+  if (
+    ["exists", "get", "put", "delete", "query"].includes(method) &&
+    isStorageReceiver(project, receiverNode, receiver)
+  ) {
     return `ctx.storage.${method}`;
   }
   if (["list", "get", "update", "create"].includes(method) && isContentReceiver(receiver)) {
@@ -370,8 +457,42 @@ function operationName(call: ts.CallExpression): string | undefined {
   return undefined;
 }
 
-function isStorageReceiver(receiver: string): boolean {
-  return receiver.includes(".storage") || receiver === "storage" || receiver.startsWith("storage(");
+function isStorageReceiver(
+  project: Project,
+  receiverNode: ts.Expression,
+  receiver: string,
+): boolean {
+  if (receiver.includes(".storage") || receiver === "storage" || receiver.startsWith("storage(")) {
+    return true;
+  }
+  // Collection views bound to a `ctx.storage[...]` element. Two real shapes:
+  //   - the StorageCapacityStore convention: `this.collection` / `collection`
+  //   - accessor calls like `getReservations(ctx)` whose body returns a
+  //     `ctx.storage[...]` element access.
+  if (receiver === "collection" || receiver === "this.collection") return true;
+  return ts.isCallExpression(receiverNode) && accessorReturnsStorage(project, receiverNode);
+}
+
+function accessorReturnsStorage(project: Project, call: ts.CallExpression): boolean {
+  const accessor = calledExpression(project, call.expression);
+  const returned = accessor ? returnedExpression(accessor) : undefined;
+  return returned !== undefined && referencesStorageElement(returned);
+}
+
+function referencesStorageElement(expression: ts.Expression): boolean {
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isElementAccessExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "storage"
+    ) {
+      found = true;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(unwrapExpression(expression));
+  return found;
 }
 
 function isKvReceiver(receiver: string): boolean {
