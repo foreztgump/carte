@@ -28,7 +28,7 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [x] 2.4 Delete dead `tender:*` hook registrations + placeholder dispatch; leave idempotent order-state trigger interface (WS4 seam, keyed on transaction id) — single exported `applyTenderTransaction(ctx, event)` with write-then-verify KV idempotency marker keyed on transaction id, in-request only (no post-response primitive); RED test `events.test.ts` covers exactly-once, paid→refunded progression, duplicate no-op, concurrent dedup
 - [x] 2.5 Remove `atomicDecrement` claims; reimplement capacity as D1 single-writer with unique slot-key constraint, conflict-as-full; KV as cache only
 - [x] 2.6 Oversell load test: N concurrent bookings for M seats never oversells
-- [ ] 2.7 Re-validate Block Kit admin pages against verified schema; delete bespoke `wrangler.toml` packaging; tarball artifacts in CI
+- [x] 2.7 Re-validate Block Kit admin pages against verified schema; delete bespoke `wrangler.toml` packaging; tarball artifacts in CI — `ci.yml` now loops `emdash-plugin validate` + `build` + `bundle` over `core`, `reservations`, `orders-backend` (dist/ asserted via `ls`, exit-code-unreliable workaround), and an `actions/upload-artifact@v4` step uploads `packages/*/dist/*.tar.gz` (`if-no-files-found: error`); no `wrangler.toml` packaging exists anywhere (removed in M1); all three plugins load in the harness (`Loaded sandboxed plugin carte-{core,reservations,orders-backend}`) with Block Kit admin pages rendering client-side (agent-browser: core `actions` block buttons, reservations + orders stats/sections, no ActionsBlock crash); zero registry ops in CI; local `emdash-plugin bundle` spot-check produced `carte-core-0.1.0.tar.gz`
 
 ## M3 — WS3 native conversions (PRO-856)
 
