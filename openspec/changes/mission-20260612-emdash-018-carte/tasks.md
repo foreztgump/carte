@@ -33,7 +33,7 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 ## M3 — WS3 native conversions (PRO-856)
 
 - [ ] 3.1 `@carte/orders-admin`: `definePlugin()` on 0.18 types; documented react-admin mount replaces `admin.entry`; register in harness `astro.config.mjs`
-- [ ] 3.2 `@carte/ai`: same conversion; re-validate BYO-LLM settings surface + mcp-wrapper route auth against verified facts
+- [x] 3.2 `@carte/ai`: same conversion; re-validate BYO-LLM settings surface + mcp-wrapper route auth against verified facts
 - [ ] 3.3 Confirm PRO-623 write-on-confirm/undo hardening holds under 0.18 semantics
 - [ ] 3.4 Both natives render React admin in the harness panel (e2e evidence)
 
