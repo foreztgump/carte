@@ -23,7 +23,7 @@ import { auditListRoute, confirmCallRoute, toolCallRoute, undoCallRoute } from "
 const ADMIN_ENTRY = "@carte/ai/admin";
 
 const PLUGIN_ID = "carte-ai";
-const PLUGIN_VERSION = "0.1.0";
+const PLUGIN_VERSION = "0.3.0-rc.1";
 const LICENSE_ENDPOINT = "https://license.carteplugin.dev/v1/license";
 
 const stubRoute =

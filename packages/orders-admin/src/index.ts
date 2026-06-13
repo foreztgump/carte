@@ -17,7 +17,7 @@ export { mountOrdersAdmin } from "./admin/index.js";
 const ADMIN_ENTRY = "@carte/orders-admin/admin";
 
 const PLUGIN_ID = "carte-orders-admin";
-const PLUGIN_VERSION = "0.1.0";
+const PLUGIN_VERSION = "0.3.0-rc.1";
 
 const stubRoute =
   (route: string) =>
