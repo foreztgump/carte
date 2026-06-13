@@ -89,4 +89,28 @@ describe("harness probe plugin", () => {
     expect(nativeSource).toContain("settingsSchema");
     expect(nativeSource).toContain('label: "Probe enabled"');
   });
+
+  it("registers the orders-admin and ai natives with flat entrypoint + adminEntry", async () => {
+    const config = await readFile(astroConfig, "utf8");
+
+    expect(config).toContain("nativeOrdersAdminPlugin()");
+    expect(config).toContain("nativeAiPlugin()");
+    expect(config).toContain('id: "carte-orders-admin"');
+    expect(config).toContain('id: "carte-ai"');
+    // Package specifiers resolve under both `astro dev` and `astro build`.
+    expect(config).toContain('entrypoint: "@carte/orders-admin"');
+    expect(config).toContain('adminEntry: "@carte/orders-admin/admin"');
+    expect(config).toContain('entrypoint: "@carte/ai"');
+    expect(config).toContain('adminEntry: "@carte/ai/admin"');
+  });
+
+  it("renders a flat adminEntry for the native React admin registry", async () => {
+    const config = await readFile(astroConfig, "utf8");
+
+    expect(config).toContain("adminEntry: nativeProbeAdminEntry");
+    expect(config).toContain('resolve(HERE, "src/native-probe-admin.tsx")');
+    expect(config).toContain("optimizeDeps");
+    expect(config).toContain('"@emdash-cms/admin"');
+    expect(config).toContain("dedupe");
+  });
 });

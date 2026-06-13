@@ -110,12 +110,18 @@ importers:
       '@astrojs/react':
         specifier: 5.0.7
         version: 5.0.7(@types/node@22.19.17)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tsx@4.21.0)(yaml@2.8.4)
+      '@carte/ai':
+        specifier: workspace:*
+        version: link:../packages/ai
       '@carte/core':
         specifier: workspace:*
         version: link:../packages/core
       '@carte/harness-probe':
         specifier: workspace:*
         version: link:plugins/probe
+      '@carte/orders-admin':
+        specifier: workspace:*
+        version: link:../packages/orders-admin
       '@carte/orders-backend':
         specifier: workspace:*
         version: link:../packages/orders-backend

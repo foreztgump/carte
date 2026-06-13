@@ -26,6 +26,7 @@ import { sqlite } from "emdash/db";
 // path resolves identically in both modes.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const nativeProbeEntrypoint = resolve(HERE, "src/native-probe.ts");
+const nativeProbeAdminEntry = resolve(HERE, "src/native-probe-admin.tsx");
 
 const probePlugin = carteHarnessProbe;
 
@@ -34,6 +35,30 @@ function nativeProbePlugin() {
     id: "carte-native-probe",
     version: "0.1.0",
     entrypoint: nativeProbeEntrypoint,
+    adminEntry: nativeProbeAdminEntry,
+  };
+}
+
+// Real native plugins. `entrypoint` → the package's named `createPlugin`
+// export; `adminEntry` → the package's `./admin` module (named `pages`
+// export). Package specifiers resolve under both `astro dev` (Vite) and
+// `astro build` (Rollup) because workspace packages are symlinked into
+// node_modules with `exports` maps for `.` and `./admin`.
+function nativeOrdersAdminPlugin() {
+  return {
+    id: "carte-orders-admin",
+    version: "0.1.0",
+    entrypoint: "@carte/orders-admin",
+    adminEntry: "@carte/orders-admin/admin",
+  };
+}
+
+function nativeAiPlugin() {
+  return {
+    id: "carte-ai",
+    version: "0.1.0",
+    entrypoint: "@carte/ai",
+    adminEntry: "@carte/ai/admin",
   };
 }
 
@@ -48,12 +73,31 @@ export default defineConfig({
         directory: "./uploads",
         baseUrl: "/_emdash/api/media/file",
       }),
-      plugins: [nativeProbePlugin()],
+      plugins: [nativeProbePlugin(), nativeOrdersAdminPlugin(), nativeAiPlugin()],
       sandboxed: [probePlugin, carteCore, carteReservations, carteOrdersBackend],
       sandboxRunner: "@emdash-cms/sandbox-workerd",
     }),
   ],
   server: {
     port: 4321,
+  },
+  vite: {
+    // Native plugin admin entries (native-probe-admin.tsx) are pulled in via
+    // emdash's generated `virtual:emdash/admin-registry`. Without deduping,
+    // Vite's dep-optimized @emdash-cms/admin bundle and the freshly-compiled
+    // admin entry resolve SEPARATE React instances → "Invalid hook call /
+    // more than one copy of React". Force a single React copy.
+    resolve: {
+      dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@emdash-cms/admin",
+      ],
+    },
   },
 });
