@@ -60,6 +60,10 @@
       "sharp",
       "workerd"
     ],
+    "overrides": {
+      "react": "19.2.6",
+      "react-dom": "19.2.6"
+    },
     "patchedDependencies": {
       "@emdash-cms/sandbox-workerd@0.1.6": "patches/@emdash-cms__sandbox-workerd@0.1.6.patch"
     }
