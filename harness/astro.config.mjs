@@ -4,6 +4,11 @@ import react from "@astrojs/react";
 // The harness `dev`/`build` scripts run `pnpm --filter @carte/core build` first so
 // this import resolves. Do NOT hand-roll the descriptor — the plugin-cli emits it.
 import carteCore from "@carte/core";
+// Built sandboxed descriptor for @carte/harness-probe (emdash-plugin build →
+// dist/index.mjs). The harness `dev`/`build` scripts run the probe build first
+// so this import resolves. The plugin-cli emits the canonical descriptor the
+// sandboxed-plugins virtual module consumes — do NOT hand-roll it.
+import carteHarnessProbe from "@carte/harness-probe";
 import carteOrdersBackend from "@carte/orders-backend";
 import carteReservations from "@carte/reservations";
 import { dirname, resolve } from "node:path";
@@ -22,24 +27,7 @@ import { sqlite } from "emdash/db";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const nativeProbeEntrypoint = resolve(HERE, "src/native-probe.ts");
 
-const probePlugin = {
-  id: "carte-harness-probe",
-  version: "0.1.0",
-  format: "standard",
-  entrypoint: "@carte/harness-probe/sandbox",
-  capabilities: ["content:read", "content:write"],
-  allowedHosts: [],
-  storage: {
-    probe_claims: {
-      indexes: ["kind", "slotKey"],
-      uniqueIndexes: ["slotKey"],
-    },
-    hook_events: {
-      indexes: ["hook", "collection", "isNew"],
-    },
-  },
-  adminPages: [{ path: "/probe", label: "Probe", icon: "TestTube" }],
-};
+const probePlugin = carteHarnessProbe;
 
 function nativeProbePlugin() {
   return {
