@@ -252,13 +252,25 @@ Evidence:
 
 ```js
 // harness/astro.config.mjs
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
 plugins: [nativeProbePlugin()];
 
 function nativeProbePlugin() {
   return {
     id: "carte-native-probe",
     version: "0.1.0",
-    entrypoint: "./src/native-probe.ts",
+    // MUST be an ABSOLUTE path. EmDash inlines the entrypoint into the
+    // `virtual:emdash/plugins` module as `import { createPlugin } from
+    // "<entrypoint>"`. A relative path ("./src/native-probe.ts") only
+    // resolves under the Vite dev server (anchored at project root); the
+    // `astro build` Rollup pass anchors it to the synthetic virtual module
+    // id and fails ("Could not resolve ./src/native-probe.ts"), breaking CI.
+    // Verified + fixed in M2 (PR #20). An absolute path resolves in both modes.
+    entrypoint: resolve(HERE, "src/native-probe.ts"),
   };
 }
 ```
