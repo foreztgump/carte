@@ -6,9 +6,21 @@ import react from "@astrojs/react";
 import carteCore from "@carte/core";
 import carteOrdersBackend from "@carte/orders-backend";
 import carteReservations from "@carte/reservations";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
+
+// Native-plugin entrypoints are inlined into the `virtual:emdash/plugins`
+// module as `import { createPlugin } from "<entrypoint>"`. A relative path
+// (e.g. "./src/native-probe.ts") only resolves under the Vite dev server,
+// which anchors it to the project root; `astro build`'s Rollup pass anchors
+// it to the synthetic virtual module id and fails to resolve. An absolute
+// path resolves identically in both modes.
+const HERE = dirname(fileURLToPath(import.meta.url));
+const nativeProbeEntrypoint = resolve(HERE, "src/native-probe.ts");
 
 const probePlugin = {
   id: "carte-harness-probe",
@@ -33,7 +45,7 @@ function nativeProbePlugin() {
   return {
     id: "carte-native-probe",
     version: "0.1.0",
-    entrypoint: "./src/native-probe.ts",
+    entrypoint: nativeProbeEntrypoint,
   };
 }
 
