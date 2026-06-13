@@ -97,6 +97,10 @@ const factory = () =>
     },
   });
 
+// Named export consumed by the EmDash 0.18 native harness registry, which
+// emits `import { createPlugin } from "<entrypoint>"` (VERIFIED-PLATFORM §5.1).
+export const createPlugin = factory;
+
 export default factory;
 
 async function fetchLicense(workspaceId: string): Promise<LicenseRecord> {

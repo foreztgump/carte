@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import factory from "./index.js";
+import factory, { createPlugin } from "./index.js";
 import adminExports, { pages } from "./admin/index.js";
 
 afterEach(cleanup);
@@ -11,6 +11,15 @@ const CHAT_PATH = "/carte-ai";
 const SECRET_KEYS = ["anthropicApiKey", "openaiApiKey", "geminiApiKey"] as const;
 
 describe("@carte/ai native definePlugin shape (0.18)", () => {
+  it("exports a named createPlugin matching the default factory shape", () => {
+    expect(typeof createPlugin).toBe("function");
+    const fromNamed = createPlugin();
+    const fromDefault = factory();
+    expect(fromNamed.id).toBe(fromDefault.id);
+    expect(fromNamed.version).toBe(fromDefault.version);
+    expect(fromNamed.admin?.entry).toBe(fromDefault.admin?.entry);
+  });
+
   it("does not carry the dead pre-v0.13 relative admin entry", () => {
     const plugin = factory();
     const entry = plugin.admin?.entry ?? "";
