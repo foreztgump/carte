@@ -6,6 +6,15 @@ const claimKind = "capacity-slot";
 const cpuProbeTargetMs = 75;
 const subrequestProbeCount = 12;
 
+// Module-scope state: if the runner reuses the plugin isolate across requests,
+// these survive and the counter increments per invocation. Probes
+// VERIFIED-PLATFORM §9 (module-state persistence / isolate reuse) which the M2
+// capacity serialization design relies on. NB: random values cannot be
+// generated at global scope in workerd, so the instance id is minted lazily on
+// first handler call.
+let moduleInvocationCount = 0;
+let moduleInstanceId: string | undefined;
+
 function hookEventId(hook: string): string {
   return `${hook}-${Date.now()}-${crypto.randomUUID()}`;
 }
@@ -118,6 +127,14 @@ const plugin: SandboxedPlugin = {
           if (firstWritten) await ctx.storage.probe_claims.delete(firstId);
           await ctx.storage.probe_claims.delete(duplicateId);
         }
+      },
+    },
+    moduleState: {
+      public: true,
+      handler: async () => {
+        moduleInstanceId ??= crypto.randomUUID();
+        moduleInvocationCount += 1;
+        return { moduleInstanceId, moduleInvocationCount };
       },
     },
     postResponsePrimitive: {

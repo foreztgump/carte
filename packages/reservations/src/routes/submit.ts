@@ -1,6 +1,6 @@
 import { CapacityExceededError, reserveCapacity } from "../capacity.js";
 import { defer, getCapacityStore, getReservations, getTokenSecret } from "./context.js";
-import { sendReservationEmailOnce } from "./email.js";
+import { sendNewReservationEmail } from "./email.js";
 import { parseSubmitInput } from "./input.js";
 import { createReservationToken } from "./tokens.js";
 import type { ReservationRecord, ReservationRouteContext, RouteResult } from "./types.js";
@@ -16,7 +16,7 @@ export async function submitReservation(ctx: ReservationRouteContext): Promise<R
   const claimed = await claimSlot(ctx, { ...input, holdId: reservation.holdId });
   if (!claimed) return failure(SLOT_FULL_STATUS, "Selected time is fully booked");
   await getReservations(ctx).put(reservationId, reservation);
-  defer(ctx, sendReservationEmailOnce(ctx, { reservationId, reservation, kind: "received" }));
+  defer(ctx, sendNewReservationEmail(ctx, { reservationId, reservation, kind: "received" }));
   return { ok: true, status: 200, reservationId, confirmationToken: reservation.confirmationToken };
 }
 

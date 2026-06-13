@@ -512,3 +512,35 @@ $ node -e "import('emdash').then(m=>console.log(m.normalizeCapabilities(['read:c
 1. Bump `@emdash-cms/sandbox-workerd` to a version whose bridge enforcer uses canonical names (verify upstream changelog; 0.1.6 is the locked pin per AGENTS.md "Stack Pins").
 2. If no such version exists, file upstream against sandbox-workerd to apply `normalizeCapability()` inside `requireCapability` (accept both legacy and canonical).
 3. Interim: a host-side shim that denormalizes canonical→legacy before `sandboxRunner.load` — but this contradicts AGENTS.md "Capability naming is locked" to canonical, so it must be an explicit operator decision, not a silent plugin change.
+
+## 9. Module-state persistence and isolate reuse (workerd runner)
+
+**Claim.** On the local `@emdash-cms/sandbox-workerd@0.1.6` runner, a sandboxed plugin's **module-level state persists across requests** and the runner **reuses a single plugin isolate** for both sequential and concurrent invocations. A module-scoped counter increments monotonically across calls and a lazily-minted module-scoped instance id stays identical for every request. This is the platform fact the M2 reservation capacity design relies on: a module-level per-slot promise queue (`packages/reservations/src/capacity.ts` `slotClaimQueues`) survives the fresh `StorageCapacityStore` instances the route layer builds per request, so the survey-then-insert claim sequence is mutually excluded for same-isolate concurrency.
+
+**Caveat — global scope I/O ban.** Random values, async I/O, and timers cannot run at global (module-initialization) scope in workerd (`Disallowed operation called within global scope`). Module state must be a plain value/structure initialized inertly (e.g. `new Map()`); any id/random must be minted lazily inside a handler. `capacity.ts` complies (the queue map is an inert `Map`).
+
+Evidence (harness on :4323, probe route `moduleState` increments a module-scoped counter and returns a lazily-minted module instance id):
+
+```console
+# 4 sequential calls — same instance id, counter 1→4
+$ for i in 1 2 3 4; do curl -s -H "Authorization: Bearer <dev-token>" \
+    http://localhost:4323/_emdash/api/plugins/carte-harness-probe/moduleState; echo; done
+{"data":{"moduleInstanceId":"30e1c3d6-e16d-472c-aadb-4e073ad4e7db","moduleInvocationCount":1}}
+{"data":{"moduleInstanceId":"30e1c3d6-e16d-472c-aadb-4e073ad4e7db","moduleInvocationCount":2}}
+{"data":{"moduleInstanceId":"30e1c3d6-e16d-472c-aadb-4e073ad4e7db","moduleInvocationCount":3}}
+{"data":{"moduleInstanceId":"30e1c3d6-e16d-472c-aadb-4e073ad4e7db","moduleInvocationCount":4}}
+
+# 6 concurrent calls — same instance id, counter continues 5→10, no reset
+$ for i in 1 2 3 4 5 6; do curl -s -H "Authorization: Bearer <dev-token>" \
+    http://localhost:4323/_emdash/api/plugins/carte-harness-probe/moduleState & done; wait
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":5}}
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":6}}
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":7}}
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":8}}
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":9}}
+{"data":{"moduleInstanceId":"30e1c3d6-...","moduleInvocationCount":10}}
+```
+
+Probe route: `harness/plugins/probe/src/plugin.ts` route `moduleState`.
+
+**RESIDUAL RISK (cross-isolate).** This verifies SAME-isolate reuse on the local workerd runner only. The Cloudflare runner (Dynamic Worker Loader) may run **multiple isolates** for one plugin under load; no in-process queue can serialize claims across separate isolates. The reservation manifest's `uniqueIndexes: ["slotKey"]` is the declared future backstop for that topology — but it is NOT enforced on the static harness path (§1), so cross-isolate oversell remains a documented known limitation until the platform materializes plugin unique indexes (or the claim path moves to a single-writer primitive). Carte's guarantee today is precisely: **in-isolate serialization, no oversell within one isolate**.
