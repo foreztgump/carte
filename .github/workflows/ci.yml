@@ -20,14 +20,31 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Sandboxed plugin packaging gate. Validates the manifest against the
-      # plugin-cli schema and builds the descriptor for the converted packages.
-      # M1: @carte/core only. M2 extends this to reservations + orders-backend.
-      - name: Validate and build sandboxed plugins (plugin-cli)
+      # Sandboxed plugin packaging gate. For each converted package: validate the
+      # manifest against the plugin-cli schema, build the descriptor, and bundle
+      # the dist/<slug>-<version>.tar.gz tarball. `bundle` re-runs validation and
+      # rejects undeclared capabilities, network:request with empty allowedHosts,
+      # and Node built-in imports. plugin-cli exit code is unreliable when piped,
+      # so dist/ contents are asserted explicitly with `ls`. No registry ops
+      # (login/publish) run here — offline build/validate/bundle only.
+      - name: Validate, build, and bundle sandboxed plugins (plugin-cli)
         run: |
-          pnpm -F @carte/core exec emdash-plugin validate
-          pnpm -F @carte/core exec emdash-plugin build
-          ls packages/core/dist/index.mjs packages/core/dist/plugin.mjs packages/core/dist/manifest.json
+          for pkg in core reservations orders-backend; do
+            echo "::group::@carte/$pkg"
+            pnpm -F "@carte/$pkg" exec emdash-plugin validate
+            pnpm -F "@carte/$pkg" exec emdash-plugin build
+            ls "packages/$pkg/dist/index.mjs" "packages/$pkg/dist/plugin.mjs" "packages/$pkg/dist/manifest.json"
+            pnpm -F "@carte/$pkg" exec emdash-plugin bundle
+            ls "packages/$pkg"/dist/*.tar.gz
+            echo "::endgroup::"
+          done
+
+      - name: Upload sandboxed plugin bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandboxed-plugin-bundles
+          path: packages/*/dist/*.tar.gz
+          if-no-files-found: error
 
       - run: pnpm -r typecheck
 

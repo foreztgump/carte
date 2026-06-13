@@ -2,8 +2,12 @@ import type { RouteContext } from "emdash";
 import { describe, expect, it, vi } from "vitest";
 
 import { createMemoryCapacityStore } from "./capacity.js";
-import factory from "./index.js";
+import { renderReservationsAdmin } from "./routes/admin.js";
+import { cancelReservationByToken } from "./routes/cancel.js";
+import { confirmReservation } from "./routes/confirm.js";
+import { submitReservation } from "./routes/submit.js";
 import { createReservationToken } from "./routes/tokens.js";
+import { pluginContextFields } from "./test-support.js";
 
 const TOKEN_SECRET = "test-token-secret";
 const SLOT = { date: "2026-05-06", slot: "18:00" } as const;
@@ -63,7 +67,8 @@ describe("reservation public routes", () => {
 
   it("cancel-by-token flips state, restores capacity, and queues cancellation email", async () => {
     const context = await createRouteContext();
-    await context.capacityStore.setCapacity(SLOT, 0);
+    await context.capacityStore.setCapacity(SLOT, 2);
+    await context.capacityStore.claim({ ...SLOT, partySize: 2, holdId: "cancel-hold" });
     const reservationId = await context.putReservation({
       status: "confirmed",
       holdId: "cancel-hold",
@@ -90,7 +95,8 @@ describe("reservation public routes", () => {
 
   it("cancel-by-token is idempotent and does not double-restore capacity", async () => {
     const context = await createRouteContext();
-    await context.capacityStore.setCapacity(SLOT, 0);
+    await context.capacityStore.setCapacity(SLOT, 2);
+    await context.capacityStore.claim({ ...SLOT, partySize: 2, holdId: "cancel-hold" });
     const reservationId = await context.putReservation({
       status: "confirmed",
       holdId: "cancel-hold",
@@ -130,8 +136,9 @@ describe("reservation admin route", () => {
     expect(serialized).toContain("Pending Guest");
     expect(serialized).toContain("Confirmed Guest");
     expect(serialized).not.toContain("Cancelled Guest");
-    expect(serialized).not.toContain('"text"');
-    expect(serialized).not.toContain('"stats"');
+    expect(serialized).toContain('"stats"');
+    expect(serialized).toContain('"items"');
+    expect(serialized).not.toContain('"list"');
     expect(serialized).not.toContain("**");
   });
 });
@@ -159,26 +166,74 @@ async function createRouteContext(): Promise<TestRouteContext> {
       reservations.push({ id, data: { ...baseReservationData(), ...data } });
       return id;
     },
-    storage: {
-      carte_reservations: {
-        get: vi.fn(async (id: string) => reservations.find((item) => item.id === id)?.data ?? null),
-        put: vi.fn(async (id: string, data: ReservationData) => {
-          const existing = reservations.find((item) => item.id === id);
-          if (existing) existing.data = data;
-          else reservations.push({ id, data });
-        }),
-        query: vi.fn(async () => ({ items: reservations, hasMore: false })),
-      },
-    },
   };
-  return context as unknown as TestRouteContext;
+  return Object.assign(
+    context,
+    pluginContextFields(reservationStorage(reservations)),
+  ) as TestRouteContext;
 }
 
-function route(name: string) {
-  const pluginRoute = factory().routes[name];
+function reservationStorage(reservations: StoredReservation[]) {
+  return {
+    carte_reservations: {
+      get: vi.fn(async (id: string) => reservations.find((item) => item.id === id)?.data ?? null),
+      put: vi.fn(async (id: string, data: ReservationData) => {
+        upsertReservation(reservations, { id, data });
+      }),
+      delete: vi.fn(async (id: string) => {
+        const initialLength = reservations.length;
+        reservations.splice(
+          0,
+          reservations.length,
+          ...reservations.filter((item) => item.id !== id),
+        );
+        return reservations.length !== initialLength;
+      }),
+      exists: vi.fn(async (id: string) => reservations.some((item) => item.id === id)),
+      getMany: vi.fn(
+        async (ids: string[]) =>
+          new Map(
+            reservations
+              .filter((item) => ids.includes(item.id))
+              .map((item) => [item.id, item.data]),
+          ),
+      ),
+      putMany: vi.fn(async (items: StoredReservation[]) => {
+        for (const item of items) upsertReservation(reservations, item);
+      }),
+      deleteMany: vi.fn(async (ids: string[]) => {
+        const initialLength = reservations.length;
+        reservations.splice(
+          0,
+          reservations.length,
+          ...reservations.filter((item) => !ids.includes(item.id)),
+        );
+        return initialLength - reservations.length;
+      }),
+      query: vi.fn(async () => ({ items: reservations, hasMore: false })),
+      count: vi.fn(async () => reservations.length),
+    },
+  };
+}
+
+function upsertReservation(reservations: StoredReservation[], item: StoredReservation): void {
+  const existing = reservations.find((reservation) => reservation.id === item.id);
+  if (existing) existing.data = item.data;
+  else reservations.push(item);
+}
+
+function route(name: keyof typeof ROUTES) {
+  const pluginRoute = ROUTES[name];
   if (pluginRoute === undefined) throw new Error(`Missing route ${name}`);
   return pluginRoute;
 }
+
+const ROUTES = {
+  admin: { handler: renderReservationsAdmin },
+  "cancel-by-token": { handler: cancelReservationByToken },
+  confirm: { handler: confirmReservation },
+  submit: { handler: submitReservation },
+} as const;
 
 function firstWaitUntilPromise(context: TestRouteContext): Promise<unknown> {
   const call = context.waitUntil.mock.calls[0];

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { getTokenSecret } from "./context.js";
+import { pluginContextFields } from "../test-support.js";
 import type { ReservationRouteContext } from "./types.js";
 
 describe("getTokenSecret", () => {
@@ -20,16 +21,16 @@ describe("getTokenSecret", () => {
 function makeContext(secret: string | null): ReservationRouteContext {
   const kv = new Map<string, unknown>();
   if (secret !== null) kv.set("settings:tokenSecret", secret);
-  return {
+  const context = {
     input: {},
     request: new Request("https://example.com/"),
     requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
     kv: {
       get: vi.fn(async (key: string) => kv.get(key) ?? null),
       set: vi.fn(async () => undefined),
-      delete: vi.fn(async () => undefined),
+      delete: vi.fn(async () => true),
       list: vi.fn(async () => []),
     },
-    storage: {},
-  } as unknown as ReservationRouteContext;
+  };
+  return Object.assign(context, pluginContextFields({})) as ReservationRouteContext;
 }

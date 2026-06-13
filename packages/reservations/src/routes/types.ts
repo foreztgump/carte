@@ -1,6 +1,6 @@
 import type { RouteContext } from "emdash";
 
-import type { AtomicCapacityStore } from "../capacity.js";
+import type { CapacityStore } from "../capacity.js";
 
 export const RESERVATION_COLLECTION = "carte_reservations";
 
@@ -22,7 +22,7 @@ export interface ReservationRecord {
 }
 
 export interface ReservationRouteContext<TInput = unknown> extends RouteContext<TInput> {
-  capacityStore?: AtomicCapacityStore;
+  capacityStore?: CapacityStore;
   waitUntil?: (promise: Promise<unknown>) => void;
 }
 

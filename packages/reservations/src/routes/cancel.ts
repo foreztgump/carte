@@ -29,10 +29,7 @@ async function restoreCapacity(
   ctx: ReservationRouteContext,
   reservation: ReservationRecord,
 ): Promise<void> {
-  await getCapacityStore(ctx).restoreCapacity(
-    { date: reservation.date, slot: reservation.slot },
-    reservation.partySize,
-  );
+  await getCapacityStore(ctx).release(reservation.holdId);
 }
 
 async function loadTokenReservation(

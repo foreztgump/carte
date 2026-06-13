@@ -4,12 +4,14 @@ import { dirname, resolve } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { enforceSubmitRateLimit } from "./context.js";
+import { enforceRateLimit } from "../rate-limit.js";
+import { pluginContextFields } from "../test-support.js";
 import type { ReservationRouteContext } from "./types.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const README_PATH = resolve(HERE, "..", "..", "README.md");
-const CONTEXT_PATH = resolve(HERE, "context.ts");
+const RATE_LIMIT_PATH = resolve(HERE, "..", "rate-limit.ts");
+const SUBMIT_ROUTE = "submit";
 
 describe("enforceSubmitRateLimit", () => {
   it("expires the counter after the rate-limit window so callers are not permanently blocked", async () => {
@@ -17,20 +19,24 @@ describe("enforceSubmitRateLimit", () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2026-05-08T00:00:00.000Z"));
-      for (let i = 0; i < 30; i += 1) await enforceSubmitRateLimit(ctx);
+      for (let i = 0; i < 60; i += 1) await enforceRateLimit(ctx, SUBMIT_ROUTE);
       // Window 1: at the cap; another call must be rejected.
-      await expect(enforceSubmitRateLimit(ctx)).resolves.toBe(false);
+      await expect(enforceRateLimit(ctx, SUBMIT_ROUTE)).resolves.toMatchObject({
+        allowed: false,
+      });
 
       // Advance past the window — the counter must be considered reset.
       vi.setSystemTime(new Date("2026-05-08T00:02:00.000Z"));
-      await expect(enforceSubmitRateLimit(ctx)).resolves.toBe(true);
+      await expect(enforceRateLimit(ctx, SUBMIT_ROUTE)).resolves.toMatchObject({
+        allowed: true,
+      });
     } finally {
       vi.useRealTimers();
     }
   });
 
   it("documents the best-effort concurrency caveat in code and README (HR6)", () => {
-    const contextSource = readFileSync(CONTEXT_PATH, "utf8");
+    const contextSource = readFileSync(RATE_LIMIT_PATH, "utf8");
     const readme = readFileSync(README_PATH, "utf8");
     expect(contextSource).toMatch(/HR6/);
     expect(contextSource).toMatch(/best-effort/i);
@@ -50,15 +56,15 @@ describe("enforceSubmitRateLimit", () => {
     try {
       vi.setSystemTime(new Date("2026-05-08T00:00:00.000Z"));
       const results = await Promise.all([
-        enforceSubmitRateLimit(ctx),
-        enforceSubmitRateLimit(ctx),
-        enforceSubmitRateLimit(ctx),
+        enforceRateLimit(ctx, SUBMIT_ROUTE),
+        enforceRateLimit(ctx, SUBMIT_ROUTE),
+        enforceRateLimit(ctx, SUBMIT_ROUTE),
       ]);
-      expect(results.every((ok) => ok === true)).toBe(true);
+      expect(results.every((result) => result.allowed)).toBe(true);
 
       const setMock = ctx.kv.set as ReturnType<typeof vi.fn>;
       const finalCount = setMock.mock.calls
-        .map(([, value]) => (value as { count: number }).count)
+        .map(([, value]) => (value as { hits: number[] }).hits.length)
         .reduce((max, count) => Math.max(max, count), 0);
       expect(finalCount).toBeGreaterThanOrEqual(1);
       expect(finalCount).toBeLessThanOrEqual(3);
@@ -72,7 +78,7 @@ describe("enforceSubmitRateLimit", () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2026-05-08T00:00:00.000Z"));
-      await enforceSubmitRateLimit(ctx);
+      await enforceRateLimit(ctx, SUBMIT_ROUTE);
     } finally {
       vi.useRealTimers();
     }
@@ -81,25 +87,24 @@ describe("enforceSubmitRateLimit", () => {
     const writtenKeys = setMock.mock.calls.map(([key]) => key as string);
     expect(writtenKeys.some((key) => key.endsWith(":ttl"))).toBe(false);
     const writtenValues = setMock.mock.calls.map(([, value]) => value);
-    const counterValue = writtenValues[0] as { count: number; expiresAt: number };
-    expect(counterValue.count).toBe(1);
-    expect(typeof counterValue.expiresAt).toBe("number");
-    expect(counterValue.expiresAt).toBeGreaterThan(Date.parse("2026-05-08T00:00:00.000Z"));
+    const counterValue = writtenValues[0] as { hits: number[] };
+    expect(counterValue.hits).toHaveLength(1);
+    expect(setMock.mock.calls[0]?.[2]).toMatchObject({ expirationTtl: 120 });
   });
 });
 
 function makeContext(ip: string): ReservationRouteContext {
   const kv = new Map<string, unknown>();
-  return {
+  const context = {
     input: {},
     request: new Request("https://example.com/"),
     requestMeta: { ip, userAgent: null, referer: null, geo: null },
     kv: {
       get: vi.fn(async (key: string) => kv.get(key) ?? null),
       set: vi.fn(async (key: string, value: unknown) => void kv.set(key, value)),
-      delete: vi.fn(async () => undefined),
+      delete: vi.fn(async () => true),
       list: vi.fn(async () => []),
     },
-    storage: {},
-  } as unknown as ReservationRouteContext;
+  };
+  return Object.assign(context, pluginContextFields({})) as ReservationRouteContext;
 }

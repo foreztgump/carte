@@ -1,20 +1,46 @@
-import { reserveCapacity } from "../capacity.js";
+import { CapacityExceededError, reserveCapacity } from "../capacity.js";
 import { defer, getCapacityStore, getReservations, getTokenSecret } from "./context.js";
-import { sendReservationEmailOnce } from "./email.js";
+import { sendNewReservationEmail } from "./email.js";
 import { parseSubmitInput } from "./input.js";
 import { createReservationToken } from "./tokens.js";
 import type { ReservationRecord, ReservationRouteContext, RouteResult } from "./types.js";
 
+const SLOT_FULL_STATUS = 409;
+
+/**
+ * Subrequest audit (worst-case accepted submit, against the 10-subrequest
+ * Cloudflare sandbox cap): rate-limit kv.get + kv.set (2, in plugin.ts) +
+ * tokenSecret kv.get (1) + capacityPerSlot kv.get (1) + claim survey query (1)
+ * + claim put (1) + one expiry-sweep delete (1) + reservations put (1) +
+ * deferred email.send + kv.set (2) = 10 at the absolute ceiling, typically 9
+ * (no expired row to sweep). The dedup pre-read is skipped on submit
+ * (sendNewReservationEmail) because a freshly minted reservationId cannot
+ * collide; the single-query survey replaced the old exists+query pair.
+ */
 export async function submitReservation(ctx: ReservationRouteContext): Promise<RouteResult> {
   const input = parseSubmitInput(ctx.input);
   if (input === null) return failure(400, "Invalid reservation request");
   const reservationId = crypto.randomUUID();
   const secret = await getTokenSecret(ctx);
   const reservation = await buildReservation(reservationId, input, secret);
-  await reserveCapacity(getCapacityStore(ctx), { ...input, holdId: reservation.holdId });
+  const claimed = await claimSlot(ctx, { ...input, holdId: reservation.holdId });
+  if (!claimed) return failure(SLOT_FULL_STATUS, "Selected time is fully booked");
   await getReservations(ctx).put(reservationId, reservation);
-  defer(ctx, sendReservationEmailOnce(ctx, { reservationId, reservation, kind: "received" }));
+  defer(ctx, sendNewReservationEmail(ctx, { reservationId, reservation, kind: "received" }));
   return { ok: true, status: 200, reservationId, confirmationToken: reservation.confirmationToken };
+}
+
+async function claimSlot(
+  ctx: ReservationRouteContext,
+  request: { date: string; slot: string; partySize: number; holdId: string },
+): Promise<boolean> {
+  try {
+    await reserveCapacity(getCapacityStore(ctx), request);
+    return true;
+  } catch (error) {
+    if (error instanceof CapacityExceededError) return false;
+    throw error;
+  }
 }
 
 function failure(status: number, error: string): RouteResult {

@@ -13,9 +13,25 @@
       "subrequests": 1,
       "cpuMs": 3
     },
-    "ctx.kv.atomicDecrement": {
+    "ctx.storage.exists": {
       "subrequests": 1,
       "cpuMs": 3
+    },
+    "ctx.storage.get": {
+      "subrequests": 1,
+      "cpuMs": 3
+    },
+    "ctx.storage.put": {
+      "subrequests": 1,
+      "cpuMs": 5
+    },
+    "ctx.storage.delete": {
+      "subrequests": 1,
+      "cpuMs": 5
+    },
+    "ctx.storage.query": {
+      "subrequests": 1,
+      "cpuMs": 5
     },
     "ctx.content.list": {
       "subrequests": 1,

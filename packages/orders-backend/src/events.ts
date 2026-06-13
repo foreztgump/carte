@@ -1,21 +1,30 @@
-const TENDER_EVENT_IDEMPOTENCY_TTL_SECONDS = 604_800;
-const TENDER_EVENT_IN_PROGRESS_TTL_SECONDS = 300;
-const TENDER_EVENT_IDEMPOTENCY_PREFIX = "idempotency:tender:";
-const TENDER_EVENT_IN_PROGRESS_PREFIX = "in-progress:";
-const TENDER_EVENT_RECONCILE_LOG_PREFIX = "[carte-orders-backend][tender-event-reconcile]";
-const ORDER_STATUS_PAID = "paid";
-const ORDER_STATUS_REFUNDED = "refunded";
+// Order state machine seam: pending → paid → refunded.
+//
+// A single exported trigger, `applyTenderTransaction`, keyed by Tender
+// transaction id. Delivering the same transaction-id trigger twice transitions
+// the order exactly once (duplicate is a no-op; at-least-once safe). There is
+// NO delivery mechanism here — no webhook, polling, or event bus. Consumption
+// is deferred to PRO-859/WS4. All work completes in-request: the sandbox has no
+// post-response primitive (VERIFIED-PLATFORM-0.18-carte §7 — no ctx.waitUntil,
+// no after()).
 
-export const TENDER_EVENT_PROCESSED_VALUE = "processed";
+const ORDERS_COLLECTION = "carte_orders";
+const TRANSACTION_TTL_SECONDS = 604_800;
+const IN_PROGRESS_TTL_SECONDS = 300;
+const IDEMPOTENCY_PREFIX = "idempotency:tender:";
+const IN_PROGRESS_PREFIX = "in-progress:";
 
-interface TenderPaymentEvent {
-  id?: string;
-  metadata?: {
-    carte_order_id?: unknown;
-  };
+export const TENDER_TRANSACTION_PROCESSED_VALUE = "processed";
+
+export type OrderTrigger = "paid" | "refunded";
+
+export interface TenderTransactionEvent {
+  transactionId: string;
+  orderId: string;
+  trigger: OrderTrigger;
 }
 
-interface TenderEventContext {
+export interface OrderTransitionContext {
   kv: {
     get<T = unknown>(key: string): Promise<T | null>;
     set(key: string, value: unknown, options?: { expirationTtl: number }): Promise<void>;
@@ -23,135 +32,49 @@ interface TenderEventContext {
   content: {
     update(collection: string, id: string, value: unknown): Promise<void>;
   };
-  waitUntil(task: Promise<void>): void;
 }
 
-interface PreparedTenderPaymentEvent {
-  orderId: string;
-  eventId: string;
-}
+/**
+ * Idempotently transition an order for a Tender transaction trigger. Returns
+ * true when this call performed the transition, false when it was a duplicate
+ * no-op. A write-then-verify KV marker narrows the concurrent-redelivery race:
+ * the order content update only runs once the caller owns the marker.
+ */
+export const applyTenderTransaction = async (
+  ctx: OrderTransitionContext,
+  event: TenderTransactionEvent,
+): Promise<boolean> => {
+  const key = idempotencyKey(event);
+  if ((await ctx.kv.get(key)) !== null) return false;
 
-export const markOrderPaid = async (
-  ctx: unknown,
-  orderId: string,
-  eventId: string,
-): Promise<void> => {
-  await eventContentStore(ctx).update("carte_orders", orderId, {
-    status: ORDER_STATUS_PAID,
-    payment: { tenderEventId: eventId, paidAt: new Date().toISOString() },
+  const marker = `${IN_PROGRESS_PREFIX}${createWriterId()}`;
+  await ctx.kv.set(key, marker, { expirationTtl: IN_PROGRESS_TTL_SECONDS });
+  if ((await ctx.kv.get<string>(key)) !== marker) return false;
+
+  await transitionOrder(ctx, event);
+  await ctx.kv.set(key, TENDER_TRANSACTION_PROCESSED_VALUE, {
+    expirationTtl: TRANSACTION_TTL_SECONDS,
   });
+  return true;
 };
 
-export const markOrderRefunded = async (
-  ctx: unknown,
-  orderId: string,
-  eventId: string,
-): Promise<void> => {
-  await eventContentStore(ctx).update("carte_orders", orderId, {
-    status: ORDER_STATUS_REFUNDED,
-    refund: { tenderEventId: eventId, refundedAt: new Date().toISOString() },
-  });
-};
+const transitionOrder = (
+  ctx: OrderTransitionContext,
+  event: TenderTransactionEvent,
+): Promise<void> => ctx.content.update(ORDERS_COLLECTION, event.orderId, transitionValue(event));
 
-// PLACEHOLDERS pending EmDash 0.10 custom inter-plugin hook namespace
-// dispatch. EmDash 0.9.0 preserves this descriptor shape but does not yet
-// dispatch tender:* namespaces, so tests invoke these exported handlers
-// directly. Sandbox budget per handler: worst case is 1 KV get + 1 KV set + 1
-// KV verify get + 1 KV processed set + 1 content update inside ctx.waitUntil =
-// 5/10 subrequests; already-processed duplicates cost 1/10. Cloudflare KV has
-// no strict compare-and-set here, so the write-then-verify marker narrows the
-// duplicate-redelivery race to the same residual window accepted by the v0.1
-// Stripe webhook. TODO(PRO-727): replace this with EmDash 0.10 first-writer
-// dispatch semantics once custom inter-plugin events ship.
-export const tenderPaymentSucceededHook = async (
-  event: TenderPaymentEvent,
-  ctx: unknown,
-): Promise<void> => {
-  const prepared = await prepareTenderPaymentEvent(event, ctx);
-  if (prepared === null) return;
+const transitionValue = (event: TenderTransactionEvent): Record<string, unknown> =>
+  event.trigger === "paid"
+    ? { status: "paid", payment: { tenderTransactionId: event.transactionId, paidAt: now() } }
+    : {
+        status: "refunded",
+        refund: { tenderTransactionId: event.transactionId, refundedAt: now() },
+      };
 
-  scheduleTenderPaidEventUpdate(ctx, prepared);
-};
+const idempotencyKey = (event: TenderTransactionEvent): string =>
+  `${IDEMPOTENCY_PREFIX}${event.transactionId}:${event.trigger}`;
 
-export const tenderPaymentRefundedHook = async (
-  event: TenderPaymentEvent,
-  ctx: unknown,
-): Promise<void> => {
-  const prepared = await prepareTenderPaymentEvent(event, ctx);
-  if (prepared === null) return;
-
-  scheduleTenderRefundedEventUpdate(ctx, prepared);
-};
-
-const prepareTenderPaymentEvent = async (
-  event: TenderPaymentEvent,
-  ctx: unknown,
-): Promise<PreparedTenderPaymentEvent | null> => {
-  const orderId = carteOrderId(event);
-  const eventId = event.id;
-  if (!orderId || !eventId) return null;
-
-  const key = tenderEventIdempotencyKey(eventId);
-  const kv = eventKvStore(ctx);
-  if ((await kv.get<string>(key)) !== null) return null;
-
-  const inProgressValue = tenderEventInProgressValue(createTenderEventWriterId());
-  await kv.set(key, inProgressValue, {
-    expirationTtl: TENDER_EVENT_IN_PROGRESS_TTL_SECONDS,
-  });
-  if ((await kv.get<string>(key)) !== inProgressValue) return null;
-
-  await kv.set(key, TENDER_EVENT_PROCESSED_VALUE, {
-    expirationTtl: TENDER_EVENT_IDEMPOTENCY_TTL_SECONDS,
-  });
-  return { orderId, eventId };
-};
-
-const carteOrderId = (event: TenderPaymentEvent): string | null =>
-  typeof event.metadata?.carte_order_id === "string" ? event.metadata.carte_order_id : null;
-
-const tenderEventIdempotencyKey = (eventId: string): string =>
-  `${TENDER_EVENT_IDEMPOTENCY_PREFIX}${eventId}`;
-
-const tenderEventInProgressValue = (writerId: string): string =>
-  `${TENDER_EVENT_IN_PROGRESS_PREFIX}${writerId}`;
-
-const createTenderEventWriterId = (): string =>
+const createWriterId = (): string =>
   globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
-const scheduleTenderPaidEventUpdate = (ctx: unknown, event: PreparedTenderPaymentEvent): void => {
-  const task = markOrderPaid(ctx, event.orderId, event.eventId).catch((error: unknown) => {
-    logTenderEventUpdateFailure(event, ORDER_STATUS_PAID, error);
-  });
-  eventContext(ctx).waitUntil(task);
-};
-
-const scheduleTenderRefundedEventUpdate = (
-  ctx: unknown,
-  event: PreparedTenderPaymentEvent,
-): void => {
-  const task = markOrderRefunded(ctx, event.orderId, event.eventId).catch((error: unknown) => {
-    logTenderEventUpdateFailure(event, ORDER_STATUS_REFUNDED, error);
-  });
-  eventContext(ctx).waitUntil(task);
-};
-
-const logTenderEventUpdateFailure = (
-  event: PreparedTenderPaymentEvent,
-  status: typeof ORDER_STATUS_PAID | typeof ORDER_STATUS_REFUNDED,
-  error: unknown,
-): void => {
-  console.error(TENDER_EVENT_RECONCILE_LOG_PREFIX, {
-    eventId: event.eventId,
-    orderId: event.orderId,
-    status,
-    error: error instanceof Error ? error.message : String(error),
-  });
-};
-
-const eventKvStore = (ctx: unknown): TenderEventContext["kv"] => eventContext(ctx).kv;
-
-const eventContentStore = (ctx: unknown): TenderEventContext["content"] =>
-  eventContext(ctx).content;
-
-const eventContext = (ctx: unknown): TenderEventContext => ctx as TenderEventContext;
+const now = (): string => new Date().toISOString();

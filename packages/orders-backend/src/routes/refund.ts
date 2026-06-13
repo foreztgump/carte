@@ -144,7 +144,11 @@ const createTenderRefund = async (
     idempotencyKey: `${REFUND_IDEMPOTENCY_PREFIX}-${input.orderId}`,
   };
 
-  return (tenderClient(ctx) as unknown as TenderRefundClient).refund(request);
+  // The SDK types `RefundInput.amount` as required, but Tender treats a missing
+  // amount as a full refund — so the local `TenderRefundClient` interface models
+  // it as optional. A single narrowing assertion bridges the two structurally
+  // comparable client shapes (no `unknown`/`never` round-trip).
+  return (tenderClient(ctx) as TenderRefundClient).refund(request);
 };
 
 const requireHttp = (ctx: RouteContext) => {

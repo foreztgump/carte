@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { sendReservationEmailOnce } from "./email.js";
+import { pluginContextFields } from "../test-support.js";
 import type { ReservationRecord, ReservationRouteContext } from "./types.js";
 
 describe("sendReservationEmailOnce", () => {
@@ -25,19 +26,19 @@ interface MockEmailCtx extends ReservationRouteContext {
 
 function makeContext(): MockEmailCtx {
   const kv = new Map<string, unknown>();
-  return {
+  const context = {
     input: {},
     request: new Request("https://example.com/"),
     requestMeta: { ip: null, userAgent: null, referer: null, geo: null },
     kv: {
       get: vi.fn(async (key: string) => kv.get(key) ?? null),
       set: vi.fn(async (key: string, value: unknown) => void kv.set(key, value)),
-      delete: vi.fn(async () => undefined),
+      delete: vi.fn(async () => true),
       list: vi.fn(async () => []),
     },
     email: { send: vi.fn(async () => undefined) },
-    storage: {},
-  } as unknown as MockEmailCtx;
+  };
+  return Object.assign(context, pluginContextFields({})) as MockEmailCtx;
 }
 
 function makeReservation(): ReservationRecord {

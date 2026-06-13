@@ -79,7 +79,11 @@ describe("harness probe plugin", () => {
 
     expect(config).toContain("nativeProbePlugin()");
     expect(config).toContain("plugins:");
-    expect(config).toContain('entrypoint: "./src/native-probe.ts"');
+    // The native entrypoint is an absolute path resolved from import.meta.url
+    // so it resolves under both the Vite dev server and the `astro build`
+    // Rollup pass (a relative path only resolves in dev — see astro.config.mjs).
+    expect(config).toContain("entrypoint: nativeProbeEntrypoint");
+    expect(config).toContain('resolve(HERE, "src/native-probe.ts")');
     expect(nativeSource).toContain('import { definePlugin } from "emdash";');
     expect(nativeSource).toContain("createPlugin");
     expect(nativeSource).toContain("settingsSchema");

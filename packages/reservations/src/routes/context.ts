@@ -1,11 +1,10 @@
 import type { ReservationCollection, ReservationRecord, ReservationRouteContext } from "./types.js";
 import { RESERVATION_COLLECTION } from "./types.js";
-import type { AtomicCapacityStore } from "../capacity.js";
+import type { CapacityCollection, CapacityStore } from "../capacity.js";
+import { CAPACITY_COLLECTION, StorageCapacityStore } from "../capacity.js";
 
-const RATE_LIMIT_PREFIX = "rate-limit:submit";
-const RATE_LIMIT_MAX_REQUESTS = 30;
-const WINDOW_SECONDS = 60;
-const UNKNOWN_IP = "unknown";
+const ACTIVE_RESERVATION_QUERY_LIMIT = 100;
+const DEFAULT_SLOT_CAPACITY = 0;
 
 export async function getTokenSecret(ctx: ReservationRouteContext): Promise<string> {
   const configured = await ctx.kv.get<string>("settings:tokenSecret");
@@ -16,15 +15,21 @@ export async function getTokenSecret(ctx: ReservationRouteContext): Promise<stri
 }
 
 export function getReservations(ctx: ReservationRouteContext): ReservationCollection {
-  const collection = ctx.storage[RESERVATION_COLLECTION] as unknown;
-  return collection as ReservationCollection;
+  return ctx.storage[RESERVATION_COLLECTION] as ReservationCollection;
 }
 
-export function getCapacityStore(ctx: ReservationRouteContext): AtomicCapacityStore {
-  if (ctx.capacityStore === undefined) {
-    throw new Error("capacityStore is required for reservation routes");
+export function getCapacityStore(ctx: ReservationRouteContext): CapacityStore {
+  if (ctx.capacityStore !== undefined) return ctx.capacityStore;
+  const collection = ctx.storage[CAPACITY_COLLECTION] as CapacityCollection | undefined;
+  if (collection === undefined) {
+    throw new Error("capacity storage collection is required for reservation routes");
   }
-  return ctx.capacityStore;
+  return new StorageCapacityStore(collection, () => resolveSlotCapacity(ctx));
+}
+
+async function resolveSlotCapacity(ctx: ReservationRouteContext): Promise<number> {
+  const configured = await ctx.kv.get<number>("settings:capacityPerSlot");
+  return typeof configured === "number" ? configured : DEFAULT_SLOT_CAPACITY;
 }
 
 export function defer(ctx: ReservationRouteContext, task: Promise<unknown>): void {
@@ -35,41 +40,9 @@ export function defer(ctx: ReservationRouteContext, task: Promise<unknown>): voi
   ctx.waitUntil(task);
 }
 
-interface RateLimitCounter {
-  count: number;
-  expiresAt: number;
-}
-
-// EmDash 0.9 KVAccess.set has no expirationTtl option, so the window expiry is
-// embedded in the stored value. Records past their expiresAt are treated as
-// reset on the next read and overwritten in place. The read-then-write here is
-// best-effort under concurrent submits from the same IP — see HR6 follow-up.
-export async function enforceSubmitRateLimit(ctx: ReservationRouteContext): Promise<boolean> {
-  const key = `${RATE_LIMIT_PREFIX}:${getClientIp(ctx)}:${getWindowId()}`;
-  const now = Date.now();
-  const stored = await ctx.kv.get<RateLimitCounter>(key);
-  const active = stored !== null && stored !== undefined && stored.expiresAt > now ? stored : null;
-  const current = active?.count ?? 0;
-  if (current >= RATE_LIMIT_MAX_REQUESTS) return false;
-  const next: RateLimitCounter = {
-    count: current + 1,
-    expiresAt: active?.expiresAt ?? now + WINDOW_SECONDS * 1000,
-  };
-  await ctx.kv.set(key, next);
-  return true;
-}
-
 export async function listActiveReservations(
   ctx: ReservationRouteContext,
 ): Promise<Array<{ id: string; data: ReservationRecord }>> {
-  const result = await getReservations(ctx).query({ limit: 100 });
+  const result = await getReservations(ctx).query({ limit: ACTIVE_RESERVATION_QUERY_LIMIT });
   return result.items.filter((item) => item.data.status !== "cancelled");
-}
-
-function getClientIp(ctx: ReservationRouteContext): string {
-  return ctx.requestMeta.ip ?? ctx.request.headers.get("CF-Connecting-IP") ?? UNKNOWN_IP;
-}
-
-function getWindowId(): number {
-  return Math.floor(Date.now() / (WINDOW_SECONDS * 1000));
 }

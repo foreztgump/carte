@@ -62,8 +62,19 @@ export default definePlugin({
       "| route | est-CPU-ms | subrequest-count | budget-margin |",
     );
     expect(auditResult.output).toContain("packages/core/src/schema-jsonld");
-    expect(auditResult.output).toContain("packages/reservations/src/submit");
-    expect(auditResult.output).toContain("packages/orders-backend/src/checkout");
+    expect(auditResult.output).toContain("packages/reservations/src/plugin/submit");
+    expect(auditResult.output).toContain("packages/orders-backend/src/plugin/checkout");
+  });
+
+  it("counts the real reservations submit claim path through the adaptRoute wrapper", async () => {
+    const auditResult = await runAuditor();
+
+    const submitSubrequests = subrequestCountFor(
+      auditResult.output,
+      "packages/reservations/src/plugin/submit",
+    );
+    expect(submitSubrequests).toBeGreaterThan(0);
+    expect(submitSubrequests).toBeLessThanOrEqual(10);
   });
 
   it("formats budget margins with caps from the active cost table", async () => {
@@ -91,6 +102,13 @@ export default definePlugin({
     expect(auditResult.output).toContain("PASS (16 subreq, 91.95ms CPU)");
   });
 });
+
+const subrequestCountFor = (output: string, route: string): number => {
+  const row = output.split("\n").find((line) => line.includes(`| ${route} |`));
+  if (row === undefined) throw new Error(`No budget row for ${route}`);
+  const cells = row.split("|").map((cell) => cell.trim());
+  return Number(cells[3]);
+};
 
 const createFixture = async (source: string, caps?: CostCaps): Promise<string> => {
   const fixtureRoot = await mkdtemp(path.join(tmpdir(), "carte-sandbox-budget-"));
