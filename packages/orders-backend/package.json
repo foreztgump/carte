@@ -1,36 +1,33 @@
 {
   "name": "@carte/orders-backend",
   "version": "0.2.0-rc.1",
-  "description": "Carte orders backend — Tender Checkout + payment-event + refund routes. Sandboxed EmDash plugin.",
+  "description": "Carte orders backend — Tender Checkout, refunds, order state. Sandboxed EmDash plugin.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.mjs",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./sandbox": "./dist/plugin.mjs"
+  },
   "files": [
-    "README.md",
-    "src/events.ts",
-    "src/index.ts",
-    "src/manifest-constants.ts",
-    "src/rate-limit.ts",
-    "src/routes/**/*.ts",
-    "tsconfig.json",
-    "worker-configuration.d.ts",
-    "wrangler.toml"
+    "dist",
+    "emdash-plugin.jsonc"
   ],
   "publishConfig": {
     "access": "public",
     "tag": "rc"
   },
   "scripts": {
+    "build": "emdash-plugin build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "peerDependencies": {
-    "@tender/sdk": "^0.1.0",
     "emdash": "^0.18"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.8.69",
+    "@emdash-cms/plugin-cli": "0.5.1",
     "@tender/sdk": "file:../../vendor/tender-sdk-0.0.0.tgz",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"

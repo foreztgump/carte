@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "carte-orders-backend",
+  // TODO(PRO-848): swap to Tender's real DID before any registry publish.
+  // Publisher DID is UNRESOLVED-BUT-UNBLOCKING (library/environment.md); the
+  // family identity is reused across Tender + Carte. Offline build/validate
+  // only — no registry publish in this mission.
+  "publisher": "did:plc:tenderfamilyexampleplaceholder",
+
+  "license": "MIT",
+  "author": { "name": "Carte Maintainers", "email": "maintainers@example.com" },
+  "security": { "email": "security@example.com", "url": "https://example.com/security" },
+  "description": "Carte orders backend — Tender Checkout, refunds, order state. Sandboxed EmDash plugin.",
+  "repo": "https://github.com/NetworkReef/carte",
+
+  // Trust contract: read/write order content, send guest emails, and reach the
+  // license host. @tender/sdk calls route through EmDash plugin routes, not an
+  // external host — license validation is the only explicit network allowlist.
+  "capabilities": ["content:read", "content:write", "email:send", "network:request"],
+  "allowedHosts": ["license.carteplugin.dev"],
+
+  // Plugin storage (ctx.storage) — orders are queried by lifecycle status,
+  // fulfillment type, guest email, and recency; orderNumber is unique.
+  "storage": {
+    "carte_orders": {
+      "indexes": ["status", "orderType", "email", "createdAt"],
+      "uniqueIndexes": ["orderNumber"],
+    },
+  },
+
+  "admin": {
+    "pages": [{ "path": "/carte-orders", "label": "Orders", "icon": "receipt" }],
+  },
+}

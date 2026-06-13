@@ -63,7 +63,7 @@ export default definePlugin({
     );
     expect(auditResult.output).toContain("packages/core/src/schema-jsonld");
     expect(auditResult.output).toContain("packages/reservations/src/plugin/submit");
-    expect(auditResult.output).toContain("packages/orders-backend/src/checkout");
+    expect(auditResult.output).toContain("packages/orders-backend/src/plugin/checkout");
   });
 
   it("formats budget margins with caps from the active cost table", async () => {
