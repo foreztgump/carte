@@ -1,0 +1,7 @@
+== tracked dotenv/secret files, expect none beyond examples ==
+none tracked (clean)
+== ignored local secret paths ==
+.gitignore:17:.dev.vars	.dev.vars
+.gitignore:3:.factory-state/	.factory-state/
+== example file non-empty values, expect placeholders only ==
+placeholders only (clean)
