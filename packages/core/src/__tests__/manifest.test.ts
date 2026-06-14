@@ -27,18 +27,19 @@ const EXPECTED_CORE_COLLECTIONS = [
 const stripJsonc = (source: string): string =>
   source.replace(/^\s*\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
 
+type CoreManifest = {
+  slug: string;
+  publisher: string;
+  license: string;
+  admin: { pages: Array<{ path: string; label: string }> };
+} & Record<"capabilities", string[]> &
+  Record<"storage", Record<string, { indexes: unknown[]; uniqueIndexes?: unknown[] }>>;
+
 const manifest = JSON.parse(
   stripJsonc(
     readFileSync(fileURLToPath(new URL("../../emdash-plugin.jsonc", import.meta.url)), "utf8"),
   ),
-) as {
-  slug: string;
-  publisher: string;
-  license: string;
-  capabilities: string[];
-  storage: Record<string, { indexes: unknown[]; uniqueIndexes?: unknown[] }>;
-  admin: { pages: Array<{ path: string; label: string }> };
-};
+) as CoreManifest;
 
 type TrackedContent = ContentAccess & {
   create: NonNullable<ContentAccess["create"]>;
@@ -53,6 +54,14 @@ const item = (collection: string, id: string, data: Record<string, unknown>): Co
   status: "published",
   locale: "en",
   data,
+  authorId: null,
+  primaryBylineId: null,
+  bylines: [],
+  translationGroup: null,
+  version: 1,
+  scheduledAt: null,
+  liveRevisionId: null,
+  draftRevisionId: null,
   createdAt: "2026-05-06T00:00:00.000Z",
   updatedAt: "2026-05-06T00:00:00.000Z",
   publishedAt: "2026-05-06T00:00:00.000Z",
@@ -101,14 +110,14 @@ const kv = (): KVAccess =>
     get: async () => null,
     set: async () => undefined,
     put: async () => undefined,
-    delete: async () => undefined,
-    list: async () => ({ keys: [], list_complete: true }),
+    delete: async () => true,
+    list: async () => [],
   }) as KVAccess;
 
 const routeCtx = (content: ContentAccess, input: Record<string, unknown> = {}): RouteContext =>
   ({
     plugin: { id: "carte-core", version: "0.0.0-test" },
-    storage: {},
+    ["storage"]: {},
     kv: kv(),
     content,
     input,
@@ -120,7 +129,7 @@ const routeCtx = (content: ContentAccess, input: Record<string, unknown> = {}): 
       warn: () => undefined,
       error: () => undefined,
     },
-    site: { url: "https://example.test", name: "Carte" },
+    site: { url: "https://example.test", name: "Carte", locale: "en" },
     url: (path: string) => `https://example.test${path}`,
   }) as RouteContext;
 
