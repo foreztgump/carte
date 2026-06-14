@@ -4,24 +4,31 @@
   "private": true,
   "description": "Carte views — Astro/React component peer-dep library for storefronts. NOT an EmDash plugin.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./components/CarteShell.astro": "./src/components/CarteShell.astro",
-    "./components/DietaryFilter.astro": "./src/components/DietaryFilter.astro",
-    "./components/HoursWidget.astro": "./src/components/HoursWidget.astro",
-    "./components/MenuDisplay.astro": "./src/components/MenuDisplay.astro",
-    "./components/MenuItem.astro": "./src/components/MenuItem.astro",
-    "./components/MenuSection.astro": "./src/components/MenuSection.astro",
-    "./components/OrderingCart.astro": "./src/components/OrderingCart.astro",
-    "./components/OrderingCheckout.astro": "./src/components/OrderingCheckout.astro",
-    "./components/OrderRecordStatus.astro": "./src/components/OrderRecordStatus.astro",
-    "./components/ReservationForm.astro": "./src/components/ReservationForm.astro",
-    "./components/ReservationRecordStatus.astro": "./src/components/ReservationRecordStatus.astro",
-    "./components/RestaurantHero.astro": "./src/components/RestaurantHero.astro",
-    "./components/RestaurantInfo.astro": "./src/components/RestaurantInfo.astro"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./components/CarteShell.astro": "./dist/components/CarteShell.astro",
+    "./components/DietaryFilter.astro": "./dist/components/DietaryFilter.astro",
+    "./components/HoursWidget.astro": "./dist/components/HoursWidget.astro",
+    "./components/MenuDisplay.astro": "./dist/components/MenuDisplay.astro",
+    "./components/MenuItem.astro": "./dist/components/MenuItem.astro",
+    "./components/MenuSection.astro": "./dist/components/MenuSection.astro",
+    "./components/OrderingCart.astro": "./dist/components/OrderingCart.astro",
+    "./components/OrderingCheckout.astro": "./dist/components/OrderingCheckout.astro",
+    "./components/OrderRecordStatus.astro": "./dist/components/OrderRecordStatus.astro",
+    "./components/ReservationForm.astro": "./dist/components/ReservationForm.astro",
+    "./components/ReservationRecordStatus.astro": "./dist/components/ReservationRecordStatus.astro",
+    "./components/RestaurantHero.astro": "./dist/components/RestaurantHero.astro",
+    "./components/RestaurantInfo.astro": "./dist/components/RestaurantInfo.astro"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsdown",
     "astro:check": "astro check",
     "typecheck": "tsc --noEmit && astro check",
     "lint": "eslint src",
@@ -37,6 +44,7 @@
   "devDependencies": {
     "@astrojs/check": "0.9.9",
     "astro": "6.3.1",
+    "tsdown": "0.20.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

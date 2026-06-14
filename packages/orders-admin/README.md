@@ -50,3 +50,11 @@ emdash({
 The old `wrangler.toml`/wrangler-var install flow is gone. Native plugins run
 in-process, so the Cloudflare Free sandbox-isolation caveat does not apply — but
 they share the host Worker's trust boundary by design.
+
+## Build
+
+Run `pnpm -F @carte/orders-admin build` (tsdown) to produce `dist/`. The build
+emits ESM (`.mjs`) + type declarations (`.d.mts`) in unbundle mode, preserving
+the module structure (`dist/admin/`, `dist/modifiers/`) the runtime specifiers
+depend on. `emdash` (peer) and `react`/`react-dom` (host-provided) stay external.
+`main` and both `exports` subpaths (`.`, `./admin`) resolve from `dist/`.
