@@ -99,25 +99,33 @@ describe("reservation capacity claims", () => {
     expect(collection.rows.size).toBe(10);
   });
 
-  it("excludes expired holds from the seat count and removes them on the next claim", async () => {
+  it("excludes expired holds from the seat count without deleting them on the claim path", async () => {
     const collection = trackingCollection();
-    const expiredRow: CapacityClaimRow = {
-      kind: "claim",
-      slotKey: buildCapacityKey(SLOT),
-      date: SLOT.date,
-      slot: SLOT.slot,
-      holdId: "stale-hold",
-      partySize: 1,
-      expiresAt: new Date(Date.now() - 1000).toISOString(),
-    };
-    await collection.put(buildHoldKey("stale-hold"), expiredRow);
+    await collection.put(buildHoldKey("stale-hold"), expiredRowFor(SLOT));
     const store = new StorageCapacityStore(collection, async () => 1);
 
     const hold = await store.claim({ ...SLOT, partySize: 1, holdId: "fresh-hold" });
 
+    // Lazy expiry: the stale row is not counted (the 1-seat slot still admits
+    // the fresh claim) but the delete is deferred off the accepted-claim path.
     expect(hold.holdId).toBe("fresh-hold");
-    expect(collection.rows.has(buildHoldKey("stale-hold"))).toBe(false);
+    expect(collection.rows.has(buildHoldKey("stale-hold"))).toBe(true);
     expect(collection.rows.has(buildHoldKey("fresh-hold"))).toBe(true);
+  });
+
+  it("deletes only its own row on release, keeping the claim and cancel paths within budget", async () => {
+    const collection = trackingCollection();
+    await collection.put(buildHoldKey("stale-hold"), expiredRowFor(SLOT));
+    const store = new StorageCapacityStore(collection, async () => 5);
+    await store.claim({ ...SLOT, partySize: 1, holdId: "live-hold" });
+
+    await store.release("live-hold");
+
+    // Release performs a single targeted delete (no slot-wide sweep query), so
+    // the cancel path stays under the 10-subrequest cap; the expired sibling is
+    // left for its own release and is already excluded from seat counts.
+    expect(collection.rows.has(buildHoldKey("live-hold"))).toBe(false);
+    expect(collection.rows.has(buildHoldKey("stale-hold"))).toBe(true);
   });
 
   it("persists each claim as a storage row keyed by the hold id with a ttl horizon", async () => {
@@ -137,6 +145,18 @@ describe("reservation capacity claims", () => {
     expect(ttlMs).toBeGreaterThanOrEqual((HOLD_TTL_SECONDS - 5) * 1000);
   });
 });
+
+function expiredRowFor(slot: { date: string; slot: string }): CapacityClaimRow {
+  return {
+    kind: "claim",
+    slotKey: buildCapacityKey(slot),
+    date: slot.date,
+    slot: slot.slot,
+    holdId: "stale-hold",
+    partySize: 1,
+    expiresAt: new Date(Date.now() - 1000).toISOString(),
+  };
+}
 
 interface TrackingCollection extends CapacityCollection {
   rows: Map<string, CapacityClaimRow>;

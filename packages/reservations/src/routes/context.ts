@@ -1,10 +1,10 @@
+import { resolveSlotCapacity } from "./slot-capacity.js";
 import type { ReservationCollection, ReservationRecord, ReservationRouteContext } from "./types.js";
 import { RESERVATION_COLLECTION } from "./types.js";
 import type { CapacityCollection, CapacityStore } from "../capacity.js";
 import { CAPACITY_COLLECTION, StorageCapacityStore } from "../capacity.js";
 
 const ACTIVE_RESERVATION_QUERY_LIMIT = 100;
-const DEFAULT_SLOT_CAPACITY = 0;
 
 export async function getTokenSecret(ctx: ReservationRouteContext): Promise<string> {
   const configured = await ctx.kv.get<string>("settings:tokenSecret");
@@ -24,12 +24,7 @@ export function getCapacityStore(ctx: ReservationRouteContext): CapacityStore {
   if (collection === undefined) {
     throw new Error("capacity storage collection is required for reservation routes");
   }
-  return new StorageCapacityStore(collection, () => resolveSlotCapacity(ctx));
-}
-
-async function resolveSlotCapacity(ctx: ReservationRouteContext): Promise<number> {
-  const configured = await ctx.kv.get<number>("settings:capacityPerSlot");
-  return typeof configured === "number" ? configured : DEFAULT_SLOT_CAPACITY;
+  return new StorageCapacityStore(collection, (slot) => resolveSlotCapacity(ctx, slot));
 }
 
 export function defer(ctx: ReservationRouteContext, task: Promise<unknown>): void {

@@ -110,15 +110,11 @@ export function cancelHold(store: CapacityStore, holdId: string, waitUntil: Wait
   waitUntil(store.release(holdId));
 }
 
-/** Survey of one slot's persisted claims: live seat total, duplicate flag, expired rows. */
+/** Survey of one slot's live persisted claims: seat total and duplicate flag. */
 interface SlotSurvey {
   duplicate: boolean;
   activeSeats: number;
-  expiredKeys: string[];
 }
-
-/** Max expired claim rows swept per claim — bounds the per-invocation subrequest cost. */
-const MAX_EXPIRY_SWEEP = 1;
 
 const isExpired = (row: CapacityClaimRow, now: number): boolean =>
   new Date(row.expiresAt).getTime() <= now;
@@ -165,27 +161,27 @@ export class StorageCapacityStore implements CapacityStore {
       throw new CapacityExceededError(hold.capacityKey);
     }
     await this.collection.put(hold.holdKey, toClaimRow(hold));
-    await this.sweepExpired(survey.expiredKeys);
     return hold;
   }
 
-  /** Single query that derives the live seat total, duplicate flag, and expired rows. */
+  /**
+   * Single query that derives the live seat total and duplicate flag. Expired
+   * rows are excluded lazily (not counted) and are NOT deleted on any sandboxed
+   * handler path: the accepted-claim path performs no delete (it would breach
+   * the 10-subrequest Cloudflare cap — AGENTS.md §8 "do not try to fit the
+   * ceiling"), and each row is removed by its own {@link release}. Lazy
+   * exclusion keeps seat math correct regardless of leftover expired rows.
+   */
   private async surveySlot(slotKey: string, holdKey: string): Promise<SlotSurvey> {
     const result = await this.collection.query({ where: { slotKey }, limit: CLAIM_QUERY_LIMIT });
     const now = Date.now();
-    const survey: SlotSurvey = { duplicate: false, activeSeats: 0, expiredKeys: [] };
+    const survey: SlotSurvey = { duplicate: false, activeSeats: 0 };
     for (const { id, data } of result.items) {
-      if (isExpired(data, now)) survey.expiredKeys.push(id);
+      if (isExpired(data, now)) continue;
       else if (id === holdKey) survey.duplicate = true;
       else survey.activeSeats += data.partySize;
     }
     return survey;
-  }
-
-  private async sweepExpired(expiredKeys: string[]): Promise<void> {
-    for (const key of expiredKeys.slice(0, MAX_EXPIRY_SWEEP)) {
-      await this.collection.delete(key);
-    }
   }
 }
 
