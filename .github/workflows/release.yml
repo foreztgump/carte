@@ -1,0 +1,92 @@
+name: Release
+
+# Publishes the five MIT @carte packages to npm.
+#
+# Two paths:
+# 1. push of a `v*` tag -> real publish via `changeset publish`.
+# 2. workflow_dispatch -> dry-run (`pnpm -r publish --dry-run`) for verification
+#    before cutting a real tag. No authentication, no publish.
+#
+# Provenance & auth: the source repo is PUBLIC and trusted publishing is
+# configured for each package on npmjs.com, so the npm CLI authenticates via
+# OIDC (id-token: write below mints the token) and generates provenance
+# automatically — no long-lived npm token. The very first 0.3.0 publish is done
+# locally (a first-ever publish cannot use trusted publishing), so this workflow
+# carries provenance from 0.3.1 onward.
+#
+# OIDC trusted publishing requires npm CLI >= 11.5.1 (Node 22 bundles 10.x), so
+# the workflow upgrades npm before publishing. `changeset publish` shells out to
+# npm internally, which is what performs the OIDC token exchange. NODE_AUTH_TOKEN
+# must NOT be set (not even empty) or npm uses it instead of falling back to OIDC.
+#
+# Deviation from Dateline: carte has no `.nvmrc` yet (separate A-track task), so
+# this pins `node-version: "22"` to match the existing ci.yml / canary.yml. Swap
+# to `node-version-file: .nvmrc` once that file lands, for full Dateline parity.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack tarballs and report what would publish, without authenticating or publishing."
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  # Required for npm provenance / OIDC trusted publishing.
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    env:
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          # registry-url wires up the npm registry context that OIDC publishing
+          # uses. Required even tokenless — removing it breaks the OIDC path.
+          registry-url: "https://registry.npmjs.org"
+          cache: pnpm
+
+      # OIDC trusted publishing needs npm >= 11.5.1; Node 22 bundles 10.x. Pin to
+      # the v11 major (>= 11.5.1) so CI stays reproducible and a future npm 12
+      # breaking change can't silently break a release.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g "npm@^11.5.1"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r build
+
+      # `changeset publish` has no dry-run flag, so verification packs the
+      # tarballs with pnpm instead. This rewrites workspace:* ranges to the
+      # resolved versions exactly as a real publish would, and prints each
+      # tarball's contents — without authenticating or pushing to the registry.
+      - name: Publish (dry-run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: pnpm -r publish --dry-run --no-git-checks
+
+      # Authentication is tokenless: npm detects the OIDC environment (via the
+      # id-token: write permission) and exchanges it for a short-lived publish
+      # token against the trusted-publisher mappings configured on npmjs.com.
+      # Provenance is generated automatically under trusted publishing, so no
+      # --provenance flag or NPM_CONFIG_PROVENANCE is needed. Do NOT set
+      # NODE_AUTH_TOKEN here — any value (even empty) makes npm skip OIDC.
+      - name: Publish to npm
+        if: github.event_name == 'push'
+        run: pnpm exec changeset publish
