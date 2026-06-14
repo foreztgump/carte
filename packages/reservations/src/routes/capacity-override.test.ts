@@ -9,8 +9,11 @@ import { pluginContextFields } from "../test-support.js";
 const SLOT = { date: "2026-05-06", slot: "18:00" } as const;
 const GLOBAL_CAPACITY = 50;
 const OVERRIDE_SEATS = 2;
+const SLOT_BLOCK_QUERY_LIMIT = 100;
 const SLOT_START = "2026-05-06T18:00:00.000Z";
 const SLOT_END = "2026-05-06T18:30:00.000Z";
+const BEFORE_SLOT_START = "2026-05-06T16:00:00.000Z";
+const BEFORE_SLOT_END = "2026-05-06T16:30:00.000Z";
 const MISSING_CAPACITY_ERROR =
   "Reservations plugin requires capacityPerSlot to be configured in plugin settings";
 
@@ -87,6 +90,44 @@ describe("write-time capacity honors per-slot block overrides", () => {
       MISSING_CAPACITY_ERROR,
     );
   });
+
+  it("fails loudly when the block survey reaches its query limit", async () => {
+    const outOfSlotBlocks = Array.from({ length: SLOT_BLOCK_QUERY_LIMIT }, () => ({
+      startsAt: BEFORE_SLOT_START,
+      endsAt: BEFORE_SLOT_END,
+      capacityOverride: GLOBAL_CAPACITY,
+    }));
+    const ctx = makeContext([...outOfSlotBlocks, { startsAt: SLOT_START, endsAt: SLOT_END }]);
+    const store = getCapacityStore(ctx);
+
+    await expect(
+      store.claim({ ...SLOT, partySize: 1, holdId: "truncated-blocks" }),
+    ).rejects.toThrow("reservation block query limit");
+  });
+
+  it.each([
+    ["NaN", Number.NaN],
+    ["negative", -1],
+  ])("rejects %s capacityPerSlot values", async (_label, capacityPerSlot) => {
+    const ctx = makeContext([], { capacityPerSlot });
+    const store = getCapacityStore(ctx);
+
+    await expect(
+      store.claim({ ...SLOT, partySize: 1, holdId: `global-${_label}` }),
+    ).rejects.toThrow("capacityPerSlot must be a finite non-negative number");
+  });
+
+  it.each([
+    ["NaN", Number.NaN],
+    ["negative", -1],
+  ])("rejects %s capacityOverride values", async (_label, capacityOverride) => {
+    const ctx = makeContext([{ startsAt: SLOT_START, endsAt: SLOT_END, capacityOverride }]);
+    const store = getCapacityStore(ctx);
+
+    await expect(
+      store.claim({ ...SLOT, partySize: 1, holdId: `override-${_label}` }),
+    ).rejects.toThrow("capacityOverride must be a finite non-negative number");
+  });
 });
 
 function makeContext(
@@ -143,6 +184,10 @@ function blockCollection(blocks: BlockRow[]) {
     exists: async () => false,
     put: async () => undefined,
     delete: async () => false,
-    query: async () => ({ items: blocks.map((data, index) => ({ id: `block-${index}`, data })) }),
+    query: async (options?: { limit?: number }) => ({
+      items: blocks
+        .slice(0, options?.limit ?? blocks.length)
+        .map((data, index) => ({ id: `block-${index}`, data })),
+    }),
   };
 }
