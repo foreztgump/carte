@@ -38,9 +38,10 @@ Out of scope:
   routes for reservation and order guest data. Erasure replaces PII with a
   deterministic `erased:<sha256>` placeholder while preserving revenue
   records for the statutory retention period.
-- **Stripe webhook integrity.** `@carte/orders-backend` verifies webhook
-  signatures and deduplicates events via KV `idempotency:{stripeEventId}` with
-  a 7-day TTL. Re-deliveries are routine, not exceptional.
+- **Tender payment boundary.** Tender owns checkout and webhook verification.
+  `@carte/orders-backend` consumes Tender SDK results and idempotent Tender
+  transaction events; Carte never receives raw PAN/CVC and does not implement a
+  direct Stripe webhook receiver in the published package set.
 - **AI tool-call boundary.** `@carte/ai` enforces a read-by-default,
   write-on-confirm contract. PII redaction happens at the tool-call layer,
   not in prompts, so jailbreaks cannot bypass it.

@@ -13,7 +13,7 @@ Shipped surfaces:
 - Audit-log writer for admin mutations (`audit/log.ts`).
 
 Execution model: **sandboxed** (Cloudflare Worker per invocation). Capabilities declared:
-`content:read`, `content:write`, `media:read`. No outbound network, no email.
+`content:read`, `content:write`. No outbound network, no email.
 
 ## Install (EmDash 0.18)
 

@@ -14,10 +14,9 @@
   "description": "Carte orders backend — Tender Checkout, refunds, order state. Sandboxed EmDash plugin.",
   "repo": "https://github.com/NetworkReef/carte",
 
-  // Trust contract: read/write order content, send guest emails, and reach the
-  // license host. @tender/sdk calls route through EmDash plugin routes, not an
-  // external host — license validation is the only explicit network allowlist.
-  "capabilities": ["content:read", "content:write", "email:send", "network:request"],
+  // Trust contract: read/write order content and the current explicit network
+  // allowlist. Tender SDK host coverage is tracked separately in PRO-912.
+  "capabilities": ["content:read", "content:write", "network:request"],
   "allowedHosts": ["license.carteplugin.dev"],
 
   // Plugin storage (ctx.storage) — orders are queried by lifecycle status,

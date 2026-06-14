@@ -13,7 +13,7 @@ describe("@carte/orders-backend sandboxed manifest", () => {
     expect(manifest).toContain('"slug": "carte-orders-backend"');
     expect(manifest).toContain('"publisher": "did:plc:tenderfamilyexampleplaceholder"');
     expect(manifest).toContain(
-      '"capabilities": ["content:read", "content:write", "email:send", "network:request"]',
+      '"capabilities": ["content:read", "content:write", "network:request"]',
     );
     expect(manifest).toContain('"allowedHosts": ["license.carteplugin.dev"]');
   });
