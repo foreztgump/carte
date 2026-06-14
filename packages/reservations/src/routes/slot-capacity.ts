@@ -8,6 +8,20 @@ const CLOSED_CAPACITY = 0;
 const MISSING_CAPACITY_ERROR =
   "Reservations plugin requires capacityPerSlot to be configured in plugin settings";
 
+export class SlotBlockSurveyLimitExceededError extends Error {
+  constructor() {
+    super("Cannot safely resolve slot capacity: reservation block query limit reached");
+    this.name = "SlotBlockSurveyLimitExceededError";
+  }
+}
+
+export class InvalidSlotCapacityError extends Error {
+  constructor(field: "capacityPerSlot" | "capacityOverride") {
+    super(`${field} must be a finite non-negative number`);
+    this.name = "InvalidSlotCapacityError";
+  }
+}
+
 /** One closure/override row, mirrored from the read-time `ReservationBlock` shape. */
 interface SlotBlockRow {
   startsAt: string;
@@ -41,6 +55,7 @@ export async function resolveSlotCapacity(
 async function readGlobalCapacity(ctx: ReservationRouteContext): Promise<number> {
   const configured = await ctx.kv.get<number>(CAPACITY_SETTING_KEY);
   if (typeof configured !== "number") throw new Error(MISSING_CAPACITY_ERROR);
+  assertCapacityValue("capacityPerSlot", configured);
   return configured;
 }
 
@@ -52,6 +67,7 @@ async function readOverlappingBlocks(
   if (collection === undefined) return [];
   const instant = slotInstant(slot);
   const result = await collection.query({ limit: SLOT_BLOCK_QUERY_LIMIT });
+  if (result.items.length >= SLOT_BLOCK_QUERY_LIMIT) throw new SlotBlockSurveyLimitExceededError();
   return result.items.map((item) => item.data).filter((block) => covers(block, instant));
 }
 
@@ -59,9 +75,16 @@ function applyOverrides(global: number, blocks: SlotBlockRow[]): number {
   let ceiling = global;
   for (const block of blocks) {
     if (block.capacityOverride === undefined) return CLOSED_CAPACITY;
+    assertCapacityValue("capacityOverride", block.capacityOverride);
     ceiling = Math.min(ceiling, block.capacityOverride);
   }
   return ceiling;
+}
+
+function assertCapacityValue(field: "capacityPerSlot" | "capacityOverride", value: number): void {
+  if (!Number.isFinite(value) || value < CLOSED_CAPACITY) {
+    throw new InvalidSlotCapacityError(field);
+  }
 }
 
 function covers(block: SlotBlockRow, instant: number): boolean {
