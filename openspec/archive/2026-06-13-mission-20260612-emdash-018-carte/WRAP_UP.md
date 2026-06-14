@@ -48,6 +48,25 @@ Mission code was complete and green at merge, but five closure items were left o
 4. **No WRAP_UP.md** — this file.
 5. **Epic PRO-848 left in Todo** — closed with milestone-complete comment.
 
+## PR Review Triage
+
+**Reviewer:** PR-Agent local
+**Risk Classification:** low (docs/CI/openspec/config only — no plugin source touched)
+**Review path:** `.factory-state/pr-agent-review-24.md`
+**Comments Posted:** 1 (top-level review guide; 0 inline)
+**PR:** #24 — closure (grep gates, wrap-up, archive)
+
+- [Nitpick] (PR-Agent) `scripts/check-grep-gates.sh:43`: claimed `$SRC_GLOB` expands in
+  caller CWD before subshell `cd "$ROOT"` — **empirically false** (verified: injected an
+  `atomicDecrement` probe and ran from `/tmp`; gate correctly exited 1). The original was
+  correct. **However** the review surfaced a real latent gap: an unquoted glob matching
+  nothing stays literal → grep errors silently → fail-closed gate passes green.
+  **Fixed in 6f1b6fd** — resolve `packages/*/src` into an explicit dir array from `$ROOT`,
+  abort if zero dirs match, pass dirs explicitly to grep. Re-verified clean from root + /tmp,
+  catches injected violation from either CWD, shellcheck clean.
+- No P0/P1/P2 actionable findings. No security concerns identified. No relevant tests
+  (closure PR — gate behavior verified manually + in CI run 27486502752).
+
 ## Deferred / tracked (not gaps)
 
 - Publisher DID — `did:plc` placeholder in all three sandboxed manifests, `TODO(PRO-848)`
