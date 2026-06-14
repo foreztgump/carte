@@ -63,6 +63,90 @@ Pick the affected package(s), the bump type (`patch` / `minor` /
 `.changeset/`; commit it alongside your code change. Internal-only edits
 (test refactors, doc-only changes) do not need a changeset.
 
+## Releasing
+
+Carte releases use Changesets for package versioning and the GitHub
+`release.yml` workflow for npm publishing. The normal release path is:
+
+1. Confirm every user-facing package change has a committed changeset from
+   `pnpm changeset`.
+2. Create the version-packages change:
+
+   ```bash
+   pnpm changeset version
+   pnpm install --lockfile-only
+   ```
+
+3. Review and commit the generated package versions, changelogs, consumed
+   `.changeset/` removals, and lockfile updates:
+
+   ```bash
+   git add -A
+   git commit -m "chore(release): version packages [PRO-XXX]"
+   ```
+
+4. Tag the release from `main` after the version-packages commit lands:
+
+   ```bash
+   git checkout main
+   git pull --ff-only
+   git tag v0.3.0
+   git push origin v0.3.0
+   ```
+
+5. The `release.yml` tag workflow runs `changeset publish` in CI and publishes
+   the packages with pending Changesets output.
+
+Before relying on CI publishing, verify the provenance preconditions:
+
+- The GitHub repository is public. npm provenance is not generated for packages
+  published from private source repositories.
+- Each published npm package has trusted publishing configured for
+  `foreztgump/carte` and the `release.yml` workflow.
+- The workflow grants OIDC with `permissions: id-token: write` and does not use
+  a long-lived `NODE_AUTH_TOKEN`.
+- CI uses Node `>=22.14.0` and npm `>=11.5.1`, because npm trusted publishing
+  requires those versions or newer.
+
+### First publish exception
+
+The first `0.3.0` publish is a one-time manual exception because new package
+names do not yet have trusted publisher mappings on npm. For that first publish
+only:
+
+1. Confirm the repository is public.
+2. Build and publish the five MIT packages locally:
+
+   ```bash
+   pnpm -r build
+   pnpm -r publish --access public
+   ```
+
+3. Configure trusted publishing on npmjs.com for each published package, using
+   repo `foreztgump/carte` and workflow `release.yml`.
+4. Use the tagged CI flow for `0.3.1+` releases.
+
+`@carte/ai` is not published in the R1 release. It stays `private: true`, is
+excluded from publish sets, and remains on its own future commercial release
+track.
+
+### Rollback and recovery
+
+npm package contents are immutable once published. If a bad release ships,
+prefer a ship-forward patch:
+
+1. Fix the issue in a new PR with a changeset.
+2. Run the normal version-packages, tag, and CI publish flow for the patch.
+3. Deprecate the bad version so new installs see a warning:
+
+   ```bash
+   npm deprecate <package>@<bad-version> "Use <fixed-version>; this release is superseded."
+   ```
+
+Do not unpublish after 72 hours. If the release is inside npm's unpublish
+window, still prefer deprecation unless removal is required for a legal,
+security, or secret-exposure incident.
+
 ## Pull request checklist
 
 Before opening a PR:
