@@ -110,6 +110,21 @@ describe("toolCallRoute", () => {
     expect(isAllowedToolUrl("http://localhost:8787/debug", allowedHosts)).toBe(false);
   });
 
+  it("rejects allow-listed IPv6 local and private tool URLs after URL hostname normalization", () => {
+    const privateIpv6Urls = [
+      { allowedHost: "[::1]", url: "http://[::1]:8080/debug" },
+      { allowedHost: "[::ffff:7f00:1]", url: "http://[::ffff:127.0.0.1]:8080/debug" },
+      { allowedHost: "[::ffff:a00:1]", url: "http://[::ffff:10.0.0.1]/debug" },
+      { allowedHost: "[fc00::1]", url: "http://[fc00::1]/debug" },
+      { allowedHost: "[fd12:3456::1]", url: "http://[fd12:3456::1]/debug" },
+      { allowedHost: "[fe80::1]", url: "http://[fe80::1]/debug" },
+    ];
+
+    for (const { allowedHost, url } of privateIpv6Urls) {
+      expect(isAllowedToolUrl(url, [allowedHost])).toBe(false);
+    }
+  });
+
   it("keeps documented KV key prefixes unique for pending calls, undo, and audit", () => {
     expect(new Set(Object.values(TOOL_CALL_KV_KEY_PREFIXES)).size).toBe(
       Object.values(TOOL_CALL_KV_KEY_PREFIXES).length,
