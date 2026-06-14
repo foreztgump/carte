@@ -28,7 +28,6 @@
   },
   "devDependencies": {
     "@emdash-cms/plugin-cli": "0.5.1",
-    "@tender/sdk": "file:../../vendor/tender-sdk-0.0.0.tgz",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   }

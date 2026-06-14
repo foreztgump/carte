@@ -35,6 +35,9 @@ importers:
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.59.1
+      '@tender/sdk':
+        specifier: file:./vendor/tender-sdk-0.0.0.tgz
+        version: file:vendor/tender-sdk-0.0.0.tgz
       '@types/node':
         specifier: ^22.9.0
         version: 22.19.17
@@ -77,8 +80,6 @@ importers:
       wrangler:
         specifier: ^4.88.0
         version: 4.88.0
-
-  ../tender/packages/sdk: {}
 
   docs-site:
     dependencies:
@@ -280,9 +281,6 @@ importers:
       '@emdash-cms/plugin-cli':
         specifier: 0.5.1
         version: 0.5.1(@atcute/identity@1.1.5(@atcute/lexicons@1.3.1))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(typescript@5.9.3)
-      '@tender/sdk':
-        specifier: file:../../vendor/tender-sdk-0.0.0.tgz
-        version: file:vendor/tender-sdk-0.0.0.tgz
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

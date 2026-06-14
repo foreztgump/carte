@@ -18,6 +18,12 @@ Execution model: **sandboxed**. Capabilities declared:
 is intentionally limited to `license.carteplugin.dev`. PCI scope is minimized
 by Tender-hosted checkout — Carte infrastructure NEVER receives raw PAN/CVC.
 
+**Tender SDK dependency:** This published package is self-contained. `@tender/sdk`
+is a workspace-private build input bundled into `dist/` at build time and is NOT
+declared as a runtime, peer, optional, or dev dependency in the packed package.
+Operators install and configure `tender-core` and `tender-stripe` when Tender is
+available; the bundled SDK is transparent to your site configuration.
+
 Subrequest budget note (per AGENTS.md): the Tender transaction trigger handler
 budget is 3 of the 10 sandbox subrequests per invocation. Stay within budget; do
 not add speculative outbound calls.
