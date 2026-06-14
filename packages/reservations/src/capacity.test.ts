@@ -15,6 +15,7 @@ import {
 } from "./capacity.js";
 
 const SLOT = { date: "2026-05-06", slot: "18:00" } as const;
+const OVER_QUERY_LIMIT_CLAIMS = 1001;
 
 describe("reservation capacity claims", () => {
   it("never oversells under 100 concurrent claims for capacity 50", async () => {
@@ -113,6 +114,29 @@ describe("reservation capacity claims", () => {
     expect(collection.rows.has(buildHoldKey("fresh-hold"))).toBe(true);
   });
 
+  it("re-claiming an expired hold id persists the fresh claim row", async () => {
+    const collection = trackingCollection();
+    await collection.put(buildHoldKey("same-hold"), expiredRowFor(SLOT, "same-hold"));
+    const store = new StorageCapacityStore(collection, async () => 1);
+
+    await store.claim({ ...SLOT, partySize: 1, holdId: "same-hold" });
+
+    const row = collection.rows.get(buildHoldKey("same-hold"));
+    expect(row).toMatchObject({ holdId: "same-hold", partySize: 1 });
+    expect(new Date(row?.expiresAt ?? 0).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("fails loudly instead of admitting a claim when slot survey reaches the query limit", async () => {
+    const collection = trackingCollection();
+    await seedActiveClaims(collection, OVER_QUERY_LIMIT_CLAIMS);
+    const store = new StorageCapacityStore(collection, async () => OVER_QUERY_LIMIT_CLAIMS + 1);
+
+    await expect(store.claim({ ...SLOT, partySize: 1, holdId: "over-limit" })).rejects.toThrow(
+      "capacity claim query limit",
+    );
+    expect(collection.rows.has(buildHoldKey("over-limit"))).toBe(false);
+  });
+
   it("deletes only its own row on release, keeping the claim and cancel paths within budget", async () => {
     const collection = trackingCollection();
     await collection.put(buildHoldKey("stale-hold"), expiredRowFor(SLOT));
@@ -138,6 +162,7 @@ describe("reservation capacity claims", () => {
     const row = collection.rows.get("hold:row-hold");
     expect(row).toMatchObject({
       kind: "claim",
+      holdKey: "hold:row-hold",
       slotKey: "capacity:2026-05-06:18:00",
       partySize: 2,
     });
@@ -146,15 +171,35 @@ describe("reservation capacity claims", () => {
   });
 });
 
-function expiredRowFor(slot: { date: string; slot: string }): CapacityClaimRow {
+async function seedActiveClaims(collection: TrackingCollection, count: number): Promise<void> {
+  await Promise.all(
+    Array.from({ length: count }, (_, index) => {
+      const holdId = `seed-${index}`;
+      return collection.put(buildHoldKey(holdId), claimRowFor(SLOT, holdId));
+    }),
+  );
+}
+
+function expiredRowFor(
+  slot: { date: string; slot: string },
+  holdId = "stale-hold",
+): CapacityClaimRow {
+  return claimRowFor(slot, holdId, new Date(Date.now() - 1000));
+}
+
+function claimRowFor(
+  slot: { date: string; slot: string },
+  holdId: string,
+  expiresAt = new Date(Date.now() + HOLD_TTL_SECONDS * 1000),
+): CapacityClaimRow {
   return {
     kind: "claim",
     slotKey: buildCapacityKey(slot),
     date: slot.date,
     slot: slot.slot,
-    holdId: "stale-hold",
+    holdId,
     partySize: 1,
-    expiresAt: new Date(Date.now() - 1000).toISOString(),
+    expiresAt: expiresAt.toISOString(),
   };
 }
 
@@ -172,10 +217,12 @@ function trackingCollection(): TrackingCollection {
     delete: async (id) => rows.delete(id),
     query: async (options) => {
       const slotKey = options?.where?.slotKey;
+      const limit = options?.limit;
+      const items = [...rows.entries()]
+        .filter(([, data]) => slotKey === undefined || data.slotKey === slotKey)
+        .map(([id, data]) => ({ id, data }));
       return {
-        items: [...rows.entries()]
-          .filter(([, data]) => slotKey === undefined || data.slotKey === slotKey)
-          .map(([id, data]) => ({ id, data })),
+        items: limit === undefined ? items : items.slice(0, limit),
       };
     },
   };
