@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased — R1 packaging
+
+### Added — build scripts for native + library packages
+
+- `@carte/orders-admin` and `@carte/views` now ship a `build` script (tsdown)
+  producing `dist/`, with `main`/`exports`/`files` pointed at the built output
+  ([PRO-898](https://linear.app/projects-linear/issue/PRO-898)). orders-admin
+  emits ESM + `.d.mts`; views compiles its TS modules and copies raw `.astro`
+  components to `dist/components/`. Consumers (and the e2e views fixture) must
+  run the build before importing from these packages. `@carte/ai` is excluded
+  (deferred) and keeps its `src`-based setup.
+
 ## v0.2.0 — Tender adapter (rc)
 
 ### Changed — Tender payment handoff

@@ -4,12 +4,22 @@
   "private": true,
   "description": "Carte orders admin — native React UI for the orders queue. EmDash native plugin.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.mjs",
   "exports": {
-    ".": "./src/index.ts",
-    "./admin": "./src/admin/index.tsx"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.mts",
+      "default": "./dist/admin/index.mjs"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
@@ -23,6 +33,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "jsdom": "29.1.1",
+    "tsdown": "0.20.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.6"
   },
