@@ -192,8 +192,10 @@ function claimRowFor(
   holdId: string,
   expiresAt = new Date(Date.now() + HOLD_TTL_SECONDS * 1000),
 ): CapacityClaimRow {
+  const holdKey = buildHoldKey(holdId);
   return {
     kind: "claim",
+    holdKey,
     slotKey: buildCapacityKey(slot),
     date: slot.date,
     slot: slot.slot,

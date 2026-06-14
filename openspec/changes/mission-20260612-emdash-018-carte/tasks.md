@@ -54,4 +54,5 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [x] 5.4 PRO-496: resolve deferred core collection schema surface per issue scope
 - [x] 5.5 PRO-860: thread per-slot `capacityOverride` blocks into write-time `resolveSlotCapacity` so claim-path ceilings match read-time advertisement; move expiry sweep + dead received-email dedup write off the accepted-submit critical path (9-subrequest worst case, 1 of headroom)
 - [x] 5.6 PRO-860: fail loud when `settings:capacityPerSlot` is missing by surfacing the same clear plugin-settings configuration error style as `getTokenSecret`, instead of silently treating an unconfigured install as zero-capacity/full
-- [ ] 5.7 Close all mapped Linear issues; final epic comment on PRO-848
+- [x] 5.7 PRO-860: align reservation capacity unique-index grain to per-hold rows and fail loud when claim surveys hit the query cap instead of silently undercounting
+- [ ] 5.8 Close all mapped Linear issues; final epic comment on PRO-848

@@ -22,7 +22,7 @@ describe("@carte/reservations sandboxed manifest", () => {
     expect(manifest).toContain('"carte_reservations"');
     expect(manifest).toContain('"carte_reservation_blocks"');
     expect(manifest).toContain('"carte_reservation_capacity"');
-    expect(manifest).toContain('"indexes": ["slotKey", "date", "slot"]');
+    expect(manifest).toContain('"indexes": ["slotKey", "date", "slot", "holdKey"]');
     expect(manifest).toContain('"uniqueIndexes": ["holdKey"]');
     expect(manifest).not.toContain('"uniqueIndexes": ["slotKey"]');
   });
