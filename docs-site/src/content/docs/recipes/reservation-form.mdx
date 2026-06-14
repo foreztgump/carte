@@ -8,20 +8,17 @@ sidebar:
 This recipe adds an end-to-end reservation flow: guests submit a request through
 [`@carte/views`](/plugins/carte-views/) and
 [`@carte/reservations`](/plugins/carte-reservations/) creates a pending
-reservation, sends confirmation email in `ctx.waitUntil`, and confirms the
-booking through a tokenized route.
+reservation, settles notification work in-request through the sandbox adapter,
+and confirms the booking through a tokenized route.
 
 ## 1. Configure reservation settings
 
-In EmDash settings for `@carte/reservations`, set the capacity and email values
-used by your restaurant:
+In EmDash settings for `@carte/reservations`, set the token secret and the
+default seat capacity used by your restaurant:
 
 ```text
-defaultPartySize: 2
-maxPartySize: 8
-holdTtlSeconds: 600
-hostEmail: host@example.test
-fromEmail: reservations@example.test
+tokenSecret: paste-a-long-random-secret     (secret)
+capacityPerSlot: 24
 ```
 
 Expected output:
@@ -31,7 +28,8 @@ Settings saved for @carte/reservations
 ```
 
 The plugin declares `content:read`, `content:write`, and `email:send`. Capacity
-holds expire after ten minutes and capacity updates are atomic.
+holds expire after ten minutes and are claimed through the storage-backed
+capacity path.
 
 ## 2. Add the form page
 
@@ -59,15 +57,14 @@ Expected output from the Astro dev server:
 ## 3. Submit a reservation
 
 ```bash
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-reservations/submit \
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-reservations/submit \
   -H 'content-type: application/json' \
   -d '{
     "guestName": "Ada Lovelace",
-    "email": "ada@example.test",
+    "guestEmail": "ada@example.test",
     "date": "2026-06-12",
-    "time": "19:00",
-    "partySize": 2,
-    "notes": "Window table if available"
+    "slot": "19:00",
+    "partySize": 2
   }'
 ```
 
@@ -76,21 +73,22 @@ Expected output:
 ```json
 {
   "ok": true,
-  "status": "pending",
-  "token": "..."
+  "status": 200,
+  "reservationId": "...",
+  "confirmationToken": "..."
 }
 ```
 
-The route creates a pending reservation, decrements capacity, and queues host
-and guest email work with `ctx.waitUntil`.
+The route creates a pending reservation, claims capacity, and settles the guest
+received email before the sandboxed request completes.
 
 ## 4. Confirm the token round-trip
 
-Open the confirmation link sent to the guest, or use the token returned by your
-test submission:
+Open the confirmation link sent to the guest, or use the `confirmationToken`
+returned by your test submission:
 
 ```bash
-curl -s 'http://localhost:8787/_emdash/api/plugins/carte-reservations/confirm?token=PASTE_TOKEN_HERE'
+curl -s 'http://localhost:4321/_emdash/api/plugins/carte-reservations/confirm?token=PASTE_TOKEN_HERE'
 ```
 
 Expected output:
@@ -98,14 +96,15 @@ Expected output:
 ```json
 {
   "ok": true,
-  "status": "confirmed"
+  "status": 200,
+  "reservationId": "..."
 }
 ```
 
 ## 5. Cancel by token when needed
 
 ```bash
-curl -s 'http://localhost:8787/_emdash/api/plugins/carte-reservations/cancel-by-token?token=PASTE_TOKEN_HERE'
+curl -s 'http://localhost:4321/_emdash/api/plugins/carte-reservations/cancel-by-token?token=PASTE_TOKEN_HERE'
 ```
 
 Expected output:
@@ -113,9 +112,10 @@ Expected output:
 ```json
 {
   "ok": true,
-  "status": "cancelled"
+  "status": 200,
+  "reservationId": "..."
 }
 ```
 
-Cancellation restores capacity and queues cancellation email outside the
-response path.
+Cancellation restores capacity and settles the cancellation email during the
+request.

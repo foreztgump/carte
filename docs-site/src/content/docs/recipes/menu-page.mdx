@@ -74,7 +74,7 @@ const dinnerMenu = {
           price: 15,
           currency: "USD",
           allergens: [],
-          dietaryTags: ["vegan", "gluten-free"],
+          dietaryTags: ["vegan", "glutenFree"],
         },
       ],
     },
@@ -98,7 +98,7 @@ Expected output from the Astro dev server:
 ```bash
 pnpm astro dev --host 127.0.0.1
 curl -s http://127.0.0.1:4321/menu | grep "Squash Risotto"
-curl -s http://localhost:8787/_emdash/api/plugins/carte-core/schema-jsonld | grep "MenuItem"
+curl -s http://localhost:4321/_emdash/api/plugins/carte-core/schema-jsonld | grep "MenuItem"
 ```
 
 Expected output:
