@@ -57,4 +57,5 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [x] 5.7 PRO-860: align reservation capacity unique-index grain to per-hold rows and fail loud when claim surveys hit the query cap instead of silently undercounting
 - [x] 5.8 PRO-856: resolve native AI admin identity from EmDash `/auth/me` plus the current deployment origin before mounting the chat panel; keep dataset identity support for host-provided roots; fail closed with no history/stream calls when identity is absent
 - [x] 5.9 PRO-865: refresh docs-site recipe pages outside the graded install pages: `first-order.mdx` now documents the Tender-hosted EmDash 0.18 checkout model with the three sandboxed Carte plugins, recipe curl examples use port 4321, and stale Stripe CLI webhook / deleted route / post-response-runtime wording is gone from recipes
-- [ ] 5.10 Close all mapped Linear issues; final epic comment on PRO-848
+- [x] 5.10 PRO-860: fail loud when reservation block surveys hit the query cap, and reject non-finite or negative capacityPerSlot/capacityOverride values before seat math
+- [ ] 5.11 Close all mapped Linear issues; final epic comment on PRO-848
