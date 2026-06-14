@@ -20,7 +20,7 @@
 **Reviewer:** PR-Agent local
 **Risk Classification:** standard
 **Review path:** `.factory-state/pr-agent-review-28.md`
-**Comments Posted:** 0
+**Comments Posted:** 1
 
 - No findings.
 
