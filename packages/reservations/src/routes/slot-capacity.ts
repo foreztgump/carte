@@ -4,8 +4,9 @@ import type { ReservationRouteContext } from "./types.js";
 const CAPACITY_SETTING_KEY = "settings:capacityPerSlot";
 const BLOCKS_COLLECTION = "carte_reservation_blocks";
 const SLOT_BLOCK_QUERY_LIMIT = 100;
-const DEFAULT_SLOT_CAPACITY = 0;
 const CLOSED_CAPACITY = 0;
+const MISSING_CAPACITY_ERROR =
+  "Reservations plugin requires capacityPerSlot to be configured in plugin settings";
 
 /** One closure/override row, mirrored from the read-time `ReservationBlock` shape. */
 interface SlotBlockRow {
@@ -39,7 +40,8 @@ export async function resolveSlotCapacity(
 
 async function readGlobalCapacity(ctx: ReservationRouteContext): Promise<number> {
   const configured = await ctx.kv.get<number>(CAPACITY_SETTING_KEY);
-  return typeof configured === "number" ? configured : DEFAULT_SLOT_CAPACITY;
+  if (typeof configured !== "number") throw new Error(MISSING_CAPACITY_ERROR);
+  return configured;
 }
 
 async function readOverlappingBlocks(
