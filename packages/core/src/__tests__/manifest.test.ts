@@ -11,7 +11,7 @@ import { routes } from "../routes.js";
 import type { ContentAccess, ContentHookEvent, ContentItem, KVAccess, RouteContext } from "emdash";
 import type { PluginContext, SandboxedRouteContext } from "emdash/plugin";
 
-const EXPECTED_CAPABILITIES = ["content:read", "content:write", "media:read"];
+const EXPECTED_CAPABILITIES = ["content:read", "content:write"];
 const EXPECTED_CORE_COLLECTIONS = [
   "carte_audit_log",
   "carte_closures",

@@ -15,8 +15,8 @@
   "repo": "https://github.com/NetworkReef/carte",
 
   // Trust contract: read menus/orders/reservations content, write erasure +
-  // audit records, read media for menu imagery. Minimal canonical set.
-  "capabilities": ["content:read", "content:write", "media:read"],
+  // audit records. Minimal canonical set.
+  "capabilities": ["content:read", "content:write"],
   "allowedHosts": [],
 
   // Collection schema surface — keep this list in lockstep with every
