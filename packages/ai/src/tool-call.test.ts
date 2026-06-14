@@ -115,14 +115,24 @@ describe("toolCallRoute", () => {
       { allowedHost: "[::1]", url: "http://[::1]:8080/debug" },
       { allowedHost: "[::ffff:7f00:1]", url: "http://[::ffff:127.0.0.1]:8080/debug" },
       { allowedHost: "[::ffff:a00:1]", url: "http://[::ffff:10.0.0.1]/debug" },
+      { allowedHost: "[::ffff:ac10:1]", url: "http://[::ffff:172.16.0.1]/debug" },
+      { allowedHost: "[::ffff:c0a8:1]", url: "http://[::ffff:192.168.0.1]/debug" },
       { allowedHost: "[fc00::1]", url: "http://[fc00::1]/debug" },
       { allowedHost: "[fd12:3456::1]", url: "http://[fd12:3456::1]/debug" },
       { allowedHost: "[fe80::1]", url: "http://[fe80::1]/debug" },
     ];
 
     for (const { allowedHost, url } of privateIpv6Urls) {
+      expect(new URL(url).hostname).toBe(allowedHost);
       expect(isAllowedToolUrl(url, [allowedHost])).toBe(false);
     }
+  });
+
+  it("allows explicitly allow-listed public IPv6 tool URLs", () => {
+    const publicIpv6Url = "https://[2606:4700:4700::1111]/dns-query";
+    const normalizedHostname = new URL(publicIpv6Url).hostname;
+
+    expect(isAllowedToolUrl(publicIpv6Url, [normalizedHostname])).toBe(true);
   });
 
   it("keeps documented KV key prefixes unique for pending calls, undo, and audit", () => {

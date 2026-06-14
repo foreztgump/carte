@@ -50,7 +50,7 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 
 - [ ] 5.1 PRO-764: align react/react-dom pins; root `pnpm.overrides`; `resolve.dedupe` in vitest configs; un-skip TODO(PRO-CARTE-AI-REACT19) tests, confirm green
 - [ ] 5.2 PRO-770: sync pr-agent env-var pins in mission AGENTS.md from `~/.factory/skills/pr-agent-runner/SKILL.md`
-- [ ] 5.3 PRO-769: IPv6 coverage (`::1`, `::ffff:` mapped, ULA `fc00::/7`, link-local `fe80::/10`) in `isLocalOrPrivateHost` + tests
+- [x] 5.3 PRO-769: IPv6 coverage (`::1`, `::ffff:` mapped, ULA `fc00::/7`, link-local `fe80::/10`) in `isLocalOrPrivateHost` + tests
 - [ ] 5.4 PRO-496: resolve deferred core collection schema surface per issue scope
 - [x] 5.5 PRO-860: thread per-slot `capacityOverride` blocks into write-time `resolveSlotCapacity` so claim-path ceilings match read-time advertisement; move expiry sweep + dead received-email dedup write off the accepted-submit critical path (9-subrequest worst case, 1 of headroom)
 - [x] 5.6 PRO-860: fail loud when `settings:capacityPerSlot` is missing by surfacing the same clear plugin-settings configuration error style as `getTokenSecret`, instead of silently treating an unconfigured install as zero-capacity/full
