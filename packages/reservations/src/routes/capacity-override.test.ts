@@ -11,6 +11,8 @@ const GLOBAL_CAPACITY = 50;
 const OVERRIDE_SEATS = 2;
 const SLOT_START = "2026-05-06T18:00:00.000Z";
 const SLOT_END = "2026-05-06T18:30:00.000Z";
+const MISSING_CAPACITY_ERROR =
+  "Reservations plugin requires capacityPerSlot to be configured in plugin settings";
 
 interface BlockRow {
   startsAt: string;
@@ -76,10 +78,25 @@ describe("write-time capacity honors per-slot block overrides", () => {
     expect(writeCeiling).toBe(OVERRIDE_SEATS);
     expect(advertised?.capacity).toBe(OVERRIDE_SEATS);
   });
+
+  it("throws a configuration error when capacityPerSlot is not configured", async () => {
+    const ctx = makeContext([], { omitCapacitySetting: true });
+    const store = getCapacityStore(ctx);
+
+    await expect(store.claim({ ...SLOT, partySize: 1, holdId: "unconfigured" })).rejects.toThrow(
+      MISSING_CAPACITY_ERROR,
+    );
+  });
 });
 
-function makeContext(blocks: BlockRow[]): ReservationRouteContext {
-  const kv = new Map<string, unknown>([["settings:capacityPerSlot", GLOBAL_CAPACITY]]);
+function makeContext(
+  blocks: BlockRow[],
+  options: { capacityPerSlot?: number; omitCapacitySetting?: boolean } = {},
+): ReservationRouteContext {
+  const kv = new Map<string, unknown>();
+  if (options.omitCapacitySetting !== true) {
+    kv.set("settings:capacityPerSlot", options.capacityPerSlot ?? GLOBAL_CAPACITY);
+  }
   const capacityRows = new Map<string, unknown>();
   const storage = {
     carte_reservation_capacity: collection(capacityRows),
