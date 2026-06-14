@@ -1,0 +1,14 @@
+== visibility ==
+{"visibility":"PUBLIC"}
+== security_and_analysis ==
+{"dependabot_security_updates":{"status":"disabled"},"secret_scanning":{"status":"disabled"},"secret_scanning_non_provider_patterns":{"status":"disabled"},"secret_scanning_push_protection":{"status":"disabled"},"secret_scanning_validity_checks":{"status":"disabled"}}
+== secret scanning alerts count ==
+{"message":"Secret scanning is disabled on this repository.","documentation_url":"https://docs.github.com/rest/secret-scanning/secret-scanning#list-secret-scanning-alerts-for-a-repository","status":"404"}gh: Secret scanning is disabled on this repository. (HTTP 404)
+== enable secret scanning started 2026-06-14T06:49:13Z ==
+{"dependabot_security_updates":{"status":"disabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_non_provider_patterns":{"status":"disabled"},"secret_scanning_push_protection":{"status":"enabled"},"secret_scanning_validity_checks":{"status":"disabled"}}
+== reverify visibility ==
+{"visibility":"PUBLIC"}
+== reverify security_and_analysis ==
+{"dependabot_security_updates":{"status":"disabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_non_provider_patterns":{"status":"disabled"},"secret_scanning_push_protection":{"status":"enabled"},"secret_scanning_validity_checks":{"status":"disabled"}}
+== reverify secret scanning alerts count ==
+0

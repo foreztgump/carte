@@ -1,0 +1,7 @@
+== gate check ==
+command: grep -q '^verdict: GO$' openspec/changes/pro-895-public-repo-audit/validation/04-audit-signoff.md
+result: passed before visibility flip
+== approved command ==
+gh repo edit foreztgump/carte --visibility public --accept-visibility-change-consequences
+== flip started 2026-06-14T06:46:59Z ==
+exit: 0

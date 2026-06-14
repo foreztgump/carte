@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. The format 
 
 ## Unreleased — R1 packaging
 
+### Changed — public repository readiness
+
+- Completed the PRO-895 pre-public secrets/URL audit and made
+  `foreztgump/carte` public for npm provenance/source links.
+
 ### Added — build scripts for native + library packages
 
 - `@carte/orders-admin` and `@carte/views` now ship a `build` script (tsdown)

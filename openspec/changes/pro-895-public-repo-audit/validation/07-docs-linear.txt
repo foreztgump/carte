@@ -1,0 +1,7 @@
+== stale private-repo copy check ==
+no stale private-repo copy (clean)
+== changelog PRO-895 entry ==
+9:- Completed the PRO-895 pre-public secrets/URL audit and made
+== linear update note ==
+Linear PRO-895 has label repo:carte and progress comment c436be4f-8a47-4099-ad9c-9e4f7fa8eb0a was posted with the validation evidence path.
+Final Linear status update to In Review/Done is deferred until PR URL exists in workflow Step 11/12.
