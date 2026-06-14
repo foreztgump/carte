@@ -54,6 +54,12 @@ jobs:
 
       - run: pnpm -r test
 
+      # Grep gates (PRO-848 acceptance #3): fail if obsolete pre-0.18 plugin
+      # patterns (sandbox-entry, tender:payment, atomicDecrement, adminEntry,
+      # plugin-def `as never`, "trusted", etc.) reappear in plugin source.
+      - name: Grep gates (obsolete plugin patterns)
+        run: ./scripts/check-grep-gates.sh
+
       - name: AgentShield scan
         run: |
           npx --yes ecc-agentshield scan -p packages/
