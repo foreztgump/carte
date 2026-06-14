@@ -10,8 +10,21 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC_GLOB="packages/*/src"
+cd "$ROOT"
 status=0
+
+# Resolve the plugin-source roots once, from the repo root. Fail closed: if the
+# glob matches nothing (layout changed, run from the wrong tree), abort rather
+# than silently passing — a gate that scans zero files is worse than no gate.
+SRC_GLOB="packages/*/src"
+SRC_DIRS=()
+for d in $SRC_GLOB; do
+  [[ -d "$d" ]] && SRC_DIRS+=("$d")
+done
+if [[ "${#SRC_DIRS[@]}" -eq 0 ]]; then
+  echo "::error::grep gate ABORTED — no plugin-source dirs matched '$SRC_GLOB' under $ROOT" >&2
+  exit 1
+fi
 
 # Banned tokens with no legitimate use anywhere in plugin source.
 HARD_BANS=(
@@ -40,7 +53,7 @@ report() {
 }
 
 for pat in "${HARD_BANS[@]}"; do
-  if hits="$(cd "$ROOT" && grep -rEn --include='*.ts' --include='*.tsx' "$pat" $SRC_GLOB 2>/dev/null)"; then
+  if hits="$(grep -rEn --include='*.ts' --include='*.tsx' "$pat" "${SRC_DIRS[@]}" 2>/dev/null)"; then
     report "$pat" "$hits"
   fi
 done
@@ -48,7 +61,7 @@ done
 for entry in "${SCOPED_BANS[@]}"; do
   pat="${entry%%|||*}"
   allow="${entry##*|||}"
-  if hits="$(cd "$ROOT" && grep -rEn --include='*.ts' --include='*.tsx' "$pat" $SRC_GLOB 2>/dev/null | grep -Ev "$allow")"; then
+  if hits="$(grep -rEn --include='*.ts' --include='*.tsx' "$pat" "${SRC_DIRS[@]}" 2>/dev/null | grep -Ev "$allow")"; then
     report "$pat (excluding /$allow/)" "$hits"
   fi
 done
