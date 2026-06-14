@@ -55,4 +55,5 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 - [x] 5.5 PRO-860: thread per-slot `capacityOverride` blocks into write-time `resolveSlotCapacity` so claim-path ceilings match read-time advertisement; move expiry sweep + dead received-email dedup write off the accepted-submit critical path (9-subrequest worst case, 1 of headroom)
 - [x] 5.6 PRO-860: fail loud when `settings:capacityPerSlot` is missing by surfacing the same clear plugin-settings configuration error style as `getTokenSecret`, instead of silently treating an unconfigured install as zero-capacity/full
 - [x] 5.7 PRO-860: align reservation capacity unique-index grain to per-hold rows and fail loud when claim surveys hit the query cap instead of silently undercounting
-- [ ] 5.8 Close all mapped Linear issues; final epic comment on PRO-848
+- [x] 5.8 PRO-856: resolve native AI admin identity from EmDash `/auth/me` plus the current deployment origin before mounting the chat panel; keep dataset identity support for host-provided roots; fail closed with no history/stream calls when identity is absent
+- [ ] 5.9 Close all mapped Linear issues; final epic comment on PRO-848

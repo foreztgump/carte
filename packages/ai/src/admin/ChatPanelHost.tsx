@@ -14,6 +14,7 @@ export interface ChatPanelHostProps {
 
 const headersFor = (workspaceId: string): Record<string, string> => ({
   "Content-Type": "application/json",
+  "X-EmDash-Request": "1",
   "X-Workspace-Id": workspaceId,
 });
 

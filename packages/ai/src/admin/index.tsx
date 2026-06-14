@@ -1,27 +1,23 @@
-import { createElement, type ReactElement } from "react";
+import { createElement, useEffect, useState, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 
 import type { PluginAdminExports } from "emdash";
 
+import {
+  ADMIN_IDENTITY_UNAVAILABLE_MESSAGE,
+  identityFromElementDataset,
+  resolveAdminIdentity,
+  type AdminIdentity,
+} from "./admin-identity.js";
 import { ChatPanelHost } from "./ChatPanelHost.js";
 
 const ROOT_ID = "carte-ai-root";
 const CHAT_PATH = "/carte-ai";
-const ANONYMOUS_USER = "anonymous";
-const NO_WORKSPACE = "";
-
-interface AdminIdentity {
-  userId: string;
-  workspaceId: string;
-}
-
-const identityFrom = (element: HTMLElement): AdminIdentity => ({
-  userId: element.dataset.userId ?? ANONYMOUS_USER,
-  workspaceId: element.dataset.workspaceId ?? NO_WORKSPACE,
-});
 
 export const mountCarteAiAdmin = (element: HTMLElement): void => {
-  createRoot(element).render(createElement(ChatPanelHost, identityFrom(element)));
+  const identity = identityFromElementDataset(element);
+  const component = identity ? createElement(ChatPanelHost, identity) : createElement(CarteAiPage);
+  createRoot(element).render(component);
 };
 
 const rootElement = typeof document === "undefined" ? null : document.getElementById(ROOT_ID);
@@ -34,10 +30,39 @@ if (rootElement) {
 // module namespace and reads `pluginAdmins[id].pages` (a NAMED export), then
 // renders each page via `jsx(PluginComponent, {})` — so values must be
 // COMPONENT FUNCTIONS, not React elements. The registry render path passes no
-// props, so the chat page defaults to an anonymous, workspace-less identity
-// (mirroring the prior element). See VERIFIED-PLATFORM §5.1.
-const CarteAiPage = (): ReactElement =>
-  createElement(ChatPanelHost, { userId: ANONYMOUS_USER, workspaceId: NO_WORKSPACE });
+// props (VERIFIED-PLATFORM §5.1), so the page resolves the current admin user
+// from EmDash's `/auth/me` endpoint and scopes chat KV to the current origin.
+const CarteAiPage = (): ReactElement => {
+  const [identity, setIdentity] = useState<AdminIdentity | null>();
+
+  useEffect(() => {
+    let active = true;
+    void resolveAdminIdentity().then((resolved) => {
+      if (active) {
+        setIdentity(resolved);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (identity === undefined) {
+    return createElement("p", { role: "status" }, "Loading Carte AI…");
+  }
+  if (identity === null) {
+    return createElement(AdminIdentityUnavailable);
+  }
+  return createElement(ChatPanelHost, identity);
+};
+
+const AdminIdentityUnavailable = (): ReactElement =>
+  createElement(
+    "section",
+    { "aria-labelledby": "carte-ai-title" },
+    createElement("h1", { id: "carte-ai-title" }, "Carte AI"),
+    createElement("p", null, ADMIN_IDENTITY_UNAVAILABLE_MESSAGE),
+  );
 
 // The platform `PluginAdminExports.pages` type is annotated `JSX.Element` but
 // the runtime invokes the values as components (VERIFIED-PLATFORM §5.1) — this
