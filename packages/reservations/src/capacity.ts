@@ -11,9 +11,10 @@ const CLAIM_QUERY_LIMIT = 1000;
  * mutually excludes the count-then-insert sequence for same-isolate
  * concurrency. RESIDUAL RISK: Cloudflare may run multiple isolates for one
  * plugin; in that topology no in-process scheme serializes cross-isolate
- * claims. The manifest `uniqueIndexes: ["slotKey"]` entry is the declared
- * future backstop for that case (not enforced on the static harness path —
- * VERIFIED-PLATFORM §1).
+ * claims, so a slot that reaches the survey cap fails loud rather than
+ * authorizing from a truncated count. The manifest `uniqueIndexes:
+ * ["holdKey"]` entry matches the row grain and backstops duplicate holds if
+ * storage uniqueness is enforced in a future runner.
  */
 const slotClaimQueues = new Map<string, Promise<unknown>>();
 
@@ -24,6 +25,13 @@ export class CapacityExceededError extends Error {
   constructor(key: string) {
     super(`No capacity remaining for ${key}`);
     this.name = "CapacityExceededError";
+  }
+}
+
+export class CapacitySurveyLimitExceededError extends Error {
+  constructor(slotKey: string) {
+    super(`Cannot safely count ${slotKey}: capacity claim query limit reached`);
+    this.name = "CapacitySurveyLimitExceededError";
   }
 }
 
@@ -45,14 +53,14 @@ export interface ReservationHold extends CapacityRequest {
 
 /**
  * One persisted seat claim. Authoritative capacity lives in the D1-backed
- * storage collection as these rows — never in KV. `slotKey` carries the
- * manifest `uniqueIndexes` intent: it is the declared future backstop for
- * cross-isolate races, not enforced on the static harness path
- * (VERIFIED-PLATFORM §1). Same-isolate race safety comes from the
- * module-scoped per-slot serialization below (VERIFIED-PLATFORM §9).
+ * storage collection as these rows — never in KV. `holdKey` carries the
+ * manifest `uniqueIndexes` intent at the same grain as each row. `slotKey`
+ * remains the query key for seat counts; same-isolate race safety comes from
+ * the module-scoped per-slot serialization below (VERIFIED-PLATFORM §9).
  */
 export interface CapacityClaimRow {
   kind: "claim";
+  holdKey: string;
   slotKey: string;
   date: string;
   slot: string;
@@ -110,15 +118,11 @@ export function cancelHold(store: CapacityStore, holdId: string, waitUntil: Wait
   waitUntil(store.release(holdId));
 }
 
-/** Survey of one slot's persisted claims: live seat total, duplicate flag, expired rows. */
+/** Survey of one slot's live persisted claims: seat total and duplicate flag. */
 interface SlotSurvey {
   duplicate: boolean;
   activeSeats: number;
-  expiredKeys: string[];
 }
-
-/** Max expired claim rows swept per claim — bounds the per-invocation subrequest cost. */
-const MAX_EXPIRY_SWEEP = 1;
 
 const isExpired = (row: CapacityClaimRow, now: number): boolean =>
   new Date(row.expiresAt).getTime() <= now;
@@ -134,9 +138,8 @@ const isExpired = (row: CapacityClaimRow, now: number): boolean =>
  * plugin isolate (workerd reuses one; VERIFIED-PLATFORM §9) never oversell,
  * and a duplicate hold id resolves to {@link CapacityExceededError}, never a
  * 500. RESIDUAL RISK: if Cloudflare runs multiple isolates for this plugin,
- * cross-isolate claims are not serialized; the manifest
- * `uniqueIndexes: ["slotKey"]` is the declared future backstop (not enforced
- * on the static harness path — VERIFIED-PLATFORM §1).
+ * cross-isolate claims are not serialized; a saturated survey fails loud to
+ * avoid silently undercounting a truncated slot.
  */
 export class StorageCapacityStore implements CapacityStore {
   constructor(
@@ -165,27 +168,30 @@ export class StorageCapacityStore implements CapacityStore {
       throw new CapacityExceededError(hold.capacityKey);
     }
     await this.collection.put(hold.holdKey, toClaimRow(hold));
-    await this.sweepExpired(survey.expiredKeys);
     return hold;
   }
 
-  /** Single query that derives the live seat total, duplicate flag, and expired rows. */
+  /**
+   * Single query that derives the live seat total and duplicate flag. Expired
+   * rows are excluded lazily (not counted) and are NOT deleted on any sandboxed
+   * handler path: the accepted-claim path performs no delete (it would breach
+   * the 10-subrequest Cloudflare cap — AGENTS.md §8 "do not try to fit the
+   * ceiling"), and each row is removed by its own {@link release}. Lazy
+   * exclusion keeps seat math correct regardless of leftover expired rows.
+   */
   private async surveySlot(slotKey: string, holdKey: string): Promise<SlotSurvey> {
     const result = await this.collection.query({ where: { slotKey }, limit: CLAIM_QUERY_LIMIT });
+    if (result.items.length >= CLAIM_QUERY_LIMIT) {
+      throw new CapacitySurveyLimitExceededError(slotKey);
+    }
     const now = Date.now();
-    const survey: SlotSurvey = { duplicate: false, activeSeats: 0, expiredKeys: [] };
+    const survey: SlotSurvey = { duplicate: false, activeSeats: 0 };
     for (const { id, data } of result.items) {
-      if (isExpired(data, now)) survey.expiredKeys.push(id);
+      if (isExpired(data, now)) continue;
       else if (id === holdKey) survey.duplicate = true;
       else survey.activeSeats += data.partySize;
     }
     return survey;
-  }
-
-  private async sweepExpired(expiredKeys: string[]): Promise<void> {
-    for (const key of expiredKeys.slice(0, MAX_EXPIRY_SWEEP)) {
-      await this.collection.delete(key);
-    }
   }
 }
 
@@ -259,12 +265,14 @@ class InMemoryCapacityCollection implements CapacityCollection {
 
   async query(options?: {
     where?: Record<string, unknown>;
+    limit?: number;
   }): Promise<{ items: Array<{ id: string; data: CapacityClaimRow }> }> {
     const slotKey = options?.where?.slotKey;
+    const limit = options?.limit;
     const items = [...this.rows.entries()]
       .filter(([, data]) => slotKey === undefined || data.slotKey === slotKey)
       .map(([id, data]) => ({ id, data }));
-    return { items };
+    return { items: limit === undefined ? items : items.slice(0, limit) };
   }
 
   async claimedSeats(slotKey: string): Promise<number> {
@@ -285,6 +293,7 @@ function toHold(request: CapacityRequest): ReservationHold {
 function toClaimRow(hold: ReservationHold): CapacityClaimRow {
   return {
     kind: "claim",
+    holdKey: hold.holdKey,
     slotKey: hold.capacityKey,
     date: hold.date,
     slot: hold.slot,

@@ -26,8 +26,8 @@
       "indexes": ["startsAt", "endsAt", "scope"],
     },
     "carte_reservation_capacity": {
-      "indexes": ["slotKey", "date", "slot"],
-      "uniqueIndexes": ["slotKey"],
+      "indexes": ["slotKey", "date", "slot", "holdKey"],
+      "uniqueIndexes": ["holdKey"],
     },
   },
 

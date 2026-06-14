@@ -104,6 +104,14 @@ const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 const PHONE_PATTERN = /(?:\+?\d|\(\d{3}\))[\d\s().-]{6,}\d/g;
 const HTTP_URL_PROTOCOLS = new Set(["http:", "https:"]);
 const LOCALHOST_NAMES = new Set(["localhost", "0.0.0.0"]);
+const IPV4_MAPPED_IPV6_PREFIX = "::ffff:";
+const IPV6_HEXTET_RADIX = 16;
+const IPV6_UNIQUE_LOCAL_MASK = 0xfe00;
+const IPV6_UNIQUE_LOCAL_PREFIX = 0xfc00;
+const IPV6_LINK_LOCAL_MASK = 0xffc0;
+const IPV6_LINK_LOCAL_PREFIX = 0xfe80;
+const OCTET_BIT_SHIFT = 8;
+const OCTET_MASK = 0xff;
 
 /**
  * Documented KV key prefixes for tool-call state. Keep each prefix unique so
@@ -662,6 +670,21 @@ function parseUrl(url: string): URL | null {
 }
 
 function isLocalOrPrivateHost(hostname: string): boolean {
+  const normalizedHostname = stripIpv6Brackets(hostname);
+  if (normalizedHostname.includes(":")) {
+    return isLocalOrPrivateIpv6Host(normalizedHostname);
+  }
+  return isLocalOrPrivateIpv4Host(normalizedHostname);
+}
+
+function stripIpv6Brackets(hostname: string): string {
+  if (hostname.startsWith("[") && hostname.endsWith("]")) {
+    return hostname.slice(1, -1);
+  }
+  return hostname;
+}
+
+function isLocalOrPrivateIpv4Host(hostname: string): boolean {
   return (
     LOCALHOST_NAMES.has(hostname) ||
     hostname.startsWith("127.") ||
@@ -669,6 +692,53 @@ function isLocalOrPrivateHost(hostname: string): boolean {
     hostname.startsWith("192.168.") ||
     isPrivate172Host(hostname)
   );
+}
+
+function isLocalOrPrivateIpv6Host(hostname: string): boolean {
+  const firstHextet = firstIpv6Hextet(hostname);
+  return (
+    hostname === "::1" ||
+    isMappedLocalOrPrivateIpv4Host(hostname) ||
+    (firstHextet & IPV6_UNIQUE_LOCAL_MASK) === IPV6_UNIQUE_LOCAL_PREFIX ||
+    (firstHextet & IPV6_LINK_LOCAL_MASK) === IPV6_LINK_LOCAL_PREFIX
+  );
+}
+
+function firstIpv6Hextet(hostname: string): number {
+  const [firstSegment = ""] = hostname.split(":");
+  if (firstSegment === "") {
+    return 0;
+  }
+  return parseIpv6Hextet(firstSegment) ?? 0;
+}
+
+function isMappedLocalOrPrivateIpv4Host(hostname: string): boolean {
+  if (!hostname.startsWith(IPV4_MAPPED_IPV6_PREFIX)) {
+    return false;
+  }
+  const mappedHost = ipv4HostFromMappedIpv6Tail(hostname.slice(IPV4_MAPPED_IPV6_PREFIX.length));
+  return mappedHost !== null && isLocalOrPrivateIpv4Host(mappedHost);
+}
+
+function ipv4HostFromMappedIpv6Tail(tail: string): string | null {
+  if (tail.includes(".")) {
+    return tail;
+  }
+  const [highPart, lowPart] = tail.split(":");
+  if (highPart === undefined || lowPart === undefined) {
+    return null;
+  }
+  const high = parseIpv6Hextet(highPart);
+  const low = parseIpv6Hextet(lowPart);
+  if (high === null || low === null) {
+    return null;
+  }
+  return `${high >> OCTET_BIT_SHIFT}.${high & OCTET_MASK}.${low >> OCTET_BIT_SHIFT}.${low & OCTET_MASK}`;
+}
+
+function parseIpv6Hextet(value: string): number | null {
+  const parsed = Number.parseInt(value, IPV6_HEXTET_RADIX);
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
 function isPrivate172Host(hostname: string): boolean {

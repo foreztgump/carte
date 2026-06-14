@@ -65,7 +65,11 @@ describe("@carte/ai native definePlugin shape (0.18)", () => {
     beforeEach(() => {
       vi.stubGlobal(
         "fetch",
-        vi.fn(async () => new Response(JSON.stringify({ messages: [] }))),
+        vi.fn(async (input: RequestInfo | URL) =>
+          String(input) === "/_emdash/api/auth/me"
+            ? Response.json({ data: { id: "admin-user-123" } })
+            : Response.json({ messages: [] }),
+        ),
       );
     });
 
@@ -73,9 +77,9 @@ describe("@carte/ai native definePlugin shape (0.18)", () => {
       vi.unstubAllGlobals();
     });
 
-    it("renders the chat panel UI from the named pages component", () => {
+    it("renders the chat panel UI from the named pages component", async () => {
       render(createElement(pages[CHAT_PATH]!));
-      expect(screen.getByRole("heading", { name: "Carte AI" })).toBeTruthy();
+      expect(await screen.findByRole("heading", { name: "Carte AI" })).toBeTruthy();
     });
   });
 });

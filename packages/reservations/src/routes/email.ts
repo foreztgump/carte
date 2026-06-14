@@ -41,15 +41,17 @@ export async function sendReservationEmailOnce(
 
 /**
  * Send for a freshly created reservation (submit). The reservationId is minted
- * per request, so the dedup record cannot pre-exist; skipping the pre-read
- * saves a subrequest against the sandbox's 10-subrequest budget.
+ * per request, so the dedup record can neither pre-exist nor ever be read again
+ * (confirm/cancel use distinct `kind` keys). Both the pre-read AND the dedup
+ * write are therefore skipped, keeping the accepted-submit path under the
+ * sandbox's 10-subrequest budget with headroom (AGENTS.md §8).
  */
 export async function sendNewReservationEmail(
   ctx: ReservationRouteContext,
   params: EmailParams,
 ): Promise<void> {
   if (ctx.email === undefined) return;
-  await deliverEmail(ctx, params, dedupKey(params));
+  await ctx.email.send(toMessage(params.reservation, params.kind));
 }
 
 async function deliverEmail(

@@ -10,12 +10,16 @@ const SLOT_FULL_STATUS = 409;
 /**
  * Subrequest audit (worst-case accepted submit, against the 10-subrequest
  * Cloudflare sandbox cap): rate-limit kv.get + kv.set (2, in plugin.ts) +
- * tokenSecret kv.get (1) + capacityPerSlot kv.get (1) + claim survey query (1)
- * + claim put (1) + one expiry-sweep delete (1) + reservations put (1) +
- * deferred email.send + kv.set (2) = 10 at the absolute ceiling, typically 9
- * (no expired row to sweep). The dedup pre-read is skipped on submit
- * (sendNewReservationEmail) because a freshly minted reservationId cannot
- * collide; the single-query survey replaced the old exists+query pair.
+ * tokenSecret kv.get (1) + capacityPerSlot kv.get (1) + block-override query
+ * (1) + claim survey query (1) + claim put (1) + reservations put (1) +
+ * deferred email.send (1) = 9, leaving 1 subrequest of headroom. Two ops were
+ * taken OFF this critical path per AGENTS.md "do not try to fit the ceiling":
+ * (a) the expiry-sweep delete is gone — the accepted claim relies on the
+ * survey's lazy expiry exclusion and never deletes a row (rows are removed by
+ * their own release); (b) the "received" email dedup kv.set is gone — that key
+ * is never read (confirm/cancel use distinct kinds), so the write was dead.
+ * Together these offset the new block-override query so threading per-slot
+ * overrides into the ceiling does not erode the budget.
  */
 export async function submitReservation(ctx: ReservationRouteContext): Promise<RouteResult> {
   const input = parseSubmitInput(ctx.input);

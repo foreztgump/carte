@@ -49,7 +49,13 @@ One milestone = one PR through `pr-agent-runner` (mission_dir set; 0 P0/P1 befor
 ## M5 — Bug cleanup (PRO-764, PRO-770, PRO-769, PRO-496)
 
 - [ ] 5.1 PRO-764: align react/react-dom pins; root `pnpm.overrides`; `resolve.dedupe` in vitest configs; un-skip TODO(PRO-CARTE-AI-REACT19) tests, confirm green
-- [ ] 5.2 PRO-770: sync pr-agent env-var pins in mission AGENTS.md from `~/.factory/skills/pr-agent-runner/SKILL.md`
-- [ ] 5.3 PRO-769: IPv6 coverage (`::1`, `::ffff:` mapped, ULA `fc00::/7`, link-local `fe80::/10`) in `isLocalOrPrivateHost` + tests
-- [ ] 5.4 PRO-496: resolve deferred core collection schema surface per issue scope
-- [ ] 5.5 Close all mapped Linear issues; final epic comment on PRO-848
+- [x] 5.2 PRO-770: sync pr-agent env-var pins in repo `AGENTS.md` from `~/.factory/skills/pr-agent-runner/SKILL.md` with documented pins/intent only, no live secrets
+- [x] 5.3 PRO-769: IPv6 coverage (`::1`, `::ffff:` mapped, ULA `fc00::/7`, link-local `fe80::/10`) in `isLocalOrPrivateHost` + tests
+- [x] 5.4 PRO-496: resolve deferred core collection schema surface per issue scope
+- [x] 5.5 PRO-860: thread per-slot `capacityOverride` blocks into write-time `resolveSlotCapacity` so claim-path ceilings match read-time advertisement; move expiry sweep + dead received-email dedup write off the accepted-submit critical path (9-subrequest worst case, 1 of headroom)
+- [x] 5.6 PRO-860: fail loud when `settings:capacityPerSlot` is missing by surfacing the same clear plugin-settings configuration error style as `getTokenSecret`, instead of silently treating an unconfigured install as zero-capacity/full
+- [x] 5.7 PRO-860: align reservation capacity unique-index grain to per-hold rows and fail loud when claim surveys hit the query cap instead of silently undercounting
+- [x] 5.8 PRO-856: resolve native AI admin identity from EmDash `/auth/me` plus the current deployment origin before mounting the chat panel; keep dataset identity support for host-provided roots; fail closed with no history/stream calls when identity is absent
+- [x] 5.9 PRO-865: refresh docs-site recipe pages outside the graded install pages: `first-order.mdx` now documents the Tender-hosted EmDash 0.18 checkout model with the three sandboxed Carte plugins, recipe curl examples use port 4321, and stale Stripe CLI webhook / deleted route / post-response-runtime wording is gone from recipes
+- [x] 5.10 PRO-860: fail loud when reservation block surveys hit the query cap, and reject non-finite or negative capacityPerSlot/capacityOverride values before seat math
+- [ ] 5.11 Close all mapped Linear issues; final epic comment on PRO-848

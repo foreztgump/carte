@@ -15,16 +15,54 @@
   "repo": "https://github.com/NetworkReef/carte",
 
   // Trust contract: read menus/orders/reservations content, write erasure +
-  // audit records, read media for menu imagery. Minimal canonical set.
-  "capabilities": ["content:read", "content:write", "media:read"],
+  // audit records. Minimal canonical set.
+  "capabilities": ["content:read", "content:write"],
   "allowedHosts": [],
 
-  // Plugin storage (ctx.storage) — core persists GDPR/allergen audit trail and
-  // its content writes via ctx.content; the audit log is queried by
-  // targetCollection/targetId/actor/action/timestamp.
+  // Collection schema surface — keep this list in lockstep with every
+  // ctx.content collection touched by core routes and hooks. EmDash 0.18's
+  // manifest schema exposes indexes/uniqueIndexes only; content field shapes
+  // remain validated in hooks and route code.
   "storage": {
     "carte_audit_log": {
       "indexes": ["actor", "action", "targetCollection", "targetId", "timestamp"],
+      "uniqueIndexes": [],
+    },
+    "carte_closures": {
+      "indexes": ["startsAt", "endsAt", "scope"],
+      "uniqueIndexes": [],
+    },
+    "carte_hours": {
+      "indexes": ["day", "opens", "closes"],
+      "uniqueIndexes": [["day", "opens", "closes"]],
+    },
+    "carte_menu_items": {
+      "indexes": ["section", "menus", "available", "unavailableUntil", "position", "name"],
+      "uniqueIndexes": [],
+    },
+    "carte_menu_sections": {
+      "indexes": ["menuId", "position", "name"],
+      "uniqueIndexes": [],
+    },
+    "carte_menus": {
+      "indexes": ["active", "position", "name", "slug"],
+      "uniqueIndexes": ["slug"],
+    },
+    "carte_orders": {
+      "indexes": ["status", "orderType", "email", "createdAt"],
+      "uniqueIndexes": ["orderNumber"],
+    },
+    "carte_reservations": {
+      "indexes": ["status", "slotStart", "guestEmail", "confirmationToken", "cancelToken"],
+      "uniqueIndexes": ["confirmationToken", "cancelToken"],
+    },
+    "carte_restaurants": {
+      "indexes": ["name", "locale", "slug"],
+      "uniqueIndexes": ["slug"],
+    },
+    "carte_settings": {
+      "indexes": ["key"],
+      "uniqueIndexes": ["key"],
     },
   },
 

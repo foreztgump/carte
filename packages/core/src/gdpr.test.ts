@@ -111,7 +111,11 @@ describe("@carte/core GDPR erasure route", () => {
       failed: [],
     });
     expect(updated).toHaveLength(2);
-    expect(updated[0]!.data).toMatchObject({
+    // gdprEraseRoute erases collections concurrently (Promise.all), so the order
+    // of `updated` pushes is non-deterministic. Select by collection, not index.
+    const reservationUpdate = updated.find((u) => u.collection === "carte_reservations");
+    expect(reservationUpdate).toBeDefined();
+    expect(reservationUpdate!.data).toMatchObject({
       guest: {
         email: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),
         name: expect.stringMatching(/^erased:[a-f0-9]{64}$/u),

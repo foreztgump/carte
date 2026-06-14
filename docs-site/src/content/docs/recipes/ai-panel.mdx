@@ -16,19 +16,30 @@ entries and ten-minute undo tokens.
 pnpm add @carte/ai
 ```
 
-Add the plugin to your EmDash plugin list:
+Register the native plugin in `plugins: []`. The verified harness shows the
+complete native descriptor, including the React admin module field; this excerpt
+keeps the install path focused:
 
 ```ts
-export default {
-  plugins: ["@carte/ai"],
-};
+function aiPlugin() {
+  return {
+    id: "carte-ai",
+    version: "0.3.0-rc.1",
+    entrypoint: "@carte/ai",
+    // React admin module: "@carte/ai/admin" (see harness/astro.config.mjs)
+  };
+}
+
+emdash({
+  plugins: [aiPlugin()],
+});
 ```
 
 Expected output when EmDash loads the manifest:
 
 ```text
-Loaded plugin @carte/ai
-Admin page registered at /carte-ai
+Loaded plugin carte-ai
+Admin page registered for /carte-ai
 ```
 
 ## 2. Save license and BYO LLM settings
@@ -61,7 +72,7 @@ snapshots, logs, or prompts.
 ## 3. Verify read tools
 
 ```bash
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-ai/tool-call \
   -H 'content-type: application/json' \
   -H 'x-workspace-id: demo-workspace' \
   -d '{
@@ -88,7 +99,7 @@ unless the user opts in for that turn at the tool-call boundary.
 Start a write action, such as a menu price update:
 
 ```bash
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-ai/tool-call \
   -H 'content-type: application/json' \
   -H 'x-workspace-id: demo-workspace' \
   -d '{
@@ -118,7 +129,7 @@ Expected output:
 Confirm only after reviewing the diff:
 
 ```bash
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-ai/tool-call \
   -H 'content-type: application/json' \
   -H 'x-workspace-id: demo-workspace' \
   -d '{
@@ -141,7 +152,7 @@ Expected output:
 ## 5. Undo within ten minutes
 
 ```bash
-curl -s -X POST http://localhost:8787/_emdash/api/plugins/carte-ai/tool-call \
+curl -s -X POST http://localhost:4321/_emdash/api/plugins/carte-ai/tool-call \
   -H 'content-type: application/json' \
   -H 'x-workspace-id: demo-workspace' \
   -d '{
