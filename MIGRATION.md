@@ -205,17 +205,15 @@ Install all three pieces for the rc:
 - `tender-stripe` (the Stripe provider whose settings surface is
   `@tender/stripe`)
 
-`@tender/sdk` is a peer dependency of `@carte/orders-backend`, so install it in
-the app root if your Tender install has not already provided it:
+**Important:** `@carte/orders-backend` bundles the Tender SDK client into its
+built `dist/` output. The published package is self-contained; you do NOT install
+`@tender/sdk` separately. Operators install and configure `tender-core` and
+`tender-stripe` when Tender is available; the bundled SDK is transparent to your
+site configuration.
 
-```sh
-pnpm add @tender/sdk@^0.1.0
-```
-
-This peer-dependency shape is the OQ-2 decision: Tender plugins provide the
-shared SDK, avoiding transitive duplication and matching the three-plugin ship
-model
-([PRO-735](https://linear.app/projects-linear/issue/PRO-735/resolve-oq-2-tendersdk-peer-vs-direct-dependency-for-carteordersbackend)).
+> **Note:** Tender SDK will eventually ship to npm as `@tender/sdk@^0.1.0`, but
+> that registry availability is not a prerequisite for this Carte release — the
+> SDK is inert until Tender plugins are installed and configured.
 
 ### 2. Update the Stripe dashboard webhook URL
 

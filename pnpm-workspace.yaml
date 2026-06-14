@@ -2,6 +2,5 @@ packages:
   - "packages/*"
   - "harness"
   - "harness/plugins/*"
-  - "../tender/packages/sdk"
   - "e2e/views/fixture"
   - "docs-site"
