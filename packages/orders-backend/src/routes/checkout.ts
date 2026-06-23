@@ -1,5 +1,6 @@
-import { createTenderClient } from "@tender/sdk";
 import type { RouteContext } from "emdash";
+
+import { tenderClientFromContext } from "./tender-client.js";
 
 // Subrequest audit: public checkout uses 1 KV get + 1 KV set for rate
 // limiting, 1 KV set for the cart hold, and normally 1 Tender charge fetch.
@@ -25,8 +26,6 @@ interface CheckoutInput {
 
 interface RuntimeSettings {
   settings?: {
-    tenderBaseUrl?: string;
-    tenderPluginToken?: string;
     currency?: string;
   };
 }
@@ -37,14 +36,14 @@ interface KvWithTtl {
 
 export interface CheckoutRouteResponse {
   checkoutUrl: string;
+  transactionId: string;
 }
 
 export const checkoutRoute = async (ctx: RouteContext): Promise<CheckoutRouteResponse> => {
   const input = validateCheckoutInput(ctx.input);
   await persistCartHold(ctx, input);
-  const tenderResponse = await createTenderCharge(ctx, input);
 
-  return { checkoutUrl: tenderResponse.checkoutUrl };
+  return createTenderCharge(ctx, input);
 };
 
 const validateCheckoutInput = (input: unknown): CheckoutInput => {
@@ -97,8 +96,8 @@ const persistCartHold = async (ctx: RouteContext, input: CheckoutInput): Promise
 const createTenderCharge = async (
   ctx: RouteContext,
   input: CheckoutInput,
-): Promise<{ checkoutUrl: string }> => {
-  const response = await tenderClient(ctx).charge({
+): Promise<CheckoutRouteResponse> => {
+  const response = await tenderClientFromContext(ctx).charge({
     flow: "hosted",
     amount: checkoutAmount(input),
     currency: readCurrency(ctx),
@@ -110,30 +109,10 @@ const createTenderCharge = async (
     originatingPluginId: ORIGINATING_PLUGIN_ID,
   });
 
-  return parseTenderChargeResponse(response.checkoutUrl);
-};
-
-const requireHttp = (ctx: RouteContext) => {
-  if (!ctx.http) {
-    throw new Error("Checkout requires network access.");
-  }
-
-  return ctx.http;
-};
-
-const tenderClient = (ctx: RouteContext) => {
-  const settings = (ctx as RouteContext & RuntimeSettings).settings;
-  const baseUrl = settings?.tenderBaseUrl;
-  const pluginToken = settings?.tenderPluginToken;
-  if (!baseUrl || !pluginToken) {
-    throw new Error("Checkout requires Tender base URL and plugin token settings.");
-  }
-
-  return createTenderClient({
-    baseUrl,
-    pluginToken,
-    fetch: requireHttp(ctx).fetch as typeof fetch,
-  });
+  return {
+    checkoutUrl: parseCheckoutUrl(response.checkoutUrl),
+    transactionId: response.transactionId,
+  };
 };
 
 const readCurrency = (ctx: RouteContext): string =>
@@ -152,10 +131,10 @@ const tenderMetadata = (
   carte_cart_id: input.cartId,
 });
 
-const parseTenderChargeResponse = (checkoutUrl: string | undefined) => {
+const parseCheckoutUrl = (checkoutUrl: string | undefined): string => {
   if (!checkoutUrl) {
     throw new Error("Tender charge response did not include a checkout URL.");
   }
 
-  return { checkoutUrl };
+  return checkoutUrl;
 };

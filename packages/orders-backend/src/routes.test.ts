@@ -6,15 +6,17 @@ beforeEach(() => {
 
 const tenderChargeMock = vi.hoisted(() => vi.fn());
 const tenderRefundMock = vi.hoisted(() => vi.fn());
-const createTenderClientMock = vi.hoisted(() =>
+const tenderGetTransactionMock = vi.hoisted(() => vi.fn());
+const createTenderClientFromContextMock = vi.hoisted(() =>
   vi.fn(() => ({
     charge: tenderChargeMock,
     refund: tenderRefundMock,
+    getTransaction: tenderGetTransactionMock,
   })),
 );
 
-vi.mock("@tender/sdk", () => ({
-  createTenderClient: createTenderClientMock,
+vi.mock("@tenderpay/sdk", () => ({
+  createTenderClientFromContext: createTenderClientFromContextMock,
 }));
 
 import { adminRoute } from "./routes/admin.js";
@@ -76,11 +78,10 @@ describe("@carte/orders-backend checkout route", () => {
 
     const result = await checkoutRoute(ctx);
 
-    expect(result).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL });
-    expect(createTenderClientMock).toHaveBeenCalledWith({
-      baseUrl: "https://restaurant.example",
-      pluginToken: "tender_plugin_token",
-      fetch: expect.any(Function),
+    expect(result).toEqual({ checkoutUrl: TENDER_CHECKOUT_URL, transactionId: "txn_123" });
+    expect(createTenderClientFromContextMock).toHaveBeenCalledWith(ctx, {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
     });
     expect(tenderChargeMock).toHaveBeenCalledWith({
       flow: "hosted",

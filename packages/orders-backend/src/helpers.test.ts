@@ -42,7 +42,7 @@ describe("createStaleStripeSettingsWarning", () => {
     expect(firstWarning).toMatchObject({
       type: "section",
       label: "Tender migration notice",
-      text: expect.stringContaining("Move the legacy Stripe secret to @tender/stripe settings"),
+      text: expect.stringContaining("Move the legacy Stripe secret to @tenderpay/stripe settings"),
     });
     expect(secondWarning).toBeNull();
     expect(writes).toEqual([

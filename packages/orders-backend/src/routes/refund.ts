@@ -1,6 +1,7 @@
-import { createTenderClient } from "@tender/sdk";
-import type { TenderRefundRecordReason } from "@tender/sdk";
+import type { TenderRefundRecordReason } from "@tenderpay/sdk";
 import type { RouteContext } from "emdash";
+
+import { tenderClientFromContext } from "./tender-client.js";
 
 // Subrequest audit: 1 Tender refund fetch on the request path + 1 content
 // update inside ctx.waitUntil = 2/10. Unauthorized callers return before
@@ -10,13 +11,6 @@ const ADMIN_SCOPE = "admin";
 const AUDIT_PREFIX = "[carte-orders-backend][refund-reconcile]";
 const ORDER_STATUS_REFUNDED = "refunded";
 const REFUND_IDEMPOTENCY_PREFIX = "refund";
-
-interface RuntimeSettings {
-  settings?: {
-    tenderBaseUrl?: string;
-    tenderPluginToken?: string;
-  };
-}
 
 interface RefundInput {
   orderId: string;
@@ -148,30 +142,7 @@ const createTenderRefund = async (
   // amount as a full refund — so the local `TenderRefundClient` interface models
   // it as optional. A single narrowing assertion bridges the two structurally
   // comparable client shapes (no `unknown`/`never` round-trip).
-  return (tenderClient(ctx) as TenderRefundClient).refund(request);
-};
-
-const requireHttp = (ctx: RouteContext) => {
-  if (!ctx.http) {
-    throw new Error("Refund requires network access.");
-  }
-
-  return ctx.http;
-};
-
-const tenderClient = (ctx: RouteContext) => {
-  const settings = (ctx as RouteContext & RuntimeSettings).settings;
-  const baseUrl = settings?.tenderBaseUrl;
-  const pluginToken = settings?.tenderPluginToken;
-  if (!baseUrl || !pluginToken) {
-    throw new Error("Refund requires Tender base URL and plugin token settings.");
-  }
-
-  return createTenderClient({
-    baseUrl,
-    pluginToken,
-    fetch: requireHttp(ctx).fetch as typeof fetch,
-  });
+  return (tenderClientFromContext(ctx) as unknown as TenderRefundClient).refund(request);
 };
 
 const mapRefundReason = (reason: string | undefined): TenderRefundRecordReason => {

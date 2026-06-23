@@ -13,17 +13,22 @@ describe("@carte/orders-backend sandboxed manifest", () => {
     expect(manifest).toContain('"slug": "carte-orders-backend"');
     expect(manifest).toContain('"publisher": "did:plc:tenderfamilyexampleplaceholder"');
     expect(manifest).toContain(
-      '"capabilities": ["content:read", "content:write", "network:request"]',
+      '"capabilities": ["content:read", "content:write", "network:request:unrestricted"]',
     );
-    expect(manifest).toContain('"allowedHosts": ["license.carteplugin.dev"]');
   });
 
-  it("keeps Stripe hosts out of the network allowlist", () => {
+  it("drops the static allowlist now the Tender base URL is operator-configured (PRO-912)", () => {
+    const manifest = manifestText();
+
+    expect(manifest).not.toContain('"allowedHosts"');
+    expect(manifest).not.toContain("license.carteplugin.dev");
+  });
+
+  it("keeps Stripe hosts out of the manifest", () => {
     const manifest = manifestText();
 
     expect(manifest).not.toContain("api.stripe.com");
     expect(manifest).not.toContain("checkout.stripe.com");
-    expect(manifest).not.toContain("network:request:unrestricted");
   });
 
   it("declares the carte_orders collection with status/orderType/email/createdAt indexes", () => {
