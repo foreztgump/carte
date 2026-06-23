@@ -1,7 +1,8 @@
 {
   "name": "@carte/orders-backend",
-  "version": "0.3.0-rc.1",
+  "version": "0.3.0",
   "description": "Carte orders backend — Tender Checkout, refunds, order state. Sandboxed EmDash plugin.",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
   "exports": {
@@ -13,8 +14,7 @@
     "emdash-plugin.jsonc"
   ],
   "publishConfig": {
-    "access": "public",
-    "tag": "rc"
+    "access": "public"
   },
   "scripts": {
     "build": "emdash-plugin build",

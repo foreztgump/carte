@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file. The format 
 
 ## Unreleased — R1 packaging
 
+### Changed — publish metadata for the five MIT packages
+
+- Made `@carte/core`, `@carte/reservations`, `@carte/orders-backend`,
+  `@carte/orders-admin`, and `@carte/views` npm-publishable
+  ([PRO-896](https://linear.app/projects-linear/issue/PRO-896)): removed
+  `private: true`, added `publishConfig.access: public` and a `license: "MIT"`
+  field, and aligned all five onto the stable `0.3.0` release line (dropping the
+  `-rc.1` pre-release suffix; `@carte/views` moves up from `0.1.0`).
+  `@carte/orders-backend` also drops its `publishConfig.tag: "rc"`. `@carte/ai`
+  is deliberately unchanged — it stays `private: true` and excluded from publish
+  sets. `pnpm -r publish --dry-run --no-git-checks` now packs exactly those five
+  packages.
+
+### Added — per-package MIT LICENSE files and `.nvmrc`
+
+- Added a top-level `LICENSE` (MIT) to each of the five published packages so the
+  license travels in every npm tarball.
+- Added a root `.nvmrc` (Node 22) matching the `engines.node` pin, and switched
+  `ci.yml`, `canary.yml`, and `release.yml` to `node-version-file: .nvmrc` so the
+  Node version has a single source of truth.
+
 ### Added — WS4 Tender fulfillment wiring
 
 - `@carte/orders-backend` now consumes the published `@tenderpay/sdk@^0.2.0`

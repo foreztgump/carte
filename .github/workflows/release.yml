@@ -19,9 +19,9 @@ name: Release
 # npm internally, which is what performs the OIDC token exchange. NODE_AUTH_TOKEN
 # must NOT be set (not even empty) or npm uses it instead of falling back to OIDC.
 #
-# Deviation from Dateline: carte has no `.nvmrc` yet (separate A-track task), so
-# this pins `node-version: "22"` to match the existing ci.yml / canary.yml. Swap
-# to `node-version-file: .nvmrc` once that file lands, for full Dateline parity.
+# Node version is sourced from `.nvmrc` (Node 22), matching ci.yml / canary.yml
+# and the root `engines.node` pin — a single source of truth for full Dateline
+# parity.
 on:
   push:
     tags:
@@ -55,7 +55,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: ".nvmrc"
           # registry-url wires up the npm registry context that OIDC publishing
           # uses. Required even tokenless — removing it breaks the OIDC path.
           registry-url: "https://registry.npmjs.org"
