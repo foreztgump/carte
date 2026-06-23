@@ -5,28 +5,58 @@ Status: **v0.2.0-rc.1 publish candidate**.
 Shipped surfaces:
 
 - Tender-hosted checkout creation (`routes/checkout.ts`) — Carte never sees
-  raw PAN/CVC.
-- Placeholder Tender payment hook handlers (`events.ts`) — dedupe via KV
-  `idempotency:tender:{eventId}` with 7-day TTL per AGENTS.md.
+  raw PAN/CVC. Returns `{ checkoutUrl, transactionId }`; the `transactionId`
+  is carried through the return trip for fulfillment correlation.
+- Return-URL fulfillment route (`routes/return.ts`) — the customer's browser
+  lands here after the hosted-checkout redirect. It short-polls the
+  transaction to a terminal `paid` status (bounded by a 2s in-request budget)
+  via `@tenderpay/sdk`'s `fulfillTransaction`, then drives the order's `paid`
+  transition exactly once. Idempotent under at-least-once delivery (durable KV
+  dedup store, 7-day TTL); a still-`processing` transaction returns
+  `{ status: "processing" }` for the client to retry.
+- Idempotent order state seam (`events.ts`) — `applyTenderTransaction` keyed by
+  Tender transaction id; a duplicate observation is a no-op. There is **no**
+  `tender:*` hook and no Carte-side polling of storage.
 - Admin-authenticated refund route (`routes/refund.ts`) with order snapshot
   updates.
 - Order snapshots at checkout time (line items, pricing, customer contact).
 - Sandboxed Block Kit admin route (`routes/admin.ts`) for basic order ops.
 
 Execution model: **sandboxed**. Capabilities declared:
-`content:read`, `content:write`, `network:request` — `allowedHosts`
-is intentionally limited to `license.carteplugin.dev`. PCI scope is minimized
-by Tender-hosted checkout — Carte infrastructure NEVER receives raw PAN/CVC.
+`content:read`, `content:write`, `network:request:unrestricted`. The Tender
+base URL is an operator-configured runtime setting (`tenderBaseUrl`), unknown
+at authoring time, so a static `allowedHosts` allowlist cannot enumerate it —
+`network:request:unrestricted` is the canonical capability for this case (see
+PRO-912). PCI scope is minimized by Tender-hosted checkout — Carte
+infrastructure NEVER receives raw PAN/CVC, so the broadened host reach carries
+no raw-card exposure.
 
-**Tender SDK dependency:** This published package is self-contained. `@tender/sdk`
-is a workspace-private build input bundled into `dist/` at build time and is NOT
-declared as a runtime, peer, optional, or dev dependency in the packed package.
-Operators install and configure `tender-core` and `tender-stripe` when Tender is
-available; the bundled SDK is transparent to your site configuration.
+**Settings:** two values, both in plugin settings storage:
 
-Subrequest budget note (per AGENTS.md): the Tender transaction trigger handler
-budget is 3 of the 10 sandbox subrequests per invocation. Stay within budget; do
-not add speculative outbound calls.
+- `tenderBaseUrl` — the EmDash site origin Tender is mounted on.
+- `tenderPluginToken` — an admin-scoped token for Tender's non-public
+  money/read routes. Stored as a **secret** (masked in the admin, never logged
+  or echoed; see HR10).
+
+**Tender SDK dependency:** This published package is self-contained.
+`@tenderpay/sdk` is a build-time devDependency bundled into `dist/` at build
+time and is NOT declared as a runtime, peer, optional, or dependency in the
+packed package. Operators install and configure `tender-core` and
+`@tenderpay/stripe` when Tender is available; the bundled SDK is transparent to
+your site configuration.
+
+Subrequest budget note (per AGENTS.md): the return-URL fulfillment path is the
+heaviest handler — each poll is one `getTransaction` subrequest plus the KV
+dedup read/write and the order-transition marker writes. Audited at 9/10 of the
+sandbox subrequest cap in the worst case (multi-poll settle). Stay within
+budget; do not add speculative outbound calls.
+
+**Fulfillment propagation latency:** fulfillment is driven in-request from the
+return URL, bounded by the 2s poll budget. A transaction that is still
+`processing` when the budget expires returns `{ status: "processing" }` — the
+order transitions to `paid` on the next observation (a return-URL refresh or a
+later admin action re-driving the same transaction id). There is no background
+catch-up; the drive point is the customer's return trip.
 
 ## Install (EmDash 0.18)
 

@@ -35,9 +35,9 @@ importers:
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.59.1
-      '@tender/sdk':
-        specifier: file:./vendor/tender-sdk-0.0.0.tgz
-        version: file:vendor/tender-sdk-0.0.0.tgz
+      '@tenderpay/sdk':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@types/node':
         specifier: ^22.9.0
         version: 22.19.17
@@ -2287,9 +2287,8 @@ packages:
   '@tanstack/store@0.9.3':
     resolution: {integrity: sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw==}
 
-  '@tender/sdk@file:vendor/tender-sdk-0.0.0.tgz':
-    resolution: {integrity: sha512-DvxLb+eJdt1UjAB3zYvloXjbckKjIA4/ZC9N6X5DY+l+WiILLdX9bXuCQbQ4xIQlWRuuw4iZkF6fKK8rkT7Dgg==, tarball: file:vendor/tender-sdk-0.0.0.tgz}
-    version: 0.0.0
+  '@tenderpay/sdk@0.2.0':
+    resolution: {integrity: sha512-REmqP8tx+1irzovbBO7wj/Ssu9OV4BPFDviqMRiKPNqJZdhcucFpRF+ObvcQ/1vEozNuybmgwtgyjLrrgZiOCQ==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -8221,7 +8220,7 @@ snapshots:
 
   '@tanstack/store@0.9.3': {}
 
-  '@tender/sdk@file:vendor/tender-sdk-0.0.0.tgz': {}
+  '@tenderpay/sdk@0.2.0': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:

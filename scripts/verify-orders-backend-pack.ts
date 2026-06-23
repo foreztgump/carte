@@ -23,10 +23,9 @@ const SRC_PREFIX = "src/";
 const VENDOR_PREFIX = "vendor/";
 const VENDOR_FRAGMENT = "vendor/";
 const FILE_SPECIFIER_PREFIX = "file:";
-const TENDER_PACKAGE_NAME = "@tender/sdk";
-const TENDER_TARBALL_FILE = "tender-sdk-0.0.0.tgz";
+const TENDER_PACKAGE_NAME = "@tenderpay/sdk";
 const CLEAN_PROJECT_NAME = "orders-backend-pack-smoke";
-const NODE_MODULES_TENDER_PATH = path.join("node_modules", "@tender", "sdk");
+const NODE_MODULES_TENDER_PATH = path.join("node_modules", "@tenderpay", "sdk");
 const DEPENDENCY_FIELDS = [
   "dependencies",
   "devDependencies",
@@ -191,8 +190,7 @@ function assertAllowedFile(file: string): void {
 }
 
 function isForbiddenPackedFile(file: string): boolean {
-  if (file.startsWith(SRC_PREFIX) || file.startsWith(VENDOR_PREFIX)) return true;
-  return path.basename(file) === TENDER_TARBALL_FILE;
+  return file.startsWith(SRC_PREFIX) || file.startsWith(VENDOR_PREFIX);
 }
 
 async function assertCleanInstall(input: {

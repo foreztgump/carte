@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file. The format 
 
 ## Unreleased — R1 packaging
 
+### Added — WS4 Tender fulfillment wiring
+
+- `@carte/orders-backend` now consumes the published `@tenderpay/sdk@^0.2.0`
+  (replacing the workspace-private `@tender/sdk@0.0.0` build input) and wires the
+  WS4 consumer-eventing path end to end. A new public return-URL route
+  (`routes/return.ts`) short-polls the transaction to a terminal `paid` status
+  (bounded by a 2s in-request budget) via `fulfillTransaction` + a durable KV
+  dedup store, then drives the order's `paid` transition exactly once —
+  idempotent under at-least-once delivery, with no `tender:*` hook and no
+  Carte-side polling of storage. Checkout now returns
+  `{ checkoutUrl, transactionId }` so the return trip can correlate.
+- Resolved the `allowedHosts` trust contract (PRO-912): the manifest declares
+  `network:request:unrestricted` and drops the static
+  `license.carteplugin.dev` allowlist, since the Tender base URL is an
+  operator-configured runtime setting unknown at authoring time. Card data still
+  never transits Carte.
+
 ### Changed — public repository readiness
 
 - Completed the PRO-895 pre-public secrets/URL audit and made

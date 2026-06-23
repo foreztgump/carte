@@ -2,8 +2,48 @@
 
 This document tracks operator migrations between Carte releases, newest first.
 
+- [v0.3 → fulfillment wired — Tender consumer eventing](#v03--fulfillment-wired--tender-consumer-eventing)
 - [v0.2 → v0.3.0-rc — EmDash 0.18 manifest-based install](#v02--v030-rc--emdash-018-manifest-based-install)
 - [v0.1 → v0.2.0-rc — Tender adapter](#v01--v020-rc--tender-adapter)
+
+---
+
+# v0.3 → fulfillment wired — Tender consumer eventing
+
+The WS4 consumer-eventing path is now **live**: `@carte/orders-backend` consumes
+the published **`@tenderpay/sdk@^0.2.0`** (replacing the workspace-private
+`@tender/sdk@0.0.0` build input) and actually fulfills paid orders.
+
+## What changed
+
+1. **SDK rename.** `@tender/sdk` → `@tenderpay/sdk`. It remains a build-time
+   input bundled into `dist/` (now a devDependency); the packed package still
+   declares **no** runtime/peer/optional dependency on it. No operator action —
+   it is transparent to your site configuration.
+2. **Fulfillment drive point is the return URL.** After Tender's hosted-checkout
+   redirect, the customer's browser lands on the public `return` route, which
+   short-polls the transaction to `paid` (bounded, in-request) and transitions
+   the order exactly once. There is **no `tender:*` hook** and **no Carte-side
+   polling of storage** — the sandbox has no post-response primitive, so
+   fulfillment is driven where a request exists.
+3. **Propagation latency.** A transaction still `processing` when the 2s poll
+   budget expires returns `{ status: "processing" }`; the order settles on the
+   next observation (a return-URL refresh or a later admin re-drive of the same
+   transaction id). No background catch-up job.
+4. **Capability broadened (PRO-912).** The manifest now declares
+   `network:request:unrestricted` and drops the static
+   `allowedHosts: ["license.carteplugin.dev"]` allowlist: the Tender base URL is
+   an operator-configured runtime setting (`tenderBaseUrl`), unknown at
+   authoring time, so a static allowlist cannot enumerate it. Card data still
+   never transits Carte (Tender hosted checkout owns PCI scope).
+
+## Required actions for operators
+
+- Ensure the two plugin settings are configured: `tenderBaseUrl` (your Tender
+  mount origin) and `tenderPluginToken` (admin-scoped, stored **secret**).
+- Point your checkout `successUrl` at the storefront page that calls the
+  `return` route with the `transactionId` returned from checkout.
+- Move any legacy Stripe provider secret to `@tenderpay/stripe`.
 
 ---
 

@@ -5,6 +5,7 @@ import { enforceRateLimit, rateLimitResponse } from "./rate-limit.js";
 import { adminRoute } from "./routes/admin.js";
 import { checkoutRoute } from "./routes/checkout.js";
 import { refundRoute } from "./routes/refund.js";
+import { returnRoute } from "./routes/return.js";
 import { createStaleStripeSettingsWarning } from "./stale-stripe-warning.js";
 
 // Sandboxed routes use the two-arg ABI `(routeCtx, ctx)` and return plain
@@ -78,6 +79,7 @@ const plugin: SandboxedPlugin = {
     admin: { handler: adaptRoute(adminRouteWithMigrationWarning) },
     checkout: { handler: adaptRoute(rateLimitedCheckoutRoute), public: true },
     refund: { handler: adaptRoute(refundRoute) },
+    return: { handler: adaptRoute(returnRoute), public: true },
   },
 };
 

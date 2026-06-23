@@ -30,7 +30,7 @@
     "@emdash-cms/plugin-cli": "0.5.1",
     "@eslint/js": "^9.16.0",
     "@playwright/test": "^1.59.1",
-    "@tender/sdk": "file:./vendor/tender-sdk-0.0.0.tgz",
+    "@tenderpay/sdk": "^0.2.0",
     "@types/node": "^22.9.0",
     "emdash": "^0.18",
     "eslint": "^9.16.0",

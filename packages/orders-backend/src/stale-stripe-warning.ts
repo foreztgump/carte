@@ -1,7 +1,7 @@
 import type { RouteContext } from "emdash";
 
 // Migration aid: if a legacy Stripe secret lingers in plugin settings, surface
-// a one-time Block Kit notice nudging operators to move it to @tender/stripe.
+// a one-time Block Kit notice nudging operators to move it to @tenderpay/stripe.
 // Never echoes the secret value. Shown at most once (KV-guarded).
 
 const STALE_STRIPE_WARNING_KEY = "migration:stripe-secret-warning-shown";
@@ -47,6 +47,6 @@ export const createStaleStripeSettingsWarning = async (
   return {
     type: "section",
     label: "Tender migration notice",
-    text: "Move the legacy Stripe secret to @tender/stripe settings, then remove it from Carte orders backend settings.",
+    text: "Move the legacy Stripe secret to @tenderpay/stripe settings, then remove it from Carte orders backend settings.",
   };
 };

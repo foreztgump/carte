@@ -114,6 +114,65 @@ export const tenderRefundContext = (options: RefundContextOptions = {}): RefundC
   return { ctx, updates, waitUntilTasks };
 };
 
+export interface ReturnContextOptions {
+  transactionId?: string;
+  transactions: ReadonlyArray<Record<string, unknown>>;
+  failOrderUpdate?: boolean;
+}
+
+export interface ReturnContextHandle {
+  ctx: RouteContext;
+  updates: Array<{ collection: string; id: string; value: unknown }>;
+  getTransactionCalls: string[];
+}
+
+/**
+ * Build a return-route context whose Tender client returns the scripted
+ * `transactions` sequence (one per poll), backed by a real in-memory KV so the
+ * SDK dedup store and the order-transition marker behave durably within the
+ * request. Records content updates and every `getTransaction` poll.
+ */
+export const tenderReturnContext = (options: ReturnContextOptions): ReturnContextHandle => {
+  const updates: Array<{ collection: string; id: string; value: unknown }> = [];
+  const getTransactionCalls: string[] = [];
+  const store = new Map<string, unknown>();
+  const pending = [...options.transactions];
+  const ctx = asRouteContext({
+    input: { transactionId: options.transactionId ?? "txn_123" },
+    request: new Request("https://example.test/return"),
+    kv: {
+      async get<T>(key: string): Promise<T | null> {
+        return (store.get(key) as T | undefined) ?? null;
+      },
+      async set(key: string, value: unknown): Promise<void> {
+        store.set(key, value);
+      },
+    },
+    http: {
+      async fetch() {
+        throw new Error("Return route must use Tender SDK instead of direct fetch.");
+      },
+    },
+    content: {
+      async update(collection: string, id: string, value: unknown) {
+        if (options.failOrderUpdate) throw new Error("content store unavailable");
+        updates.push({ collection, id, value });
+      },
+    },
+    settings: {
+      tenderBaseUrl: "https://restaurant.example",
+      tenderPluginToken: "tender_plugin_token",
+    },
+    tenderClient: {
+      async getTransaction(id: string) {
+        getTransactionCalls.push(id);
+        return pending.length > 1 ? pending.shift() : pending[0];
+      },
+    },
+  });
+  return { ctx, updates, getTransactionCalls };
+};
+
 export interface RateLimitCounters {
   get: number;
   set: number;

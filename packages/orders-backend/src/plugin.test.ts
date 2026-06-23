@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import plugin from "./plugin.js";
 
-const EXPECTED_ROUTE_KEYS = ["admin", "checkout", "refund"];
+const EXPECTED_ROUTE_KEYS = ["admin", "checkout", "refund", "return"];
 
 const routeHandler = (key: string): unknown => {
   const route = plugin.routes?.[key];
@@ -24,8 +24,9 @@ describe("@carte/orders-backend sandboxed plugin surface", () => {
     }
   });
 
-  it("keeps the public checkout route marked public and admin/refund private", () => {
+  it("keeps the customer-facing checkout and return routes public and admin/refund private", () => {
     expect(plugin.routes?.checkout).toMatchObject({ public: true });
+    expect(plugin.routes?.return).toMatchObject({ public: true });
     expect(plugin.routes?.admin).not.toHaveProperty("public");
     expect(plugin.routes?.refund).not.toHaveProperty("public");
   });
