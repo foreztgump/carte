@@ -31,7 +31,8 @@ Examples:
 
 ## Local development loop
 
-The repo is a pnpm 10 workspace pinned to Node 22.
+The repo is a pnpm 10 workspace pinned to Node 22 (captured in `.nvmrc`; run
+`nvm use` to match CI and the release workflow).
 
 ```bash
 pnpm install          # install all workspace deps (frozen lockfile in CI)

@@ -1,8 +1,8 @@
 {
   "name": "@carte/core",
-  "version": "0.3.0-rc.1",
-  "private": true,
+  "version": "0.3.0",
   "description": "Carte core — menus, restaurant settings, hours, schema.org JSON-LD. Sandboxed EmDash plugin.",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
   "exports": {
@@ -16,6 +16,9 @@
     "dist",
     "emdash-plugin.jsonc"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "emdash-plugin build",
     "typecheck": "tsc --noEmit",
