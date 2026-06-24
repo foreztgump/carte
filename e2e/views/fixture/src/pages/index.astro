@@ -120,5 +120,112 @@ const orderingCart = {
         partySizeOptions={[2, 4, 6]}
       />
     </main>
+    <script is:inline>
+      // Host-page checkout orchestration. @carte/views components are
+      // prop-driven and never fetch (SG7), so the storefront owns the POST,
+      // the open-redirect-safe navigation to the Tender checkout URL, and
+      // threading the returned `transactionId` to the success page so the
+      // return route can drive fulfillment.
+      const SUCCESS_PATH = "/order-success";
+      const TRANSACTION_KEY = "carte:last-transaction";
+      const ALLOWED_CHECKOUT_HOSTS = ["checkout.stripe.com"];
+      const checkoutForm = document.querySelector("[data-carte-checkout-form]");
+      const orderId = "order_fixture_1001";
+
+      const safeCheckoutUrl = (raw) => {
+        let url;
+        try {
+          url = new URL(raw);
+        } catch {
+          return null;
+        }
+        if (url.protocol !== "https:" || !ALLOWED_CHECKOUT_HOSTS.includes(url.host)) {
+          return null;
+        }
+        return url.toString();
+      };
+
+      checkoutForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const statusEl = checkoutForm.querySelector("[data-carte-checkout-status]");
+        const errorEl = checkoutForm.querySelector("[data-carte-checkout-error]");
+        const form = new FormData(checkoutForm);
+        const successUrl = new URL(SUCCESS_PATH, globalThis.location.origin);
+        successUrl.searchParams.set("orderId", orderId);
+
+        try {
+          const response = await fetch(checkoutForm.getAttribute("action"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              cartId: "cart-fixture",
+              orderId,
+              customerEmail: form.get("email"),
+              successUrl: successUrl.toString(),
+              cancelUrl: globalThis.location.href,
+              lineItems: [{ name: "Charred Broccolini", unitAmount: 1400, quantity: 2 }],
+            }),
+          });
+          const payload = await response.json();
+          const target = safeCheckoutUrl(payload?.checkoutUrl);
+          if (!target) {
+            if (errorEl) {
+              errorEl.hidden = false;
+              errorEl.textContent = "Checkout is unavailable. Please try again.";
+            }
+            return;
+          }
+          // Persist the id only once the redirect target is trusted; Tender may
+          // not append a verifiable id to the return URL, so sessionStorage is
+          // the production carrier the success page reads back.
+          if (payload?.transactionId) {
+            globalThis.sessionStorage?.setItem(TRANSACTION_KEY, payload.transactionId);
+          }
+          if (statusEl) statusEl.textContent = "Redirecting to secure payment…";
+          globalThis.location.assign(target);
+        } catch {
+          if (errorEl) {
+            errorEl.hidden = false;
+            errorEl.textContent = "Checkout is unavailable. Please try again.";
+          }
+        }
+      });
+
+      // Host-page reservation orchestration. The ReservationForm is likewise
+      // fetch-free, so the storefront owns the POST and renders the success
+      // copy or the validation error returned by the reservations route.
+      const reservationForm = document.querySelector("[data-carte-reservation-form]");
+
+      reservationForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const statusEl = reservationForm.querySelector("[data-carte-reservation-status]");
+        const errorEl = reservationForm.querySelector("[data-carte-reservation-error]");
+        const form = new FormData(reservationForm);
+        if (statusEl) statusEl.textContent = "";
+        if (errorEl) errorEl.hidden = true;
+
+        try {
+          const response = await fetch(reservationForm.getAttribute("action"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(Object.fromEntries(form.entries())),
+          });
+          const payload = await response.json();
+          if (response.ok) {
+            if (statusEl) statusEl.textContent = payload?.message ?? "Reservation request received.";
+            return;
+          }
+          if (errorEl) {
+            errorEl.hidden = false;
+            errorEl.textContent = payload?.message ?? "Reservation request failed.";
+          }
+        } catch {
+          if (errorEl) {
+            errorEl.hidden = false;
+            errorEl.textContent = "Reservation request failed.";
+          }
+        }
+      });
+    </script>
   </body>
 </html>
