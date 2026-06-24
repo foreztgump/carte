@@ -134,7 +134,10 @@ test("@carte/views OrderingCheckout toggles summary and redirects", async ({ pag
     expect(route.request().method()).toBe("POST");
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ checkoutUrl: "https://checkout.stripe.com/c/pay_fixture" }),
+      body: JSON.stringify({
+        checkoutUrl: "https://checkout.stripe.com/c/pay_fixture",
+        transactionId: "txn_fixture_redirect",
+      }),
     });
   });
 
@@ -164,6 +167,48 @@ test("@carte/views OrderingCheckout toggles summary and redirects", async ({ pag
   await expect(page).toHaveURL("https://checkout.stripe.com/c/pay_fixture");
 });
 
+test("@carte/views threads transactionId from checkout through to the return route", async ({
+  page,
+}) => {
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/checkout", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        checkoutUrl: "https://checkout.stripe.com/c/pay_fixture",
+        transactionId: "txn_fixture_chain",
+      }),
+    });
+  });
+
+  // Stub the hosted-checkout origin so the redirect lands on a local page
+  // instead of making a real cross-origin request to Stripe.
+  await page.route("https://checkout.stripe.com/**", async (route) => {
+    await route.fulfill({ contentType: "text/html", body: "<!doctype html><title>pay</title>" });
+  });
+
+  let returnBody: unknown;
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/return", async (route) => {
+    returnBody = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ status: "paid" }),
+    });
+  });
+
+  await page.goto(fixtureUrl);
+  await page.getByLabel("Checkout name").fill("Alex Guest");
+  await page.getByLabel("Checkout email").fill("alex@example.com");
+  await page.getByRole("button", { name: "Continue to secure payment" }).click();
+  await expect(page).toHaveURL("https://checkout.stripe.com/c/pay_fixture");
+
+  // The customer returns from the hosted checkout to the success page WITHOUT a
+  // Tender-appended id. The success page must recover the transactionId the
+  // checkout handler persisted (sessionStorage), proving the threading works.
+  await page.goto(`${fixtureUrl}/order-success?orderId=order_fixture_1001`);
+  await expect(page.locator("[data-carte-fulfillment-status]")).toHaveText("paid");
+  expect(returnBody).toEqual({ transactionId: "txn_fixture_chain" });
+});
+
 test("@carte/views order success page renders explicit order record", async ({ page }) => {
   await page.goto(`${fixtureUrl}/order-success?orderId=order_fixture_1001`);
 
@@ -174,6 +219,65 @@ test("@carte/views order success page renders explicit order record", async ({ p
   await expect(page.getByText("6:30 PM–6:45 PM")).toBeVisible();
   await expect(page.getByText("Charred Broccolini")).toBeVisible();
   await expect(page.getByText("$50.46")).toBeVisible();
+});
+
+test("@carte/views order success page drives fulfillment via the return route", async ({
+  page,
+}) => {
+  let returnBody: unknown;
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/return", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    returnBody = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ status: "paid" }),
+    });
+  });
+
+  await page.goto(
+    `${fixtureUrl}/order-success?orderId=order_fixture_1001&transactionId=txn_fixture_9001`,
+  );
+
+  await expect(page.locator("[data-carte-fulfillment-status]")).toHaveText("paid");
+  expect(returnBody).toEqual({ transactionId: "txn_fixture_9001" });
+});
+
+test("@carte/views order success page retries a processing return until paid", async ({ page }) => {
+  let attempts = 0;
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/return", async (route) => {
+    attempts += 1;
+    const status = attempts === 1 ? "processing" : "paid";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ status }),
+    });
+  });
+
+  await page.goto(
+    `${fixtureUrl}/order-success?orderId=order_fixture_1001&transactionId=txn_fixture_9002`,
+  );
+
+  await expect(page.locator("[data-carte-fulfillment-status]")).toHaveText("paid");
+  expect(attempts).toBeGreaterThanOrEqual(2);
+});
+
+test("@carte/views order success page omits the fulfillment status without a transactionId", async ({
+  page,
+}) => {
+  let called = false;
+  await page.route("**/_emdash/api/plugins/carte-orders-backend/return", async (route) => {
+    called = true;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ status: "paid" }),
+    });
+  });
+
+  await page.goto(`${fixtureUrl}/order-success?orderId=order_fixture_1001`);
+
+  await expect(page.getByRole("heading", { name: "Order received", level: 1 })).toBeVisible();
+  await expect(page.locator("[data-carte-fulfillment-status]")).toBeHidden();
+  expect(called).toBe(false);
 });
 
 test("@carte/views reservation success page renders explicit reservation record", async ({

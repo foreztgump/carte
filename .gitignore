@@ -24,6 +24,10 @@ packages/*/worker-configuration.d.ts
 # Playwright MCP scratch output
 .playwright-mcp/
 
+# Playwright test run artifacts
+test-results/
+playwright-report/
+
 # Loose validation render screenshots dropped at repo root (committed copies live
 # under each milestone's validation/ dir referenced from tasks.md)
 /pro*-*.png

@@ -47,11 +47,59 @@ const order = {
   <body>
     <main>
       <OrderRecordStatus order={order} />
+      <p data-carte-fulfillment-status hidden role="status" aria-live="polite"></p>
     </main>
     <script is:inline>
-      const orderId = new URL(globalThis.location.href).searchParams.get("orderId");
+      const params = new URL(globalThis.location.href).searchParams;
+      const orderId = params.get("orderId");
       const label = document.querySelector("[data-carte-order-record-label]");
       if (orderId && label) label.textContent = `Order ${orderId}`;
+
+      // Host-page fulfillment drive point: after Tender's hosted-checkout
+      // redirect, the success page POSTs the checkout `transactionId` to the
+      // public return route, which short-polls Tender to terminal `paid`. A
+      // bounded poll may answer `processing` (not yet settled), so retry until
+      // a terminal status or the attempt budget is spent.
+      const RETURN_ROUTE = "/_emdash/api/plugins/carte-orders-backend/return";
+      const TRANSACTION_KEY = "carte:last-transaction";
+      const MAX_ATTEMPTS = 5;
+      const RETRY_DELAY_MS = 500;
+      // Tender may not append a verifiable id to the return URL, so the
+      // checkout handler persists it client-side; prefer an explicit query
+      // param and fall back to that persisted handle.
+      const transactionId =
+        params.get("transactionId") ?? globalThis.sessionStorage?.getItem(TRANSACTION_KEY);
+      const statusEl = document.querySelector("[data-carte-fulfillment-status]");
+
+      const sleep = (ms) => new Promise((resolve) => globalThis.setTimeout(resolve, ms));
+
+      const driveFulfillment = async () => {
+        if (!transactionId || !statusEl) return;
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+          let status = "processing";
+          try {
+            const response = await fetch(RETURN_ROUTE, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ transactionId }),
+            });
+            const payload = await response.json();
+            status = typeof payload?.status === "string" ? payload.status : "processing";
+          } catch {
+            status = "processing";
+          }
+          if (status !== "processing") {
+            statusEl.textContent = status;
+            statusEl.hidden = false;
+            return;
+          }
+          await sleep(RETRY_DELAY_MS);
+        }
+        statusEl.textContent = "processing";
+        statusEl.hidden = false;
+      };
+
+      void driveFulfillment();
     </script>
   </body>
 </html>
